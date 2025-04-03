@@ -1,0 +1,148 @@
+- name: Create OpenMediaVault VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: omv
+    vmid: 101
+    autostart: true
+    net:
+      net0: 'virtio,bridge=vmbr0,tag="2"'
+      net1: 'virtio,bridge=vmbr1'
+    cores: 2
+    memory: 8192
+    state: "stopped"
+- name: Waiting for user input
+  pause:
+    prompt: Configure the settings for the OpenMediaVault VM! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Starting OpenMediaVault VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: omv
+    vmid: 101
+    node: saturn
+    state: "started"
+- name: Create Media Docker VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: media-docker
+    vmid: 102
+    autostart: true
+    net:
+      net0: 'virtio,bridge=vmbr0,tag="4"'
+      net1: 'virtio,bridge=vmbr1'
+    cores: 4
+    memory: 16384
+    state: "stopped"
+- name: Waiting for user input
+  pause:
+    prompt: Configure the settings for the Media Docker VM! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Starting Media Docker VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: media-docker
+    vmid: 102
+    node: saturn
+    state: "started"
+- name: Create MGMT Docker VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: mgmt-docker
+    vmid: 103
+    autostart: true
+    net:
+      net0: 'virtio,bridge=vmbr0,tag="2"'
+      net1: 'virtio,bridge=vmbr1'
+    cores: 2
+    memory: 8192
+    state: "stopped"
+- name: Waiting for user input
+  pause:
+    prompt: Configure the settings for the MGMT Docker VM! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Starting MGMT Docker VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: mgmt-docker
+    vmid: 103
+    node: saturn
+    state: "started"
+- name: Create VPN Docker VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: vpn-docker
+    vmid: 104
+    autostart: true
+    net:
+      net0: 'virtio,bridge=vmbr0,tag="8"'
+      net1: 'virtio,bridge=vmbr1'
+    cores: 4
+    memory: 16384
+    state: "stopped"
+- name: Waiting for user input
+  pause:
+    prompt: Configure the settings for the VPN Docker VM! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Starting VPN Docker VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: vpn-docker
+    vmid: 104
+    node: saturn
+    state: "started"
+- name: Create Camera Docker VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: cam-docker
+    vmid: 105
+    autostart: true
+    net:
+      net0: 'virtio,bridge=vmbr0,tag="5"'
+      net1: 'virtio,bridge=vmbr1'
+    cores: 4
+    memory: 8192
+    state: "stopped"
+- name: Waiting for user input
+  pause:
+    prompt: Configure the settings for the Camera Docker VM! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Starting Camera Docker VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: cam-docker
+    vmid: 105
+    node: saturn
+    state: "started"
+- name: Waiting for user input
+  pause:
+    prompt: Complete the OpenMediaVault Installer! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Waiting for user input
+  pause:
+    prompt: Complete the Media Docker Debian Installer! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Waiting for user input
+  pause:
+    prompt: Complete the MGMT Docker Debian Installer! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Waiting for user input
+  pause:
+    prompt: Complete the VPN Docker Debian Installer! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Waiting for user input
+  pause:
+    prompt: Complete the Camera Docker Debian Installer! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Configure OpenMediaVault
+  pause:
+    prompt: Complete the OpenMediaVault Installer! Once complete, press return to continue. Press Ctrl+c and then "a" to abort

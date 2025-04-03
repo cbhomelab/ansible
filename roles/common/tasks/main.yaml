@@ -1,0 +1,73 @@
+- name: Install software
+  ansible.builtin.apt:
+    pkg: 
+    - nfs-common
+    - git
+    update_cache: yes
+- name: Add NAS to hostfile
+  blockinfile:
+    state: present
+    dest: etc_hosts
+    content: 'omv {{ nas-ip }}'
+- name: Add DNS to hostfile
+  blockinfile:
+    state: present
+    dest: etc_hosts
+    content: 'dns {{ dns-ip }}'
+- name: Configure git user name
+  git_config:
+    name: user.name
+    scope: global
+    value: '{{ git_full_name }}'
+- name: Configure git user email
+  git_config:
+    name: user.email
+    scope: global
+    value: '{{ github_email }}'
+- name: Creating Directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    mode: '0755'
+  loop:
+    - '{{ appdata-dir }}'
+    - '{{ media-dir }}'
+    - '{{ backup-dir }}'
+    - '{{ compose-dir }}'
+    - '{{ script-dir }}'
+- name: Mounting Backup NFS Share
+  ansible.posix.mount:
+    src: '{{ backup-nfs }}'
+    path: '{{ backup-dir }}'
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+    boot: true
+- name: Mounting Compose NFS Share
+  ansible.posix.mount:
+    src: '{{ compose-nfs }}'
+    path: '{{ compose-dir }}'
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+    boot: true
+- name: Mounting Script NFS Share
+  ansible.posix.mount:
+    src: '{{ script-nfs }}'
+    path: '{{ script-dir }}'
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+    boot: true
+- name: Creating Group-Specific Directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    mode: '0755'
+  loop: '{{ host-dir }}'
+- name: Creating Host-Specific Directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    mode: '0755'
+  loop: '{{ host-dir }}'

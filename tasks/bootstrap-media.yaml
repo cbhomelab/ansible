@@ -1,0 +1,12 @@
+- name: Waiting for user input
+  pause:
+    prompt: Enable SSH and install Python on Media Docker! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Waiting for user input
+  pause:
+    prompt: Enable SSH and install Python on VPN Docker! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Waiting for user input
+  pause:
+    prompt: Enable SSH and install Python on MGMT Docker! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+- name: Waiting for user input
+  pause:
+    prompt: Enable SSH and install Python on Camera Docker! Once complete, press return to continue. Press Ctrl+c and then "a" to abort

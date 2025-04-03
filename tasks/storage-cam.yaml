@@ -1,0 +1,18 @@
+- name: Creating CCTV media directory
+  ansible.builtin.file:
+    path: '{{ cctv-dir }}'
+    state: directory
+    mode: '0755'
+- name: Mounting CCTV NFS Share
+  ansible.posix.mount:
+    src: '{{ cctv-nfs }}'
+    path: '{{ cctv-dir }}'
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+    boot: true
+- name: Creating Frigate Appdata Directory
+  ansible.builtin.file:
+    path: '{{ frigate-dir }}'
+    state: directory
+    mode: '0755'

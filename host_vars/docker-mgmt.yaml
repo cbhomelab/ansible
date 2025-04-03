@@ -1,0 +1,8 @@
+host-mount-directories:
+- minio-dir: '{{ media-dir }}/jordan'
+- sync-dir: '{{ media-dir }}/sync'
+host-appdata-directories:
+- syncthing-dir: '{{ appdata-dir }}/syncthing'
+host-mount-nfs:
+- minio-nfs: '{{ nas-ip }}:/jordan'
+- syncthing-nfs: '{{ nas-ip }}:/syncthing'

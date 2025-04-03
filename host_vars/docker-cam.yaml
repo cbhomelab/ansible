@@ -1,0 +1,6 @@
+# Media Directories
+cctv-dir: '{{ media-dir }}/cctv'
+# Appdata Directories
+frigate-dir: '{{ appdata-dir }}/frigate'
+# NFS Shares
+cctv-nfs: '{{ nas-ip }}:/cctv'

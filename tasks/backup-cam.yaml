@@ -1,0 +1,6 @@
+- name: Create Cron entry for backup script
+  ansible.builtin.cron:
+    name: "backup"
+    minute: "0"
+    hour: "2"
+    job: "./{{ script-dir }}/backup/cam-backup.sh > /dev/null"

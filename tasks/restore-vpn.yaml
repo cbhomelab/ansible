@@ -1,0 +1,65 @@
+- name: Copying Stash-S6 Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/stash-s6/'
+    dest: '{{ stash-dir }}/'
+- name: Copying Sonarr Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/sonarr/'
+    dest: '{{ sonarr-dir }}/'
+- name: Copying Radarr Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/radarr/'
+    dest: '{{ radarr-dir }}/'
+- name: Copying Lidarr Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/lidarr/'
+    dest: '{{ lidarr-dir }}/'
+- name: Copying Prowlarr Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/prowlarr/'
+    dest: '{{ prowlarr-dir }}/'
+- name: Copying Whisparr Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/whisparr/'
+    dest: '{{ whisparr-dir }}/'
+- name: Copying Readarr-1 Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/readarr-1/'
+    dest: '{{ readarr-1-dir }}/'
+- name: Copying Readarr-2 Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/readarr-2/'
+    dest: '{{ readarr-2-dir }}/'
+- name: Copying Whisparr Sabnzbd
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/sabnbzbd/'
+    dest: '{{ sabnzbd-dir }}/'
+- name: Copying qBitTorrent Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/qbittorrent/'
+    dest: '{{ qbittorrent-dir }}/'
+- name: Copying TubeSync Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/tubesync/'
+    dest: '{{ tubesync-dir }}/'
+- name: Copying auto-m4b Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/auto-m4b/'
+    dest: '{{ auto-m4b-dir }}/'
+- name: Copying Flaresolverr Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/flaresolverr/'
+    dest: '{{ flaresolverr-dir }}/'

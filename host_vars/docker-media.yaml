@@ -1,0 +1,11 @@
+# Appdata Directories
+appdata-directories: 
+- plex-dir: '{{ appdata-dir }}/plex'
+- tautulli-dir: '{{ appdata-dir }}/tautulli'
+- bazarr-dir: '{{ appdata-dir }}/bazarr'
+- jellyfin-dir: '{{ appdata-dir }}/jellyfin'
+- fileflows-dir: '{{ appdata-dir }}/fileflows'
+- npm-dir: '{{ appdata-dir }}/npm'
+- ddns-dir: '{{ appdata-dir }}/ddns'
+- overseerr-dir: '{{ appdata-dir }}/overseerr'
+- doplarr-dir: '{{ appdata-dir }}/doplarr'

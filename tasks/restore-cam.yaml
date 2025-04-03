@@ -1,0 +1,5 @@
+- name: Copying Frigate Appdata
+  ansible.posix.synchronize:
+    mode: pull
+    src: '{{ backup-dir }}/appdata/frigate/'
+    dest: '{{ frigate-dir }}/'

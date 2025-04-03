@@ -1,0 +1,32 @@
+- name: Creating Syncthing Media directory
+  ansible.builtin.file:
+    path: '{{ sync-dir }}'
+    state: directory
+    mode: '0755'
+- name: Mount Syncthing NFS Share
+  ansible.posix.mount:
+    src: '{{ syncthing-nfs }}'
+    path: '{{ sync-dir }}'
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+    boot: true
+- name: Creating Syncthing Appdata Directory
+  ansible.builtin.file:
+    path: '{{ syncthing-dir }}'
+    state: directory
+    mode: '0755'
+- name: Create Jordan Minio Media directory
+  ansible.builtin.file:
+    path: /mnt/media/jordan
+    state: directory
+    mode: '0755'
+- name: Mount Jordan Minio NFS Share
+  ansible.posix.mount:
+    src: '{{ minio-nfs }}'
+    path: '{{ minio-dir }}'
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+    boot: true
+    boot: true

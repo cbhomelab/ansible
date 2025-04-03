@@ -1,0 +1,5 @@
+- name: Running Compose Files
+  community.docker.docker_compose_v2:
+    project_src: '{{ compose-dir }}/mgmt'
+    pull: missing
+  register: output

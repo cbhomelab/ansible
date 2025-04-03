@@ -1,0 +1,19 @@
+# Appdata Directories
+sonarr-dir: '{{ appdata-dir }}/sonarr'
+radarr-dir: '{{ appdata-dir }}/radarr'
+lidarr-dir: '{{ appdata-dir }}/lidarr'
+prowlarr-dir: '{{ appdata-dir }}/prowlarr'
+whisparr-dir: '{{ appdata-dir }}/whisparr'
+stash-dir: '{{ appdata-dir }}/stash-s6'
+readarr-1-dir: '{{ appdata-dir }}/readarr-1'
+readarr-2-dir: '{{ appdata-dir }}/readarr-2'
+sabznbd-dir: '{{ appdata-dir }}/sabnzbd'
+qbittorrent-dir: '{{ appdata-dir }}/qbittorrent'
+tubesync-dir: '{{ appdata-dir }}/tubesync'
+auto-m4b-dir: '{{ appdata-dir }}/audo-m4b'
+flaresolverr-dir: '{{ appdata-dir }}/flaresolverr'
+# Media Directories
+deprecated-dir: '{{ media-dir }}/deprecated'
+# NFS Mounts
+deprecated-nfs: '{{ nas-ip }}/deprecated'
+      
