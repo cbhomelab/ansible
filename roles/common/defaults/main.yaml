@@ -2,3 +2,6 @@
 common-packages-debian:
 - nfs-common
 - git
+- zsh
+git_full_name: Christian Bishop
+git_email: github@christian.cbhomelab.net

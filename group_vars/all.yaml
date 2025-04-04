@@ -2,11 +2,6 @@ nas-ip: 192.168.100.1
 # Local Directories
 appdata-dir: /opt/appdata
 media-dir: /mnt/media
-# Media Directories
-compose-dir: '{{ media-dir }}/compose'
-backup-dir: '{{ media-dir }}/backup'
-script-dir: '{{ media-dir }}/seeds'
-# NFS Shares
-compose-nfs: '{{ nas-ip }}:/compose'
-backup-nfs: '{{ nas-ip }}:/backup'
-script-nfs: '{{ nas-ip }}:/seeds'
+
+git_full_name: Christian Bishop
+git_email: github@christian.cbhomelab.net

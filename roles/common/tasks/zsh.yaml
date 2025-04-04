@@ -1,0 +1,51 @@
+---
+- name: Set user shell to ZSH
+  ansible.builtin.user:
+    name: "{{ user }}"
+    shell: /bin/zsh
+  become: true
+
+- name: Download ohmyzsh
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    dest: "/home/{{ user }}/install.sh"
+    mode: '0755'
+
+- name: Install ohmyzsh
+  ansible.builtin.script:
+    cmd: "/home/{{ user }}/install.sh"
+
+- name: Install PowerLevel10K
+  ansible.builtin.git:
+    repo: https://github.com/romkatv/powerlevel10k.git
+    dest: "/home/{{ user }}/.oh-my-zsh/custom/themes/powerlevel10k"
+    depth: 1
+
+- name: Download NerdFonts
+  ansible.builtin.get_url:
+    url: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.3/Meslo.zip
+    dest: "/home/{{ user }}/Meslo.zip"
+
+- name: Create temp directory
+  ansible.builtin.file:
+    path: "/home/{{ user }}/Meslo"
+    state: directory
+    mode: '0755'
+
+- name: Install font files
+  ansible.builtin.unarchive:
+    src: "/home/{{ user }}/Meslo.zip"
+    dest: "/home/{{ user }}/Meslo"
+
+- name: Move font files to fonts directory
+  ansible.builtin.copy:
+    src: "/home/{{ user }}/Meslo"
+    dest: /usr/share/fonts/Meslo
+    owner: root
+  become: true
+
+- name: Update .zshrc
+  ansible.builtin.lineinfile:
+    path: "/home/{{ user }}/.zshrc"
+    insertafter: EOF
+    line: "source /home/{{ user }}/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme"
