@@ -1,12 +1,22 @@
 ---
+### ROLE 1 ###
+# Trigger Proxmox to provision VM
+# Wait for user to complete setup
+# Provide user with command for bootscrap script and wait for prompt to exit
+- hosts: saturn
+  vars_files:
+    - /etc/ansible/host_vars/docker.yaml
+  roles:
+    - provision-vm
 
-# Network Devices
-# Hosts File
-# Update System
+- hosts: docker
+  roles:
+    - common
+    - docker
+
+
+
+### ROLE 3 - DOCKER ###
 # Install Docker & Docker compose
-# Install & Configure ZSH
-# Create directories
-# Mount Storage
 # Pull docker compose files from github
 # run docker compose
-###################

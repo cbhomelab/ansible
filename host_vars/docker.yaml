@@ -10,8 +10,9 @@ media-directories:
 - '{{ media-dir }}/seeds'
 - '{{ media-dir }}/cctv'
 - '{{ media-dir }}/jordan'
-- '{{ media-dir }}/sync'
+- '{{ media-dir }}/syncthing'
 - '{{ media-dir }}/deprecated'
+- '{{ media-dir }}/backup'
 # Appdata Directories
 appdata-directories:
 - '{{ appdata-dir }}/frigate'
@@ -51,6 +52,43 @@ nfs-mounts:
 - '{{ nas-ip }}:/cctv'
 - '{{ nas-ip }}:/jordan'
 - '{{ nas-ip }}:/syncthing'
-- '{{ nas-ip }}/deprecated'
-
-
+- '{{ nas-ip }}:/deprecated'
+- '{{ nas-ip }}:/backup'
+# Network Interfaces
+interfaces:
+- name: net0
+  type: ethernet
+  state: up
+  ipv4:
+    enabled: true
+    dhcp: true
+- name: net1
+  type: ethernet
+  state: up
+  ipv4:
+    enabled: true
+    dhcp: true
+- name: net2
+  type: ethernet
+  state: up
+  ipv4:
+    enabled: true
+    dhcp: true
+- name: net3
+  type: ethernet
+  state: up
+  ipv4:
+    enabled: true
+    dhcp: true
+- name: net4
+  type: ethernet
+  state: up
+  ipv4:
+    enabled: true
+    address:
+      - ip: '{{ storage-ip }}'
+        prefix-length: 24
+    auto-dns: false
+    dhcp: false
+  ipv6:
+    enabled: false

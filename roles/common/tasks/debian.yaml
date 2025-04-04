@@ -1,0 +1,7 @@
+---
+- name: Install packages (Debian)
+  ansible.builtin.apt:
+    pkg: 
+    - '{{ common-packages-debian }}'
+    - '{{ additional-software }}'
+    update_cache: yes

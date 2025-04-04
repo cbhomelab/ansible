@@ -1,73 +1,103 @@
-- name: Install software
-  ansible.builtin.apt:
-    pkg: 
-    - nfs-common
-    - git
-    update_cache: yes
-- name: Add NAS to hostfile
+---
+- include_tasks: debian.yaml
+  when: ansible_os_family == "Debian"
+
+- name: Adding network devices to hostfile
   blockinfile:
     state: present
     dest: etc_hosts
-    content: 'omv {{ nas-ip }}'
-- name: Add DNS to hostfile
-  blockinfile:
-    state: present
-    dest: etc_hosts
-    content: 'dns {{ dns-ip }}'
+    content:  |
+        {% for host in groups.network %}
+        {{ host }}
+        {% endfor %}
+
 - name: Configure git user name
   git_config:
     name: user.name
     scope: global
     value: '{{ git_full_name }}'
+
 - name: Configure git user email
   git_config:
     name: user.email
     scope: global
-    value: '{{ github_email }}'
-- name: Creating Directories
+    value: '{{ git_email }}'
+
+- name: Creating Media Directories
   ansible.builtin.file:
-    path: '{{ item }}'
+    path: '/mnt/media/{{ item }}'
     state: directory
     mode: '0755'
-  loop:
-    - '{{ appdata-dir }}'
-    - '{{ media-dir }}'
-    - '{{ backup-dir }}'
-    - '{{ compose-dir }}'
-    - '{{ script-dir }}'
-- name: Mounting Backup NFS Share
+  loop: '{{ media-directories }}'
+
+- name: Creating Appdata Directories
+  ansible.builtin.file:
+    path: '/opt/appdata/{{ item }}'
+    state: directory
+    mode: '0755'
+  loop: '{{ appdata-directories }}'
+
+- name: Mounting NFS Shares
   ansible.posix.mount:
-    src: '{{ backup-nfs }}'
-    path: '{{ backup-dir }}'
+    src: '{{ nas-ip }}:/{{ item }}'
+    path: '/mnt/media/{{ item }}'
     opts: rw,sync,hard
     state: mounted
     fstype: nfs
     boot: true
-- name: Mounting Compose NFS Share
-  ansible.posix.mount:
-    src: '{{ compose-nfs }}'
-    path: '{{ compose-dir }}'
-    opts: rw,sync,hard
-    state: mounted
-    fstype: nfs
-    boot: true
-- name: Mounting Script NFS Share
-  ansible.posix.mount:
-    src: '{{ script-nfs }}'
-    path: '{{ script-dir }}'
-    opts: rw,sync,hard
-    state: mounted
-    fstype: nfs
-    boot: true
-- name: Creating Group-Specific Directories
+  loop: "{{ media-directories }}"
+
+- name: Configuring Network Interfaces
+  network_state:
+    interfaces: '{{ interfaces }}'
+    
+- name: Set user shell to ZSH
+  ansible.builtin.user:
+    name: "{{ user }}"
+    shell: /bin/zsh
+  become: true
+
+- name: Download ohmyzsh
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    dest: "/home/{{ user }}/install.sh"
+    mode: '0755'
+
+- name: Install ohmyzsh
+  ansible.builtin.script:
+    cmd: "/home/{{ user }}/install.sh"
+
+- name: Install PowerLevel10K
+  ansible.builtin.git:
+    repo: https://github.com/romkatv/powerlevel10k.git
+    dest: "/home/{{ user }}/.oh-my-zsh/custom/themes/powerlevel10k"
+    depth: 1
+
+- name: Download NerdFonts
+  ansible.builtin.get_url:
+    url: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.3/Meslo.zip
+    dest: "/home/{{ user }}/Meslo.zip"
+
+- name: Create temp directory
   ansible.builtin.file:
-    path: '{{ item }}'
+    path: "/home/{{ user }}/Meslo"
     state: directory
     mode: '0755'
-  loop: '{{ host-dir }}'
-- name: Creating Host-Specific Directories
-  ansible.builtin.file:
-    path: '{{ item }}'
-    state: directory
-    mode: '0755'
-  loop: '{{ host-dir }}'
+
+- name: Install font files
+  ansible.builtin.unarchive:
+    src: "/home/{{ user }}/Meslo.zip"
+    dest: "/home/{{ user }}/Meslo"
+
+- name: Move font files to fonts directory
+  ansible.builtin.copy:
+    src: "/home/{{ user }}/Meslo"
+    dest: /usr/share/fonts/Meslo
+    owner: root
+  become: true
+
+- name: Update .zshrc
+  ansible.builtin.lineinfile:
+    path: "/home/{{ user }}/.zshrc"
+    insertafter: EOF
+    line: "source /home/{{ user }}/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme"
