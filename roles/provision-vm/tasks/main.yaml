@@ -1,0 +1,59 @@
+---
+# Trigger Proxmox to provision VM
+# Provide user with command for bootscrap script and wait for prompt to exit
+
+- name: Create VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: '{{ vm-name }}'
+    vmid: '{{ vm-id }}'
+    autostart: '{{ vm-autostart }}'
+    net: '{{ vm-network }}'
+    cores: '{{ vm-cores }}'
+    memory: '{{ vm-ram }}'
+    state: "stopped"
+
+# Wait for user to complete any additional config
+
+- name: Waiting for user input
+  pause:
+    prompt: Configure the settings for the VM! Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+
+# Start VM
+
+- name: Starting VM
+  community.general.proxmox_kvm:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    name: '{{ vm-name }}'
+    vmid: '{{ vm-id }}'
+    state: "started"
+
+# Wait for user to complete installer
+
+- name: Waiting for user input
+  pause:
+    prompt: Complete the Installer! Once the VM has fully rebooted, press return to continue. Press Ctrl+c and then "a" to abort
+
+# Create Initial Backup
+
+- name: Backup VM and set retention
+  community.general.proxmox_backup:
+    api_user: '{{ pve-user }}'
+    api_password: '{{ pve-pass }}'
+    api_host: '{{ pve-host }}'
+    bandwidth: 0
+    backup_mode: suspend
+    compress: zstd
+    compression_threads: 0
+    description: A single backup for {% raw %}{{ guestname }}{% endraw %}
+    mode: include
+    notification_mode: notification-system
+    protected: false
+    retention: keep-monthly=1, keep-weekly=1
+    storage: backup
+    vmids:
+      - '{{ vm-id }}'

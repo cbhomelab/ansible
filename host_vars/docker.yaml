@@ -1,94 +1,62 @@
+# VM Config
+vm-name: docker
+vm-id: 101
+vm-autostart: true
+vm-cores: 10
+vm-ram: 49152
+vm-network:
+  net0: 'virtio,bridge=vmbr0'
+  net1: 'virtio,bridge=vmbr0,tag="4"'
+  net2: 'virtio,bridge=vmbr0,tag="5"'
+  net3: 'virtio,bridge=vmbr0,tag="8"'
+  net4: 'virtio,bridge=vmbr1'
+
 # Media Directories
-media-directories:
-- '{{ media-dir }}/tv'
-- '{{ media-dir }}/movies'
-- '{{ media-dir }}/music'
-- '{{ media-dir }}/ebooks'
-- '{{ media-dir }}/audiobooks'
-- '{{ media-dir }}/youtube'
-- '{{ media-dir }}/downloads'
-- '{{ media-dir }}/seeds'
-- '{{ media-dir }}/cctv'
-- '{{ media-dir }}/jordan'
-- '{{ media-dir }}/syncthing'
-- '{{ media-dir }}/deprecated'
-- '{{ media-dir }}/backup'
+media_dirs:
+- 'tv'
+- 'movies'
+- 'music'
+- 'ebooks'
+- 'audiobooks'
+- 'youtube'
+- 'downloads'
+- 'seeds'
+- 'cctv'
+- 'jordan'
+- 'syncthing'
+- 'deprecated'
+- 'backup'
+
 # Appdata Directories
-appdata-directories:
-- '{{ appdata-dir }}/frigate'
-- '{{ appdata-dir }}/plex'
-- '{{ appdata-dir }}/tautulli'
-- '{{ appdata-dir }}/bazarr'
-- '{{ appdata-dir }}/jellyfin'
-- '{{ appdata-dir }}/fileflows'
-- '{{ appdata-dir }}/npm'
-- '{{ appdata-dir }}/ddns'
-- '{{ appdata-dir }}/overseerr'
-- '{{ appdata-dir }}/doplarr'
-- '{{ appdata-dir }}/syncthing'
-- '{{ appdata-dir }}/sonarr'
-- '{{ appdata-dir }}/radarr'
-- '{{ appdata-dir }}/lidarr'
-- '{{ appdata-dir }}/prowlarr'
-- '{{ appdata-dir }}/whisparr'
-- '{{ appdata-dir }}/stash-s6'
-- '{{ appdata-dir }}/readarr-1'
-- '{{ appdata-dir }}/readarr-2'
-- '{{ appdata-dir }}/sabnzbd'
-- '{{ appdata-dir }}/qbittorrent'
-- '{{ appdata-dir }}/tubesync'
-- '{{ appdata-dir }}/audo-m4b'
-- '{{ appdata-dir }}/flaresolverr'
-# NFS Shares
-nfs-mounts:
-- '{{ nas-ip }}:/tv'
-- '{{ nas-ip }}:/movies'
-- '{{ nas-ip }}:/music'
-- '{{ nas-ip }}:/ebooks'
-- '{{ nas-ip }}:/audiobooks'
-- '{{ nas-ip }}:/youtube'
-- '{{ nas-ip }}:/downloads'
-- '{{ nas-ip }}:/seeds'
-- '{{ nas-ip }}:/cctv'
-- '{{ nas-ip }}:/jordan'
-- '{{ nas-ip }}:/syncthing'
-- '{{ nas-ip }}:/deprecated'
-- '{{ nas-ip }}:/backup'
+appdata_dirs:
+- 'frigate'
+- 'plex'
+- 'tautulli'
+- 'bazarr'
+- 'jellyfin'
+- 'fileflows'
+- 'npm'
+- 'ddns'
+- 'overseerr'
+- 'doplarr'
+- 'syncthing'
+- 'sonarr'
+- 'radarr'
+- 'lidarr'
+- 'prowlarr'
+- 'whisparr'
+- 'stash-s6'
+- 'readarr-1'
+- 'readarr-2'
+- 'sabnzbd'
+- 'qbittorrent'
+- 'tubesync'
+- 'audo-m4b'
+- 'flaresolverr'
+
 # Network Interfaces
-interfaces:
-- name: net0
-  type: ethernet
-  state: up
-  ipv4:
-    enabled: true
-    dhcp: true
-- name: net1
-  type: ethernet
-  state: up
-  ipv4:
-    enabled: true
-    dhcp: true
-- name: net2
-  type: ethernet
-  state: up
-  ipv4:
-    enabled: true
-    dhcp: true
-- name: net3
-  type: ethernet
-  state: up
-  ipv4:
-    enabled: true
-    dhcp: true
+storage-nic:
 - name: net4
-  type: ethernet
-  state: up
-  ipv4:
-    enabled: true
-    address:
-      - ip: '{{ storage-ip }}'
-        prefix-length: 24
-    auto-dns: false
-    dhcp: false
-  ipv6:
-    enabled: false
+  ip: 192.168.226.3
+
+  

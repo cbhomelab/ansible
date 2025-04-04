@@ -1,0 +1,10 @@
+pve-user: root
+pve-pass: password
+pve-host: localhost
+vm-name: virtual-machine
+vm-id: 100
+vm-autostart: true
+vm-interfaces:
+  net0: 'virtio,bridge=vmbr0'
+vm-cores: 1
+vm-ram: 2048

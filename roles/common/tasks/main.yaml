@@ -1,6 +1,34 @@
 ---
+
+### ROLE 2 - COMMON ###
+# Install Packages
+
+- name: Set Facts
+  ansible.builtin.set_fact:
+    dirs: "{{ media_dirs + appdata_dirs }}"
+
 - include_tasks: debian.yaml
   when: ansible_os_family == "Debian"
+
+# Configure Network Devices
+
+- name: Configuring Storage Network Interface
+  network_state:
+    interfaces:
+    - name: '{{ storage-nic.name }}'
+      type: ethernet
+      state: up
+      ipv4:
+        enabled: true
+        address:
+          - ip: '{{ storage-nic.ip }}'
+            prefix-length: 24
+        auto-dns: false
+        dhcp: false
+      ipv6:
+        enabled: false
+
+# Hosts File
 
 - name: Adding network devices to hostfile
   blockinfile:
@@ -10,6 +38,8 @@
         {% for host in groups.network %}
         {{ host }}
         {% endfor %}
+
+# Configure Git
 
 - name: Configure git user name
   git_config:
@@ -23,19 +53,16 @@
     scope: global
     value: '{{ git_email }}'
 
-- name: Creating Media Directories
+# Create directories
+
+- name: Creating Directories
   ansible.builtin.file:
     path: '/mnt/media/{{ item }}'
     state: directory
     mode: '0755'
-  loop: '{{ media-directories }}'
+  loop: '{{ dirs }}'
 
-- name: Creating Appdata Directories
-  ansible.builtin.file:
-    path: '/opt/appdata/{{ item }}'
-    state: directory
-    mode: '0755'
-  loop: '{{ appdata-directories }}'
+# Mount Storage
 
 - name: Mounting NFS Shares
   ansible.posix.mount:
@@ -45,59 +72,12 @@
     state: mounted
     fstype: nfs
     boot: true
-  loop: "{{ media-directories }}"
+  loop: "{{ media_dirs }}"
 
-- name: Configuring Network Interfaces
-  network_state:
-    interfaces: '{{ interfaces }}'
     
-- name: Set user shell to ZSH
-  ansible.builtin.user:
-    name: "{{ user }}"
-    shell: /bin/zsh
-  become: true
+# Install & Configure ZSH
 
-- name: Download ohmyzsh
-  ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-    dest: "/home/{{ user }}/install.sh"
-    mode: '0755'
+- include_tasks: zsh.yaml
 
-- name: Install ohmyzsh
-  ansible.builtin.script:
-    cmd: "/home/{{ user }}/install.sh"
-
-- name: Install PowerLevel10K
-  ansible.builtin.git:
-    repo: https://github.com/romkatv/powerlevel10k.git
-    dest: "/home/{{ user }}/.oh-my-zsh/custom/themes/powerlevel10k"
-    depth: 1
-
-- name: Download NerdFonts
-  ansible.builtin.get_url:
-    url: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.3/Meslo.zip
-    dest: "/home/{{ user }}/Meslo.zip"
-
-- name: Create temp directory
-  ansible.builtin.file:
-    path: "/home/{{ user }}/Meslo"
-    state: directory
-    mode: '0755'
-
-- name: Install font files
-  ansible.builtin.unarchive:
-    src: "/home/{{ user }}/Meslo.zip"
-    dest: "/home/{{ user }}/Meslo"
-
-- name: Move font files to fonts directory
-  ansible.builtin.copy:
-    src: "/home/{{ user }}/Meslo"
-    dest: /usr/share/fonts/Meslo
-    owner: root
-  become: true
-
-- name: Update .zshrc
-  ansible.builtin.lineinfile:
-    path: "/home/{{ user }}/.zshrc"
-    insertafter: EOF
-    line: "source /home/{{ user }}/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme"
+# Restore Backups
+# Configure Backups
