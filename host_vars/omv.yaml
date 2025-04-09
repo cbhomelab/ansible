@@ -1,6 +1,0 @@
-# VM Config
-vm-name: omv
-vm-id: 100
-vm-autostart: true
-vm-cores: 2
-vm-ram: 16384

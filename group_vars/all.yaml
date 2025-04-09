@@ -1,7 +1,0 @@
-nas-ip: 192.168.100.1
-# Local Directories
-appdata-dir: /opt/appdata
-media-dir: /mnt/media
-
-git_full_name: Christian Bishop
-git_email: github@christian.cbhomelab.net
