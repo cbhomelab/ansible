@@ -11,6 +11,8 @@
     vmid: '{{ vm_id }}'
     autostart: '{{ vm_autostart }}'
     net: '{{ vm_network }}'
+    searchdomains: '{{ vm_searchdomains }}'
+    nameservers: '{{ vm_nameservers }}'
     cpu: '{{ vm_cpu }}'
     cores: '{{ vm_cores }}'
     memory: '{{ vm_ram }}'
@@ -18,6 +20,9 @@
     ide: '{{ vm_ide }}'
     hostpci: '{{ vm_hostpci }}'
     machine: '{{ vm_machine }}'
+    sshkeys: '{{ ssh_key }}'
+    ciuser: '{{ my_user }}'
+    cipassword: '{{ my_password }}'
     state: "stopped"
 
 # Wait for user to check VM config

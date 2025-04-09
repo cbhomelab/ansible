@@ -3,6 +3,16 @@
 - name: Set Facts
   ansible.builtin.set_fact:
     users: "{{ all_users + host_users }}"
+    groups: "{{ all_groups + host_groups }}"
+
+- name: Add several groups
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    state: present
+    gid: "{{ item.gid }}"
+    system: "{{ item.system }}"
+  loop:
+    - "{{ groups }}"
 
 - name: Add several users
   ansible.builtin.user:

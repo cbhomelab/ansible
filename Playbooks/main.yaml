@@ -2,12 +2,14 @@
 
 - name: Configuring Virtual Machines
   hosts: pve
-  gather_facts: no
+  vars_files:
+    - /etc/ansible/host_vars/docker.yaml
+  gather_facts: false
   roles:
     - provision-vm
 
 - name: Running Common Config
-  hosts: vms
+  hosts: docker
   roles:
     - common
 

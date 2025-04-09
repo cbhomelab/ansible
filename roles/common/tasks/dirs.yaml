@@ -6,7 +6,9 @@
 
 - name: Creating Media Directories
   ansible.builtin.file:
-    path: '{{ item }}'
+    path: '{{ item.dir }}'
     state: directory
-    mode: '0755'
+    mode: '{{ item.mode }}'
+    owner: '{{ item.owner }}'
+    group: '{{ item.group }}'
   loop: '{{ create_dirs }}'
