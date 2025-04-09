@@ -1,0 +1,18 @@
+# PROXMOX CONFIG
+- name: Configuring Virtual Machines
+  hosts: pve
+  gather_facts: no
+  tasks:
+    - include: tasks/proxmox-provision.yml
+# BOOTSTRAPPING
+- name: Bootstrapping Clients
+  hosts: vms
+  gather_facts: no
+  tasks:
+    - include: tasks/proxmox-provision.yml
+# COMMON CONFIG
+- name: Running Common Config
+  hosts: vms
+  gather_facts: no
+  roles:
+    - common

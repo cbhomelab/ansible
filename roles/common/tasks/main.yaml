@@ -10,23 +10,7 @@
 - include_tasks: debian.yaml
   when: ansible_os_family == "Debian"
 
-# Configure Network Devices
-
-- name: Configuring Storage Network Interface
-  network_state:
-    interfaces:
-    - name: '{{ storage-nic.name }}'
-      type: ethernet
-      state: up
-      ipv4:
-        enabled: true
-        address:
-          - ip: '{{ storage-nic.ip }}'
-            prefix-length: 24
-        auto-dns: false
-        dhcp: false
-      ipv6:
-        enabled: false
+# Create users and groups
 
 # Hosts File
 
