@@ -25,5 +25,8 @@
     group: 1001
 
 # - name: Clone docker-compose repo from github
-
+- name: Clone docker-compose repository
+  ansible.builtin.git:
+    repo: 'https://github.com/cbhomelab/'
+    dest: /tmp/checkout
 # - name: Copy compose environment files from ansible host
