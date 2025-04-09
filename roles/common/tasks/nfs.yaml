@@ -1,0 +1,11 @@
+---
+
+- name: Mounting NFS Shares
+  ansible.posix.mount:
+    src: '{{ nas_ip }}:/{{ item }}'
+    path: '/mnt/media/{{ item }}'
+    opts: rw,sync,hard
+    state: mounted
+    fstype: nfs
+    boot: true
+  loop: "{{ media_dirs }}"

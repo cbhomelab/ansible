@@ -1,67 +1,16 @@
 ---
-
-### ROLE 2 - COMMON ###
-# Install Packages
-
-- name: Set Facts
-  ansible.builtin.set_fact:
-    dirs: "{{ media_dirs + appdata_dirs }}"
-
-- include_tasks: debian.yaml
+- name: Run Debian-specific tasks
+  ansible.builtin.include_tasks: debian.yaml
   when: ansible_os_family == "Debian"
 
-# Create users and groups
+- name: Create Directories
+  ansible.builtin.include_tasks: dirs.yaml
 
-# Hosts File
+- name: Mount Shares
+  ansible.builtin.include_tasks: nfs.yaml
 
-- name: Adding network devices to hostfile
-  blockinfile:
-    state: present
-    dest: etc_hosts
-    content:  |
-        {% for host in groups.network %}
-        {{ host }}
-        {% endfor %}
+- name: Add network devices to hostfile
+  ansible.builtin.include_tasks: hostfile.yaml
 
-# Configure Git
-
-- name: Configure git user name
-  git_config:
-    name: user.name
-    scope: global
-    value: '{{ git_full_name }}'
-
-- name: Configure git user email
-  git_config:
-    name: user.email
-    scope: global
-    value: '{{ git_email }}'
-
-# Create directories
-
-- name: Creating Directories
-  ansible.builtin.file:
-    path: '/mnt/media/{{ item }}'
-    state: directory
-    mode: '0755'
-  loop: '{{ dirs }}'
-
-# Mount Storage
-
-- name: Mounting NFS Shares
-  ansible.posix.mount:
-    src: '{{ nas-ip }}:/{{ item }}'
-    path: '/mnt/media/{{ item }}'
-    opts: rw,sync,hard
-    state: mounted
-    fstype: nfs
-    boot: true
-  loop: "{{ media_dirs }}"
-
-    
-# Install & Configure ZSH
-
-- include_tasks: zsh.yaml
-
-# Restore Backups
-# Configure Backups
+- name: Install & Configure ZSH
+  ansible.builtin.include_tasks: zsh.yaml

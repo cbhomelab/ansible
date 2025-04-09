@@ -1,0 +1,12 @@
+---
+
+- name: Set Facts
+  ansible.builtin.set_fact:
+    create_dirs: "{{ media_dirs + appdata_dirs }}"
+
+- name: Creating Media Directories
+  ansible.builtin.file:
+    path: '{{ item }}'
+    state: directory
+    mode: '0755'
+  loop: '{{ create_dirs }}'

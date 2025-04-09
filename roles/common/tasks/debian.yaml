@@ -1,7 +1,11 @@
 ---
+
+- name: Set Facts
+  ansible.builtin.set_fact:
+    install_pkg: "{{ common_pkg_debian + host_pkgs }}"
+
 - name: Install packages (Debian)
   ansible.builtin.apt:
-    pkg: 
-    - '{{ common-packages-debian }}'
-    - '{{ additional-software }}'
-    update_cache: yes
+    pkg:
+      - '{{ install_pkg }}'
+    update_cache: true

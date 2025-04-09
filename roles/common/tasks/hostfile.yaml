@@ -1,0 +1,10 @@
+---
+
+- name: Adding network devices to hostfile
+  ansible.builtin.blockinfile:
+    state: present
+    dest: etc_hosts
+    content: |
+        {% for host in groups.network %}
+        {{ host }}
+        {% endfor %}
