@@ -1,5 +1,0 @@
-- name: Copying Syncthing Appdata
-  ansible.posix.synchronize:
-    mode: pull
-    src: '{{ backup-dir }}/appdata/syncthing/'
-    dest: '{{ syncthing-dir }}/'
