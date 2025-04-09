@@ -3,14 +3,20 @@
   ansible.builtin.include_tasks: debian.yaml
   when: ansible_os_family == "Debian"
 
+- name: Create Users and Groups
+  ansible.builtin.include_tasks: users.yaml
+
+- name: Configure SSH
+  ansible.builtin.include_tasks: ssh.yaml
+
+- name: Add network devices to hostfile
+  ansible.builtin.include_tasks: hostfile.yaml
+
 - name: Create Directories
   ansible.builtin.include_tasks: dirs.yaml
 
 - name: Mount Shares
   ansible.builtin.include_tasks: nfs.yaml
-
-- name: Add network devices to hostfile
-  ansible.builtin.include_tasks: hostfile.yaml
 
 - name: Install & Configure ZSH
   ansible.builtin.include_tasks: zsh.yaml

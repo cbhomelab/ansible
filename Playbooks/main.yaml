@@ -1,18 +1,17 @@
 ---
+
 - name: Configuring Virtual Machines
   hosts: pve
   gather_facts: no
-  tasks:
-    - include: tasks/proxmox-provision.yml
-
-- name: Bootstrapping Clients
-  hosts: vms
-  gather_facts: no
-  tasks:
-    - include: tasks/proxmox-provision.yml
+  roles:
+    - provision-vm
 
 - name: Running Common Config
   hosts: vms
-  gather_facts: no
   roles:
     - common
+
+- name: Running Docker Config
+  hosts: docker
+  roles:
+    - docker

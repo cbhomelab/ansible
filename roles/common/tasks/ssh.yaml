@@ -1,0 +1,7 @@
+---
+
+- name: Set authorized keys taken from url using lookup
+  ansible.posix.authorized_key:
+    user: christian
+    state: present
+    key: "{{ lookup('url', 'https://github.com/cbhomelab/279f4b9fd9ba955b7dcf0531cac0ed00', split_lines=False) }}"
