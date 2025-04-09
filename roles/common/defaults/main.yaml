@@ -1,7 +1,14 @@
 ---
-common-packages-debian:
-- nfs-common
-- git
-- zsh
-git_full_name: Christian Bishop
-git_email: github@christian.cbhomelab.net
+common_pkg_debian:
+  - nfs-common
+  - git
+  - zsh
+git_full_name: Firstname Lastname
+git_email: email@domain.com
+
+all_media_dirs:
+group_media_dirs:
+host_media_dirs:
+all_appdata_dirs:
+group_appdata_dirs:
+host_appdata_dirs:
