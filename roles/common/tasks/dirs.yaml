@@ -2,7 +2,7 @@
 
 - name: Set Facts
   ansible.builtin.set_fact:
-    create_dirs: "{{ all_media_dirs + group_media_dirs + host_media_dirs + all_appdata_dirs + group_appdata_dirs + host_appdata_dirs }}"
+    create_dirs: "{{ all_media_dirs | ansible.builtin.combine(group_media_dirs) | ansible.builtin.combine(host_media_dirs) | ansible.builtin.combine(all_appdata_dirs) | ansible.builtin.combine(group_appdata_dirs) | ansible.builtin.combine(host_appdata_dirs) }}"
 
 - name: Creating Media Directories
   ansible.builtin.file:

@@ -3,15 +3,12 @@ pve_user: root
 pve_pass: password
 pve_host: localhost
 vm_name: virtual-machine
-vm_id: 100
+# vm_id: 100
 vm_autostart: true
 vm_cores: 1
 vm_ram: 2048
 vm_cpu: host
-vm_network:
-  net0: 'model="virtio",bridge="vmbr0"'
-vm_virtio: "local-lvm:32,format=raw"
-vm_ide:
-  ide: 'local:debian-cloudinit,format=raw'
+vm_network: '{"net0":"virtio,bridge=vmbr0"}'
+vm_virtio: '{"virtio0":"local-lvm:32,format=raw"}'
 vm_hostpci: ''
 vm_machine: q35

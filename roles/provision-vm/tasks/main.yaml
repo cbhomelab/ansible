@@ -8,22 +8,24 @@
     api_password: '{{ pve_pass }}'
     api_host: '{{ pve_host }}'
     name: '{{ vm_name }}'
-    vmid: '{{ vm_id }}'
+    # vmid: '{{ vm_id }}'
+    node: '{{ vm_node }}'
+    storage: '{{ vm_storage }}'
     autostart: '{{ vm_autostart }}'
     net: '{{ vm_network }}'
-    searchdomains: '{{ vm_searchdomains }}'
-    nameservers: '{{ vm_nameservers }}'
+    searchdomains: 
+    - '{{ vm_searchdomains }}'
+    nameservers: 
+    - '{{ vm_nameservers }}'
     cpu: '{{ vm_cpu }}'
     cores: '{{ vm_cores }}'
     memory: '{{ vm_ram }}'
     virtio: '{{ vm_virtio }}'
-    ide: '{{ vm_ide }}'
     hostpci: '{{ vm_hostpci }}'
     machine: '{{ vm_machine }}'
     sshkeys: '{{ ssh_key }}'
     ciuser: '{{ my_user }}'
     cipassword: '{{ my_password }}'
-    state: "stopped"
 
 # Wait for user to check VM config
 

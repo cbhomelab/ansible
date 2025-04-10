@@ -3,7 +3,7 @@
 - name: Configuring Virtual Machines
   hosts: pve
   vars_files:
-    - /etc/ansible/host_vars/docker.yaml
+    - /mnt/c/Users/Christian/Documents/Repos/ansible/host_vars/docker.yaml
   gather_facts: false
   roles:
     - provision-vm
