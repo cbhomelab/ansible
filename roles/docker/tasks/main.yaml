@@ -21,12 +21,19 @@
 - name: Change file ownership, group and permissions
   ansible.builtin.file:
     path: /usr/local/bin/docker-compose
-    owner: "{{ my_user }}"
+    owner: docker
     group: 1001
 
-# - name: Clone docker-compose repo from github
 - name: Clone docker-compose repository
   ansible.builtin.git:
-    repo: 'https://github.com/cbhomelab/'
-    dest: /tmp/checkout
-# - name: Copy compose environment files from ansible host
+    repo: 'https://github.com/cbhomelab/docker-compose-node.git'
+    dest: "{{ compose_dir }}"
+    version: main
+
+- name: Copy compose environment files from ansible host
+  ansible.builtin.copy:
+    src: files/.env
+    dest: "{{ compose_dir }}/.env"
+    owner: docker
+    group: users
+    mode: '0755'

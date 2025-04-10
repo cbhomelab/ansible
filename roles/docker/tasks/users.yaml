@@ -1,5 +1,4 @@
 ---
-
 - name: Ensure group "docker" exists
   ansible.builtin.group:
     name: docker
@@ -7,9 +6,9 @@
 
 - name: Adding users to "docker" group
   ansible.builtin.user:
-    name: {{ item }}
+    name: "{{ item }}"
     groups: docker
     append: true
   loop:
     - docker
-    - {{ my_user }}
+    - "{{ my_user }}"
