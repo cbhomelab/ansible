@@ -1,14 +1,61 @@
 ---
 
-- name: Set Facts
-  ansible.builtin.set_fact:
-    create_dirs: "{{ all_media_dirs | ansible.builtin.combine(group_media_dirs) | ansible.builtin.combine(host_media_dirs) | ansible.builtin.combine(all_appdata_dirs) | ansible.builtin.combine(group_appdata_dirs) | ansible.builtin.combine(host_appdata_dirs) }}"
+# - name: Creating Global Media Directories
+#   ansible.builtin.file:
+#     path: '{{ item.dir }}'
+#     state: directory
+#     mode: '{{ item.mode }}'
+#     owner: '{{ item.owner }}'
+#     group: '{{ item.group }}'
+#   loop: '{{ all_media_dirs }}'
+#   become: true
 
-- name: Creating Media Directories
+# - name: Creating Group Media Directories
+#   ansible.builtin.file:
+#     path: '{{ item.dir }}'
+#     state: directory
+#     mode: '{{ item.mode }}'
+#     owner: '{{ item.owner }}'
+#     group: '{{ item.group }}'
+#   loop: '{{ group_media_dirs }}'
+#   become: true
+
+# - name: Creating Host Media Directories
+#   ansible.builtin.file:
+#     path: '{{ item.dir }}'
+#     state: directory
+#     mode: '{{ item.mode }}'
+#     owner: '{{ item.owner }}'
+#     group: '{{ item.group }}'
+#   loop: '{{ host_media_dirs }}'
+#   become: true
+
+# - name: Creating Global Appdata Directories
+#   ansible.builtin.file:
+#     path: '{{ item.dir }}'
+#     state: directory
+#     mode: '{{ item.mode }}'
+#     owner: '{{ item.owner }}'
+#     group: '{{ item.group }}'
+#   loop: '{{ all_appdata_dirs }}'
+#   become: true
+
+- name: Creating Group Appdata Directories
   ansible.builtin.file:
     path: '{{ item.dir }}'
     state: directory
     mode: '{{ item.mode }}'
     owner: '{{ item.owner }}'
     group: '{{ item.group }}'
-  loop: '{{ create_dirs }}'
+  loop: '{{ group_appdata_dirs }}'
+  become: true
+
+- name: Creating Host Appdata Directories
+  ansible.builtin.file:
+    path: '{{ item.dir }}'
+    state: directory
+    mode: '{{ item.mode }}'
+    owner: '{{ item.owner }}'
+    group: '{{ item.group }}'
+  loop: '{{ host_appdata_dirs }}'
+  become: true

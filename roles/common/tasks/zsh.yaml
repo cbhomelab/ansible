@@ -1,51 +1,71 @@
 ---
 - name: Set user shell to ZSH
   ansible.builtin.user:
-    name: "{{ user }}"
+    name: "{{ my_user }}"
     shell: /bin/zsh
   become: true
 
 - name: Download ohmyzsh
   ansible.builtin.get_url:
     url: https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh
-    dest: "/home/{{ user }}/install.sh"
+    dest: "/home/{{ my_user }}/install.sh"
     mode: '0755'
+    owner: '{{ my_user }}'
+    group: users
+  become: true
 
 - name: Install ohmyzsh
-  ansible.builtin.script:
-    cmd: "/home/{{ user }}/install.sh"
+  ansible.builtin.shell: "/home/{{ my_user }}/install.sh"
+  become: true
 
 - name: Install PowerLevel10K
   ansible.builtin.git:
     repo: https://github.com/romkatv/powerlevel10k.git
-    dest: "/home/{{ user }}/.oh-my-zsh/custom/themes/powerlevel10k"
+    dest: "/home/{{ my_user }}/.oh-my-zsh/custom/themes/powerlevel10k"
     depth: 1
+  become: true
 
 - name: Download NerdFonts
   ansible.builtin.get_url:
     url: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.3/Meslo.zip
-    dest: "/home/{{ user }}/Meslo.zip"
+    dest: "/home/{{ my_user }}/Meslo.zip"
+    owner: '{{ my_user }}'
+    group: users
+  become: true
 
 - name: Create temp directory
   ansible.builtin.file:
-    path: "/home/{{ user }}/Meslo"
+    path: "/home/{{ my_user }}/Meslo"
     state: directory
     mode: '0755'
+    owner: '{{ my_user }}'
+    group: users
+  become: true
 
 - name: Install font files
   ansible.builtin.unarchive:
-    src: "/home/{{ user }}/Meslo.zip"
-    dest: "/home/{{ user }}/Meslo"
+    src: "/home/{{ my_user }}/Meslo.zip"
+    dest: "/home/{{ my_user }}/Meslo"
+  become: true
 
 - name: Move font files to fonts directory
   ansible.builtin.copy:
-    src: "/home/{{ user }}/Meslo"
+    src: "/home/{{ my_user }}/Meslo"
     dest: /usr/share/fonts/Meslo
     owner: root
   become: true
 
 - name: Update .zshrc
   ansible.builtin.lineinfile:
-    path: "/home/{{ user }}/.zshrc"
+    path: "/home/{{ my_user }}/.zshrc"
     insertafter: EOF
-    line: "source /home/{{ user }}/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme"
+    line: "source /home/{{ my_user }}/.oh-my-zsh/custom/themes/powerlevel10k/powerlevel10k.zsh-theme"
+  become: true
+
+- name: Fix any permissions issues
+  ansible.builtin.file:
+    path: /home/{{ my_user }}
+    state: directory
+    recurse: yes
+    owner: '{{ my_user }}'
+    group: users

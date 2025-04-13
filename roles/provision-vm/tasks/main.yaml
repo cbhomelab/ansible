@@ -7,31 +7,31 @@
     api_user: '{{ pve_user }}'
     api_password: '{{ pve_pass }}'
     api_host: '{{ pve_host }}'
-    name: '{{ vm_name }}'
-    # vmid: '{{ vm_id }}'
+    name: '{{ hostname }}'
+    vmid: '{{ vm_clone_id }}'
+    newid: '{{ vm_id }}'
     node: '{{ vm_node }}'
     storage: '{{ vm_storage }}'
-    autostart: '{{ vm_autostart }}'
-    net: '{{ vm_network }}'
-    searchdomains: 
-    - '{{ vm_searchdomains }}'
-    nameservers: 
-    - '{{ vm_nameservers }}'
-    cpu: '{{ vm_cpu }}'
-    cores: '{{ vm_cores }}'
-    memory: '{{ vm_ram }}'
-    virtio: '{{ vm_virtio }}'
-    hostpci: '{{ vm_hostpci }}'
-    machine: '{{ vm_machine }}'
-    sshkeys: '{{ ssh_key }}'
-    ciuser: '{{ my_user }}'
-    cipassword: '{{ my_password }}'
+    clone: '{{ vm_clone }}'
+    timeout: 180
+  
+    # autostart: '{{ vm_autostart }}'
+    # net: '{{ vm_network }}'
+    # cpu: '{{ vm_cpu }}'
+    # cores: '{{ vm_cores }}'
+    # memory: '{{ vm_ram }}'
+    # virtio: '{{ vm_virtio }}'
+    # hostpci: '{{ vm_hostpci }}'
+    # machine: '{{ vm_machine }}'
+    # sshkeys: '{{ ssh_key }}'
+    # ciuser: '{{ my_user }}'
+    # cipassword: '{{ my_password }}'
 
 # Wait for user to check VM config
 
-- name: Waiting for user input
-  ansible.builtin.pause:
-    prompt: Ensure the settings for the VM are properly configured. Once complete, press return to continue. Press Ctrl+c and then "a" to abort
+# - name: Waiting for user input
+#   ansible.builtin.pause:
+#     prompt: Ensure the settings for the VM are properly configured. Once complete, press return to continue. Press Ctrl+c and then "a" to abort
 
 # Start VM
 
@@ -40,15 +40,15 @@
     api_user: '{{ pve_user }}'
     api_password: '{{ pve_pass }}'
     api_host: '{{ pve_host }}'
-    name: '{{ vm_name }}'
+    name: '{{ hostname }}'
     vmid: '{{ vm_id }}'
-    state: "started"
+    state: started
 
 # Wait for user to complete installer
 
-- name: Waiting for user input
-  ansible.builtin.pause:
-    prompt: Complete the Installer! Once the VM has fully rebooted, press return to continue. Press Ctrl+c and then "a" to abort
+# - name: Waiting for user input
+#   ansible.builtin.pause:
+#     prompt: Complete the Installer! Once the VM has fully rebooted, press return to continue. Press Ctrl+c and then "a" to abort
 
 # Create Initial Backup
 

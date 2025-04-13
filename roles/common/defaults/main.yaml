@@ -1,8 +1,5 @@
 ---
-common_pkg_debian:
-  - nfs-common
-  - git
-  - zsh
+os_pkg:
 git_full_name: Firstname Lastname
 git_email: email@domain.com
 
@@ -12,3 +9,6 @@ host_media_dirs:
 all_appdata_dirs:
 group_appdata_dirs:
 host_appdata_dirs:
+
+create_home: false
+system: false

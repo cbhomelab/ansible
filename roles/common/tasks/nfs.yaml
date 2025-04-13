@@ -1,12 +1,6 @@
 ---
 
-- name: Set Facts
-  ansible.builtin.set_fact:
-    nfs:
-      dir: "{{ media_dirs }}"
-      mnt: "{{ nfs_mounts }}"
-
-- name: Mounting NFS Shares
+- name: Mounting Global NFS Shares
   ansible.posix.mount:
     src: '{{ item.mnt }}'
     path: '{{ item.dir }}'
@@ -14,4 +8,16 @@
     state: mounted
     fstype: nfs
     boot: true
-  loop: "{{ nfs }}"
+  loop: "{{ all_nfs_mounts }}"
+  become: true
+
+- name: Mounting Group NFS Shares
+  ansible.posix.mount:
+    src: '{{ item.mnt }}'
+    path: '{{ item.dir }}'
+    opts: user,rw,hard,intr
+    state: mounted
+    fstype: nfs
+    boot: true
+  loop: "{{ group_nfs_mounts }}"
+  become: true

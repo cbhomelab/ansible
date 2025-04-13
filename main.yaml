@@ -1,19 +1,26 @@
 ---
 
-- name: Configuring Virtual Machines
-  hosts: pve
-  vars_files:
-    - /mnt/c/Users/Christian/Documents/Repos/ansible/host_vars/docker.yaml
-  gather_facts: false
-  roles:
-    - provision-vm
+# - name: Configuring Virtual Machines
+#   hosts: neptune
+#   vars_files:
+#     - /mnt/c/Users/Christian/Documents/Repos/ansible/host_vars/docker.yaml
+#   gather_facts: false
+#   roles:
+#     - provision-vm
 
 - name: Running Common Config
-  hosts: docker
+  hosts: docker-hosts
   roles:
     - common
 
-- name: Running Docker Config
-  hosts: docker
+- name: Running ZSH Config
+  hosts: docker-hosts
+  vars:
+    ansible_user: christian
   roles:
-    - docker
+    - zsh
+
+# - name: Running Docker Config
+#   hosts: docker
+#   roles:
+#     - docker

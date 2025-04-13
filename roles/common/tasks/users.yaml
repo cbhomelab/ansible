@@ -1,18 +1,22 @@
 ---
 
-- name: Set Facts
-  ansible.builtin.set_fact:
-    users: "{{ all_users + host_users }}"
-    groups: "{{ all_groups + host_groups }}"
-
 - name: Add several groups
-  ansible.builtin.user:
+  ansible.builtin.group:
     name: "{{ item.name }}"
     state: present
     gid: "{{ item.gid }}"
     system: "{{ item.system }}"
-  loop:
-    - "{{ groups }}"
+  loop: "{{ all_groups }}"
+  become: true
+
+- name: Add several groups
+  ansible.builtin.group:
+    name: "{{ item.name }}"
+    state: present
+    gid: "{{ item.gid }}"
+    system: "{{ item.system }}"
+  loop: "{{ group_groups }}"
+  become: true
 
 - name: Add several users
   ansible.builtin.user:
@@ -23,5 +27,17 @@
     uid: "{{ item.uid }}"
     system: "{{ item.system }}"
     create_home: "{{ item.home }}"
-  loop:
-    - "{{ users }}"
+  loop: "{{ all_users }}"
+  become: true
+
+- name: Add several users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    state: present
+    groups: "{{ item.groups }}"
+    group: "{{ item.group }}"
+    uid: "{{ item.uid }}"
+    system: "{{ item.system }}"
+    create_home: "{{ item.home }}"
+  loop: "{{ group_users }}"
+  become: true

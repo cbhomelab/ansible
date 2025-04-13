@@ -1,11 +1,35 @@
 ---
 
+- name: Install parted (Debian)
+  ansible.builtin.apt:
+    pkg:
+      - parted
+    update_cache: true
+  become: true
+
+# - name: Read device information (always use unit when probing)
+#   community.general.parted: device=/dev/sda unit=MiB
+#   register: sda_info
+#   become: true
+
+# - name: Extend existing partition to fill all available space
+#   ansible.builtin.expect:
+#     command: 'parted -s -a opt /dev/sda "resizepart 1 100%"'
+#     responses: yes
+# community.general.parted:
+#   device: /dev/sda
+#   number: 1
+#   part_end: "100%"
+#   resize: true
+#   state: present
+# become: true
+
 - name: Set Facts
   ansible.builtin.set_fact:
-    install_pkg: '{{ common_pkg_debian + host_pkgs }}'
+    install_pkg: '{{ os_pkg }}'
 
 - name: Install packages (Debian)
   ansible.builtin.apt:
-    pkg:
-      - '{{ install_pkg }}'
+    pkg: '{{ install_pkg }}'
     update_cache: true
+  become: true

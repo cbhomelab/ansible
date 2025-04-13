@@ -6,8 +6,8 @@
 - name: Create Users and Groups
   ansible.builtin.include_tasks: users.yaml
 
-- name: Configure SSH
-  ansible.builtin.include_tasks: ssh.yaml
+# - name: Configure SSH
+#   ansible.builtin.include_tasks: ssh.yaml
 
 - name: Add network devices to hostfile
   ansible.builtin.include_tasks: hostfile.yaml
@@ -17,6 +17,3 @@
 
 - name: Mount Shares
   ansible.builtin.include_tasks: nfs.yaml
-
-- name: Install & Configure ZSH
-  ansible.builtin.include_tasks: zsh.yaml
