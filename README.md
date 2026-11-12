@@ -23,10 +23,13 @@ playbooks/
 roles/
   access_control/       Users, SSH authorized_keys, sudoers.
   webui_identity/        Per-service account creation on app/appliance web UIs.
-  common/, docker/, provision-vm/  Pre-existing roles (legacy layout, still
-                        driven by the root main.yaml).
-main.yaml               Legacy top-level playbook (pre-dates playbooks/;
-                        kept as-is, not yet migrated).
+  common/                Generic host-prep (packages, hostfile, dirs, NFS
+                        mounts, zsh). User/group/SSH management used to live
+                        here too but has been consolidated into
+                        access_control; common no longer touches
+                        users/SSH.
+  docker/, provision-vm/ Pre-existing roles, out of scope for the
+                        access/permissions work — not yet reviewed/migrated.
 ```
 
 ## Usage

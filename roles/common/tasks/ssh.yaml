@@ -1,7 +1,0 @@
----
-
-- name: Set authorized keys taken from url using lookup
-  ansible.posix.authorized_key:
-    user: "{{ my_user }}"
-    state: present
-    key: "{{ lookup('url', '{{ ssh_authorized_hosts_url }}', split_lines=False) }}"

@@ -1,15 +1,26 @@
 ---
-# STUB — not yet implemented. Intended shape below.
+# Ensure declared users exist. Supersedes the legacy roles/common users.yaml
+# loop (which managed a separate ad-hoc groups/users model) — this is now
+# the single source of truth for user management across the fleet.
 
-# - name: Ensure users exist
-#   ansible.builtin.user:
-#     name: "{{ item.name }}"
-#     groups: "{{ item.groups | default([]) }}"
-#     shell: "{{ item.shell | default('/bin/bash') }}"
-#     append: true
-#   loop: "{{ access_control_users }}"
-#   become: true
+- name: Ensure declared groups exist
+  ansible.builtin.group:
+    name: "{{ item.name }}"
+    gid: "{{ item.gid | default(omit) }}"
+    system: "{{ item.system | default(false) }}"
+    state: present
+  loop: "{{ access_control_groups }}"
+  become: true
 
-- name: users.yml placeholder (TODO)
-  ansible.builtin.debug:
-    msg: "access_control/users.yml is a stub — implement user management here."
+- name: Ensure declared users exist
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    groups: "{{ item.groups | default([]) }}"
+    shell: "{{ item.shell | default('/bin/bash') }}"
+    uid: "{{ item.uid | default(omit) }}"
+    system: "{{ item.system | default(false) }}"
+    create_home: "{{ item.create_home | default(true) }}"
+    append: true
+    state: present
+  loop: "{{ access_control_users }}"
+  become: true

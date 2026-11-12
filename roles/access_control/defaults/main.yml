@@ -2,6 +2,13 @@
 # Default (empty) access control model. Override per-group/per-host in
 # group_vars/host_vars. Each entry is intentionally a no-op until wired up.
 
+access_control_groups: []
+# Example shape:
+# access_control_groups:
+#   - name: media
+#     gid: 1006
+#     system: false
+
 access_control_users: []
 # Example shape:
 # access_control_users:
