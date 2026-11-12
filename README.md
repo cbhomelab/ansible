@@ -18,8 +18,11 @@ playbooks/
   site.yml             Top-level playbook, imports the others below.
   access.yml           OS-level access control (users/SSH keys/sudoers) for
                         proxmox_host/lxc_guests/vm_guests/omv/windows.
-  webui.yml            Per-service web UI/API account provisioning for the
-                        appliances group (OPNsense, UniFi, ...).
+  webui.yml            Per-service web UI/API account provisioning
+                        (Proxmox PAM, OMV, UniFi, NPM, Home Assistant,
+                        Grafana, OPNsense) - runs once from localhost,
+                        driven entirely by group_vars/all.yml, not tied
+                        to a specific inventory group.
 roles/
   access_control/       Users, SSH authorized_keys, sudoers.
   webui_identity/        Per-service account creation on app/appliance web UIs.
@@ -42,7 +45,14 @@ ansible-playbook playbooks/access.yml -i inventory/hosts.yml
 
 ## Status
 
-`access_control` and `webui_identity` are scaffolded skeletons (stub tasks)
-pending the Bitwarden control-node integration and real per-host variable
-values. `inventory/hosts.yml` reflects the current homelab topology; update
-it as hosts change.
+`access_control` has real tasks (users/ssh_keys/sudoers) wired up.
+`webui_identity` has real per-service tasks for Proxmox, OMV, UniFi, NPM,
+Home Assistant (manual-step note), Grafana, and OPNsense, plus a
+documented no-op for Pi-hole (single shared admin password) - see
+`roles/webui_identity/README.md`. Both roles are written and reviewable
+now, but **executing `playbooks/webui.yml` for real must wait** until (1)
+`access_control` has rolled out the `christian`/`hermes` OS users
+fleet-wide, since the Proxmox `@pam` trick needs that system user to
+exist, and (2) real secrets are populated in Bitwarden in place of the
+placeholder item names in `group_vars/all.yml`. `inventory/hosts.yml`
+reflects the current homelab topology; update it as hosts change.

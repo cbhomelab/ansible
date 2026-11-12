@@ -1,7 +1,10 @@
 ---
-# Appliance API credentials (OPNsense, UniFi) — consumed by
-# roles/webui_identity, not by generic SSH-based roles.
-webui_identity_accounts:
+# Appliance API credentials (OPNsense, UniFi) used for AUTOMATION, not
+# interactive logins - kept separate from the christian WebUI identity
+# accounts, which now live in group_vars/all.yml (webui_identity now runs
+# once from localhost across every service, not just this group, so its
+# vars belong at the all.yml level - see that file).
+webui_identity_automation_accounts:
   - service: opnsense
     username: automation
     role: readonly

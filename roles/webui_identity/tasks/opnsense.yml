@@ -1,0 +1,65 @@
+---
+# OPNsense (VM 100 router): own local FreeBSD user DB, independent of the
+# Proxmox PAM trick. Create christian as a real interactive WebUI/SSH-
+# capable account. hermes stays scoped to an API key (key+secret via HTTP
+# Basic, NOT the account password - see homelab-infrastructure skill) for
+# firewall automation only, never an interactive login.
+#
+# NOTE: core User CRUD lives under /api/core/user/* (searchUser, addUser,
+# get, set/<uuid>, del/<uuid>) on current OPNsense releases - verify
+# against this install's actual version before running for real; the
+# skill notes OPNsense's API CRUD coverage is uneven by subsystem, and
+# every POST needs a body or it 411s (`-d ""` even for no-op actions).
+
+- name: "OPNsense: check if christian already exists"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}/api/core/user/searchUser"
+    method: POST
+    url_username: "{{ item.extra.api_key }}"
+    url_password: "{{ item.extra.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {}
+    validate_certs: false
+    status_code: [200]
+  register: webui_identity_opnsense_existing
+
+- name: "OPNsense: create christian account"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}/api/core/user/addUser"
+    method: POST
+    url_username: "{{ item.extra.api_key }}"
+    url_password: "{{ item.extra.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      user:
+        name: "{{ item.username }}"
+        password: "{{ item.password }}"
+        full_name: "{{ item.extra.full_name | default('Christian Bishop') }}"
+        groups: "admins"
+        shell: "/bin/csh"
+    validate_certs: false
+    status_code: [200]
+  when: >
+    webui_identity_opnsense_existing.json.rows
+    | selectattr('name', 'equalto', item.username) | list | length == 0
+  register: webui_identity_opnsense_create
+
+- name: "OPNsense: apply changes (reconfigure)"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}/api/core/user/reconfigure"
+    method: POST
+    url_username: "{{ item.extra.api_key }}"
+    url_password: "{{ item.extra.api_secret }}"
+    force_basic_auth: true
+    body: ""
+    validate_certs: false
+    status_code: [200]
+  when: webui_identity_opnsense_create.changed | default(false)
+
+- name: "OPNsense: report result"
+  ansible.builtin.debug:
+    msg: >
+      christian OPNsense account {{ 'created' if (webui_identity_opnsense_create.changed | default(false))
+      else 'already present' }} on {{ item.api_base_url }}.

@@ -8,3 +8,88 @@
 pve_user: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='username') }}"
 pve_pass: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='password') }}"
 pve_host: "10.20.0.6"
+
+# webui_identity: unify WebUI/API logins to "christian" across every
+# service with its own user DB. Runs once from localhost
+# (playbooks/webui.yml), so these vars live here at the all.yml level
+# rather than under a specific inventory group.
+#
+# EXECUTION ORDERING CONSTRAINT: do not run playbooks/webui.yml for real
+# until (1) roles/access_control has created the christian/hermes OS
+# users fleet-wide - the Proxmox entry below depends on christian@pam
+# being a real, authenticatable system user - and (2) every Bitwarden
+# item name referenced below exists with real values. Until then these
+# are placeholder item names; the role code itself is safe to review/run
+# in --check mode any time.
+#
+# Pi-hole deliberately has no entry here beyond the no-op note task - see
+# roles/webui_identity/tasks/pihole.yml.
+webui_identity_accounts:
+  - service: proxmox
+    username: christian
+    api_base_url: "10.20.0.6"
+    extra:
+      token_id: "hermes@pve!hermes"
+      token_secret: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='password') }}"
+
+  - service: omv
+    username: christian
+    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-omv', field='password') }}"
+    api_base_url: "10.20.0.2"
+    extra:
+      admin_user: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='username') }}"
+      admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='password') }}"
+      email: "christian@cbho.me"
+
+  - service: unifi
+    username: christian
+    api_base_url: "10.20.0.107"
+    extra:
+      admin_user: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='username') }}"
+      admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='password') }}"
+      email: "christian@cbho.me"
+
+  - service: npm
+    username: christian
+    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-npm', field='password') }}"
+    api_base_url: "10.20.0.102"
+    extra:
+      admin_email: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='username') }}"
+      admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='password') }}"
+      email: "christian@cbho.me"
+      full_name: "Christian Bishop"
+
+  - service: home_assistant
+    username: christian
+    api_base_url: "10.20.0.5"
+    # no password/extra needed - this one is a documented manual step,
+    # see roles/webui_identity/tasks/home_assistant.yml
+
+  - service: opnsense
+    username: christian
+    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-opnsense', field='password') }}"
+    api_base_url: "10.20.0.1"
+    extra:
+      api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='username') }}"
+      api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='password') }}"
+      full_name: "Christian Bishop"
+
+  - service: pihole
+    username: christian
+    # no-op - single shared admin password, see tasks/pihole.yml
+
+# Grafana entry intentionally omitted here - add it only once Grafana is
+# confirmed deployed (e.g. the 90-logging OMV compose stack), since there
+# is no inventory group guaranteeing its presence on every homelab
+# checkout of this repo:
+#
+# webui_identity_accounts:
+#   - service: grafana
+#     username: christian
+#     password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-grafana', field='password') }}"
+#     api_base_url: "10.20.0.161:3000"
+#     extra:
+#       admin_user: "{{ lookup('community.general.bitwarden', 'homelab-grafana-admin', field='username') }}"
+#       admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-grafana-admin', field='password') }}"
+#       email: "christian@cbho.me"
+#       full_name: "Christian Bishop"

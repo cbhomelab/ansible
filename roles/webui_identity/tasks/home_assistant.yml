@@ -1,0 +1,19 @@
+---
+# Home Assistant (VM 101): HA DOES support multiple local users with admin
+# rights, but there is no stable REST endpoint to create one - user/person
+# creation is only exposed over HA's authenticated WebSocket API
+# (config/auth/create), not the plain REST API ansible.builtin.uri can
+# drive, and not the MCP Server integration either (that exposes
+# assistant/automation tools, not account administration).
+#
+# Rather than build a brittle one-off websocket client into this role for
+# a single one-time account creation, this stays a documented manual step.
+
+- name: "Home Assistant: manual step required (no REST user-create API)"
+  ansible.builtin.debug:
+    msg: >
+      Home Assistant has no REST endpoint for creating a local user.
+      Create '{{ item.username }}' manually via Settings > People > Users
+      in the HA web UI (http://{{ item.api_base_url }}:8123), grant
+      Administrator, confirm christian can log in, then demote/retire the
+      original default admin account from the same screen.

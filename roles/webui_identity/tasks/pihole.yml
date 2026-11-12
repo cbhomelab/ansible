@@ -1,0 +1,16 @@
+---
+# Pi-hole (LXC 108): KNOWN LIMITATION - single shared admin password only,
+# no per-user accounts exist in Pi-hole's own data model. Do NOT attempt
+# to create a per-user login here; there is nothing to automate.
+#
+# The only action this service needs is making sure the single shared
+# admin password lives in the Bitwarden Homelab-Infra collection (see
+# t_eab3e60d) instead of being separately memorized by anyone.
+
+- name: "Pi-hole: no per-user account possible (documented limitation)"
+  ansible.builtin.debug:
+    msg: >
+      Pi-hole has one shared admin password, not per-user accounts. No
+      action taken for '{{ item.username }}' here - confirm the shared
+      admin password is stored in the Bitwarden Homelab-Infra collection
+      rather than memorized separately.

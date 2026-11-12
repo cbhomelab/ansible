@@ -1,0 +1,75 @@
+---
+# OMV (saturn): create a christian admin user via the same Session.login
+# + RPC pattern already used for the existing `hermes` OMV user (see
+# homelab-infrastructure skill, "OMV Compose plugin RPC" section - same
+# /rpc.php session-cookie mechanism, different service/method: UserMgmt
+# instead of Compose).
+#
+# NOTE: OMV's exact UserMgmt create/update param names were not
+# re-verified against this install's live RPC schema while writing this
+# role. Follow the same "check getList before set" discipline the skill
+# documents for Compose-style creates (a multi-step create can partially
+# commit state even when the overall call throws) - this task deliberately
+# lists existing users first and only calls `set` when christian isn't
+# already there, rather than blindly retrying a create.
+
+- name: "OMV: log in for a session cookie"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/rpc.php"
+    method: POST
+    body_format: json
+    body:
+      service: "Session"
+      method: "login"
+      params:
+        username: "{{ item.extra.admin_user }}"
+        password: "{{ item.extra.admin_pass }}"
+    status_code: [200]
+  register: webui_identity_omv_login
+
+- name: "OMV: list existing users"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/rpc.php"
+    method: POST
+    headers:
+      Cookie: "{{ webui_identity_omv_login.cookies_string }}"
+    body_format: json
+    body:
+      service: "UserMgmt"
+      method: "getList"
+      params:
+        start: 0
+        limit: -1
+    status_code: [200]
+  register: webui_identity_omv_existing
+
+- name: "OMV: create christian admin user (only if not already present)"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/rpc.php"
+    method: POST
+    headers:
+      Cookie: "{{ webui_identity_omv_login.cookies_string }}"
+    body_format: json
+    # Deliberately no `uuid` key - omitting it entirely is what makes OMV's
+    # ConfigObject->isNew() true on the Compose RPC per the skill; verify
+    # this holds for UserMgmt.set too before trusting it unattended.
+    body:
+      service: "UserMgmt"
+      method: "set"
+      params:
+        name: "{{ item.username }}"
+        email: "{{ item.extra.email | default('') }}"
+        password: "{{ item.password }}"
+        groups: "{{ item.extra.groups | default(['sudo', 'docker', 'openmediavault-admin']) }}"
+        disabled: false
+    status_code: [200]
+  when: >
+    webui_identity_omv_existing.json.response
+    | selectattr('name', 'equalto', item.username) | list | length == 0
+  register: webui_identity_omv_create
+
+- name: "OMV: report result"
+  ansible.builtin.debug:
+    msg: >
+      christian OMV user {{ 'created' if (webui_identity_omv_create.changed | default(false))
+      else 'already present' }} on {{ item.api_base_url }}.

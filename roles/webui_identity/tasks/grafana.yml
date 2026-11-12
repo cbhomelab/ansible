@@ -1,0 +1,56 @@
+---
+# Grafana (part of the 90-logging OMV compose stack, if deployed - e.g.
+# 10.20.0.161:3000 at setup time). Grafana's own HTTP API supports admin
+# user creation directly, unlike Home Assistant.
+#
+# Only wire a `grafana` entry into webui_identity_accounts if Grafana is
+# actually deployed on this homelab - the role does nothing by default
+# since there's no inventory group guaranteeing its presence.
+
+- name: "Grafana: list existing users"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/api/users"
+    method: GET
+    url_username: "{{ item.extra.admin_user | default('admin') }}"
+    url_password: "{{ item.extra.admin_pass }}"
+    force_basic_auth: true
+    status_code: [200]
+  register: webui_identity_grafana_existing
+
+- name: "Grafana: create christian admin user"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/api/admin/users"
+    method: POST
+    url_username: "{{ item.extra.admin_user | default('admin') }}"
+    url_password: "{{ item.extra.admin_pass }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      name: "{{ item.extra.full_name | default('Christian Bishop') }}"
+      login: "{{ item.username }}"
+      email: "{{ item.extra.email }}"
+      password: "{{ item.password }}"
+    status_code: [200]
+  when: >
+    webui_identity_grafana_existing.json
+    | selectattr('login', 'equalto', item.username) | list | length == 0
+  register: webui_identity_grafana_create
+
+- name: "Grafana: grant Grafana Admin (superadmin) flag"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/api/admin/users/{{ webui_identity_grafana_create.json.id }}/permissions"
+    method: PUT
+    url_username: "{{ item.extra.admin_user | default('admin') }}"
+    url_password: "{{ item.extra.admin_pass }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      isGrafanaAdmin: true
+    status_code: [200]
+  when: webui_identity_grafana_create.changed | default(false)
+
+- name: "Grafana: report result"
+  ansible.builtin.debug:
+    msg: >
+      christian Grafana user {{ 'created' if (webui_identity_grafana_create.changed | default(false))
+      else 'already present' }} on {{ item.api_base_url }}.

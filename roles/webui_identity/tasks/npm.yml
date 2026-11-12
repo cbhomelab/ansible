@@ -1,0 +1,62 @@
+---
+# Nginx Proxy Manager (LXC 102 "intranet"): create a christian admin user.
+# Auth tokens are short-lived (~24h, see homelab-infrastructure skill) -
+# always re-login per run rather than caching a token across plays.
+
+- name: "NPM: log in and get a JWT"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/api/tokens"
+    method: POST
+    body_format: json
+    body:
+      identity: "{{ item.extra.admin_email }}"
+      secret: "{{ item.extra.admin_pass }}"
+    status_code: [200]
+  register: webui_identity_npm_login
+
+- name: "NPM: list existing users"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/api/users"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ webui_identity_npm_login.json.token }}"
+    status_code: [200]
+  register: webui_identity_npm_existing
+
+- name: "NPM: create christian user"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/api/users"
+    method: POST
+    headers:
+      Authorization: "Bearer {{ webui_identity_npm_login.json.token }}"
+    body_format: json
+    body:
+      name: "{{ item.extra.full_name | default('Christian Bishop') }}"
+      nickname: "{{ item.username }}"
+      email: "{{ item.extra.email }}"
+      roles: ["admin"]
+      is_disabled: false
+    status_code: [200, 201]
+  when: >
+    webui_identity_npm_existing.json
+    | selectattr('nickname', 'equalto', item.username) | list | length == 0
+  register: webui_identity_npm_create
+
+- name: "NPM: set christian's password (only right after create)"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/api/users/{{ webui_identity_npm_create.json.id }}/auth"
+    method: PUT
+    headers:
+      Authorization: "Bearer {{ webui_identity_npm_login.json.token }}"
+    body_format: json
+    body:
+      type: "password"
+      secret: "{{ item.password }}"
+    status_code: [200, 201]
+  when: webui_identity_npm_create.changed | default(false)
+
+- name: "NPM: report result"
+  ansible.builtin.debug:
+    msg: >
+      christian NPM user {{ 'created' if (webui_identity_npm_create.changed | default(false))
+      else 'already present' }} on {{ item.api_base_url }}.

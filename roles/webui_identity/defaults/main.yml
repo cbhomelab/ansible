@@ -1,13 +1,100 @@
 ---
+# webui_identity defaults.
+#
+# Each entry in webui_identity_accounts describes ONE account to create on
+# ONE service. `service` must match a tasks/<service>.yml file name exactly
+# (main.yml does `include_tasks: "{{ item.service }}.yml"`).
+#
+# Common keys (not every service uses every key — see each tasks/<service>.yml
+# for what it actually reads off `item`):
+#   service        - proxmox | omv | unifi | npm | home_assistant | grafana |
+#                    opnsense | pihole
+#   username       - target login name (almost always "christian" for this
+#                    rollout; kept as a field rather than hardcoded so this
+#                    role stays reusable for other per-service accounts later)
+#   password       - target account's new password (Bitwarden lookup)
+#   api_base_url   - host[:port] for that service's API/WebUI (no scheme)
+#   extra          - free-form dict of whatever else that service's task
+#                    file needs (bootstrap admin creds to authenticate the
+#                    create call, API key/secret pairs, email, etc.)
+#
+# ORDERING CONSTRAINT: this role's tasks talk to each service's own account
+# store and are independent of each other, but several of them assume
+# prerequisites from OTHER in-flight work:
+#   - proxmox.yml assumes the OS user `christian` already exists on
+#     `neptune` (created by roles/access_control) — Proxmox's `@pam` realm
+#     authenticates against system users, so granting a WebUI role to
+#     christian@pam before that OS user exists would grant a role to a
+#     login that can't actually authenticate yet.
+#   - Every task file that needs a password/API key assumes those secrets
+#     are already populated in Bitwarden (see t_eab3e60d) rather than the
+#     placeholder lookup names below.
+# Do not run this role for real against live services until BOTH of those
+# are true. Writing/reviewing the role code itself has no such dependency.
 webui_identity_accounts: []
-# Example shape:
+# Example shape, one entry per service (fill in real Bitwarden item names
+# and wire into group_vars/all.yml — see that file for the consolidated
+# real list used by playbooks/webui.yml):
+#
 # webui_identity_accounts:
-#   - service: opnsense
-#     username: automation
-#     role: readonly
-#     api_base_url: "https://10.20.0.1"
-#     api_key: "{{ lookup('community.general.bitwarden', 'opnsense-api', field='notes') }}"
+#   - service: proxmox
+#     username: christian
+#     api_base_url: "10.20.0.6"
+#     extra:
+#       token_id: "hermes@pve!hermes"
+#       token_secret: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='password') }}"
+#
+#   - service: omv
+#     username: christian
+#     password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-omv', field='password') }}"
+#     api_base_url: "10.20.0.2"
+#     extra:
+#       admin_user: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='username') }}"
+#       admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='password') }}"
+#       email: "christian@cbho.me"
+#
 #   - service: unifi
-#     username: automation
-#     role: readonly
-#     api_base_url: "https://10.20.0.107"
+#     username: christian
+#     api_base_url: "10.20.0.107"
+#     extra:
+#       admin_user: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='username') }}"
+#       admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='password') }}"
+#       email: "christian@cbho.me"
+#
+#   - service: npm
+#     username: christian
+#     password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-npm', field='password') }}"
+#     api_base_url: "10.20.0.102"
+#     extra:
+#       admin_email: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='username') }}"
+#       admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='password') }}"
+#       email: "christian@cbho.me"
+#       full_name: "Christian Bishop"
+#
+#   - service: home_assistant
+#     username: christian
+#     api_base_url: "10.20.0.5"
+#     # no password/extra needed - this one is a documented manual step
+#
+#   - service: grafana
+#     username: christian
+#     password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-grafana', field='password') }}"
+#     api_base_url: "10.20.0.161:3000"
+#     extra:
+#       admin_user: "{{ lookup('community.general.bitwarden', 'homelab-grafana-admin', field='username') }}"
+#       admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-grafana-admin', field='password') }}"
+#       email: "christian@cbho.me"
+#       full_name: "Christian Bishop"
+#
+#   - service: opnsense
+#     username: christian
+#     password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-opnsense', field='password') }}"
+#     api_base_url: "10.20.0.1"
+#     extra:
+#       api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='username') }}"
+#       api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='password') }}"
+#       full_name: "Christian Bishop"
+#
+#   - service: pihole
+#     username: christian
+#     # no-op - single shared admin password, see tasks/pihole.yml

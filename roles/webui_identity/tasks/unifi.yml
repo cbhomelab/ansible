@@ -1,0 +1,61 @@
+---
+# UniFi Controller (LXC 107, self-hosted Network Application - NOT the
+# UniFi OS console): create a christian admin account. Demoting/retiring
+# the generic default admin is done in the EXECUTION task (t_5a11ba20),
+# not here, once christian's login has been confirmed to work.
+#
+# Login: try the legacy cookie session first (POST /api/login) - works on
+# older/self-hosted controllers even when the newer /api/auth/login 401s
+# with LoginRequired (see homelab-infrastructure skill).
+# Site-scoped calls need the real site NAME (e.g. "1alwstz1"), never the
+# literal string "default" - fetch it via GET /api/self/sites first.
+#
+# NOTE: local-admin creation on a self-hosted controller is normally
+# driven through Settings > Admins in the UI, backed by
+# POST /api/s/<site>/cmd/sitemgr {"cmd":"invite-admin", ...}. This exact
+# endpoint/payload was not re-verified live against this install's
+# controller version while writing the role - confirm with --check /
+# a dry run against a real session before trusting it unattended.
+
+- name: "UniFi: legacy cookie login"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}:8443/api/login"
+    method: POST
+    body_format: json
+    body:
+      username: "{{ item.extra.admin_user }}"
+      password: "{{ item.extra.admin_pass }}"
+    validate_certs: false
+    status_code: [200]
+  register: webui_identity_unifi_login
+
+- name: "UniFi: fetch real site name"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}:8443/api/self/sites"
+    method: GET
+    headers:
+      Cookie: "{{ webui_identity_unifi_login.cookies_string }}"
+    validate_certs: false
+    status_code: [200]
+  register: webui_identity_unifi_sites
+
+- name: "UniFi: invite/create christian as a local admin"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}:8443/api/s/{{ webui_identity_unifi_sites.json.data[0].name }}/cmd/sitemgr"
+    method: POST
+    headers:
+      Cookie: "{{ webui_identity_unifi_login.cookies_string }}"
+    body_format: json
+    body:
+      cmd: "invite-admin"
+      email: "{{ item.extra.email }}"
+      for_sso: false
+      name: "{{ item.username }}"
+      role: "admin"
+    validate_certs: false
+    status_code: [200]
+  register: webui_identity_unifi_create
+
+- name: "UniFi: report result"
+  ansible.builtin.debug:
+    var: webui_identity_unifi_create.json

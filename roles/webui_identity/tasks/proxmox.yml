@@ -1,0 +1,55 @@
+---
+# Proxmox (neptune): grant the Administrator role to christian@pam in
+# Datacenter > Permissions. The `christian` OS user itself is created by
+# roles/access_control, NOT here - PAM realm auth works against system
+# users automatically, so there is nothing to "create" on the Proxmox
+# side beyond the ACL grant.
+#
+# Uses the same token-based auth pattern as the existing hermes@pve!hermes
+# automation token (see homelab-infrastructure skill, "Proxmox API
+# access"). hermes keeps its own scoped token for automation and must
+# NOT be given an interactive WebUI login - this task only ever touches
+# the christian@pam ACL entry, never hermes's.
+#
+# ORDERING CONSTRAINT: do not run this against the live host until the
+# `christian` OS user has been confirmed to exist on neptune (via
+# access_control) - granting a role to a login that can't authenticate
+# yet is harmless but pointless, and running it early is a signal this
+# task jumped ahead of its dependency.
+
+- name: "Proxmox: check whether christian@pam already has an ACL entry"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}:8006/api2/json/access/acl"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken={{ item.extra.token_id }}={{ item.extra.token_secret }}"
+    validate_certs: false
+    status_code: [200]
+  register: webui_identity_proxmox_existing
+
+- name: "Proxmox: grant Administrator role to christian@pam"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}:8006/api2/json/access/acl"
+    method: PUT
+    headers:
+      Authorization: "PVEAPIToken={{ item.extra.token_id }}={{ item.extra.token_secret }}"
+    body_format: json
+    body:
+      path: "/"
+      roles: "Administrator"
+      type: "user"
+      ugid: "{{ item.username }}@pam"
+    validate_certs: false
+    status_code: [200]
+  when: >
+    webui_identity_proxmox_existing.json.data
+    | selectattr('ugid', 'equalto', item.username ~ '@pam')
+    | selectattr('roleid', 'equalto', 'Administrator')
+    | list | length == 0
+  register: webui_identity_proxmox_grant
+
+- name: "Proxmox: report result"
+  ansible.builtin.debug:
+    msg: >
+      christian@pam Administrator ACL {{ 'granted' if (webui_identity_proxmox_grant.changed | default(false))
+      else 'already present' }} on {{ item.api_base_url }}.

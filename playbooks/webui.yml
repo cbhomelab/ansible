@@ -1,10 +1,11 @@
 ---
 # Per-service web UI / API account provisioning (OPNsense, UniFi, OMV,
-# Proxmox API tokens, app admin accounts). Runs locally since these
-# targets are driven over HTTP APIs, not SSH.
+# Proxmox API/PAM, NPM, Home Assistant, Grafana). Runs once from the
+# control node over HTTP APIs - connection: local, no inventory host
+# looping, since none of these tasks touch the box's own shell.
 
 - name: Apply web UI / appliance identity provisioning
-  hosts: appliances
+  hosts: localhost
   connection: local
   gather_facts: false
   roles:

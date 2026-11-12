@@ -1,16 +1,39 @@
 ---
-# webui_identity role — skeleton. Each service will likely need its own
-# include file since the account-creation API differs per appliance/app.
+# webui_identity: unify WebUI/API logins to "christian" across every
+# service that keeps its own user DB (Proxmox PAM realm, OMV, UniFi, NPM,
+# Home Assistant, Grafana, OPNsense). Pi-hole is intentionally excluded
+# from per-user handling (single shared admin password, see tasks/pihole.yml).
+#
+# ORDERING CONSTRAINT (do not skip): running this for real against live
+# services assumes roles/access_control has already created the `christian`
+# OS user fleet-wide (Proxmox's `christian@pam` WebUI login only works once
+# that system user exists) and that Bitwarden holds real secrets for every
+# lookup referenced in group_vars/all.yml. See defaults/main.yml for the
+# detailed per-service breakdown. This role's TASK CODE has no such
+# dependency and can be written/reviewed any time; only EXECUTION does.
 
 - name: webui_identity placeholder (TODO)
   ansible.builtin.debug:
     msg: >
-      webui_identity is a stub — implement per-service account provisioning
-      (OPNsense, UniFi, OMV, Proxmox API tokens, app admin accounts) here,
-      one include file per service under tasks/.
+      webui_identity_accounts is empty - nothing to do. Populate it in
+      group_vars/all.yml (or host_vars) once Bitwarden secrets are ready,
+      then re-run. See defaults/main.yml for the full per-service shape.
   when: webui_identity_accounts | length == 0
+  run_once: true
+
+- name: Note execution ordering constraint
+  ansible.builtin.debug:
+    msg: >
+      About to provision {{ webui_identity_accounts | length }} account(s).
+      This assumes roles/access_control has already run fleet-wide and
+      Bitwarden secrets are populated - if either isn't true yet, stop
+      here (re-run with --check first).
+  when: webui_identity_accounts | length > 0
+  run_once: true
 
 - name: Provision per-service accounts
   ansible.builtin.include_tasks: "{{ item.service }}.yml"
   loop: "{{ webui_identity_accounts }}"
+  loop_control:
+    label: "{{ item.service }}/{{ item.username }}"
   when: webui_identity_accounts | length > 0
