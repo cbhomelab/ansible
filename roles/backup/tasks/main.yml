@@ -1,0 +1,14 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED.
+# No backup strategy exists yet — see README.md for the open questions
+# (what gets backed up, where to, retention, mechanism) that need user
+# decisions before any real task is written here.
+#
+# This stub is deliberately check-mode-safe and makes zero changes.
+
+- name: backup — not yet implemented (no-op)
+  ansible.builtin.debug:
+    msg: >-
+      roles/backup is scaffolded but not implemented; no backup strategy
+      has been decided yet. No changes were made on {{ inventory_hostname }}.
+      See roles/backup/README.md.

@@ -1,0 +1,15 @@
+---
+# Scaffolded defaults — intentionally no-op until compose_stacks is
+# implemented. See README.md for the Option A/B decision (SSH + docker
+# compose CLI chosen over OMV's internal Compose RPC API) and open
+# questions.
+
+compose_stacks_enabled: false
+compose_stacks_base_dir: "/opt/docker-compose"
+compose_stacks_projects: []
+# Example shape (not applied yet — real project list to be enumerated
+# from saturn:/opt/docker-compose/ when this role is implemented):
+# compose_stacks_projects:
+#   - name: "20-frigate"
+#     state: started   # started | stopped
+#     pull: false        # whether to pull images before (re)creating

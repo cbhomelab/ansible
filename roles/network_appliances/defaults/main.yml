@@ -1,0 +1,19 @@
+---
+# Scaffolded defaults — intentionally no-op until network_appliances is
+# implemented. See README.md for scope, relationship to
+# roles/webui_identity, and open questions.
+
+network_appliances_enabled: false
+
+network_appliances_opnsense:
+  api_base_url: "https://10.20.0.1"
+  api_key: ""
+  api_secret: ""
+  # Sourced via Bitwarden once populated — see group_vars/appliances.yml
+  # webui_identity_accounts entry for opnsense.
+
+network_appliances_unifi:
+  api_base_url: "https://10.20.0.107"
+  username: ""
+  password: ""
+  # Session-cookie auth (not a static API key) — see README.md.

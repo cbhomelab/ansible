@@ -7,3 +7,23 @@
 
 - name: Import webui identity playbook
   ansible.builtin.import_playbook: webui.yml
+
+# Next-phase domains below are scaffolded (no-op debug stubs) only — see
+# each role's README.md for intended scope and open questions. Safe to
+# include in site.yml since each one makes zero changes until its role
+# is actually implemented.
+
+- name: Import system baseline playbook (scaffolded, no-op)
+  ansible.builtin.import_playbook: baseline.yml
+
+- name: Import compose stacks playbook (scaffolded, no-op)
+  ansible.builtin.import_playbook: compose.yml
+
+- name: Import monitoring agents playbook (scaffolded, no-op)
+  ansible.builtin.import_playbook: monitoring.yml
+
+- name: Import backup playbook (scaffolded, no-op)
+  ansible.builtin.import_playbook: backup.yml
+
+- name: Import network appliances playbook (scaffolded, no-op)
+  ansible.builtin.import_playbook: network.yml

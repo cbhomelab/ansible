@@ -1,0 +1,14 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED.
+# This role is a placeholder for managing the OMV-hosted docker-compose
+# project fleet on saturn (SSH + `docker compose` CLI — see README.md for
+# why that was chosen over OMV's internal Compose RPC API).
+#
+# This stub is deliberately check-mode-safe and makes zero changes.
+
+- name: compose_stacks — not yet implemented (no-op)
+  ansible.builtin.debug:
+    msg: >-
+      roles/compose_stacks is scaffolded but not implemented.
+      No compose project changes were made on {{ inventory_hostname }}.
+      See roles/compose_stacks/README.md.

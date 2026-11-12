@@ -1,0 +1,10 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED — roles/network_appliances is a no-op stub.
+# Runs locally against the `appliances` group, same pattern as webui.yml.
+
+- name: Apply network appliance config management
+  hosts: appliances
+  connection: local
+  gather_facts: false
+  roles:
+    - network_appliances

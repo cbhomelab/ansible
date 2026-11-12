@@ -1,0 +1,11 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED — roles/monitoring_agents is a no-op stub.
+# Excludes `appliances` (OPNsense/UniFi have their own native syslog
+# forwarding, see the logging-monitoring skill reference) and
+# vm101-homeassistant (HAOS, no shell — needs a separate mechanism).
+
+- name: Apply monitoring agents
+  hosts: proxmox_host:lxc_guests:vm_guests:omv
+  become: true
+  roles:
+    - monitoring_agents

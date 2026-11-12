@@ -1,0 +1,10 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED — roles/backup is a no-op stub. No backup
+# strategy has been decided yet; see roles/backup/README.md for the open
+# questions that need answering before this targets real hosts for real.
+
+- name: Apply backup
+  hosts: proxmox_host:lxc_guests:vm_guests:omv
+  become: true
+  roles:
+    - backup

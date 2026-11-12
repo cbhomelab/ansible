@@ -1,0 +1,14 @@
+---
+# Scaffolded defaults — intentionally no-op until monitoring_agents is
+# implemented. See README.md for scope, relationship to t_d72f45fd
+# (audit-logging-specific task), and open questions.
+
+monitoring_agents_promtail_enabled: false
+monitoring_agents_node_exporter_enabled: false
+monitoring_agents_loki_push_url: ""
+# e.g. "http://10.20.0.2:3100/loki/api/v1/push" — confirm real Loki
+# endpoint when this role is implemented.
+
+monitoring_agents_promtail_jobs: []
+# Future home for per-domain scrape jobs (e.g. the ssh/sudo audit logs
+# from t_d72f45fd) once this role exists as the shared base installer.

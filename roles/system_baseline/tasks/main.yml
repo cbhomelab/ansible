@@ -1,0 +1,15 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED.
+# This role is a placeholder for fleet-wide OS baseline management
+# (patching, base packages, timezone/locale, unattended-upgrades).
+# See README.md for intended scope, relationship to roles/common, and
+# open questions that need a decision before real tasks are written here.
+#
+# This stub is deliberately check-mode-safe and makes zero changes.
+
+- name: system_baseline — not yet implemented (no-op)
+  ansible.builtin.debug:
+    msg: >-
+      roles/system_baseline is scaffolded but not implemented.
+      No OS baseline changes were made to {{ inventory_hostname }}.
+      See roles/system_baseline/README.md.

@@ -1,0 +1,10 @@
+---
+galaxy_info:
+  author: cbhomelab
+  description: >-
+    API-based config management (ansible.builtin.uri) for OPNsense/UniFi
+    appliances. SCAFFOLDED, NOT IMPLEMENTED — see README.md.
+  license: MIT
+  min_ansible_version: "2.14"
+
+dependencies: []

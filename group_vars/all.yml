@@ -93,3 +93,11 @@ webui_identity_accounts:
 #       admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-grafana-admin', field='password') }}"
 #       email: "christian@cbho.me"
 #       full_name: "Christian Bishop"
+
+# Next-phase domain placeholders (scaffolded, not implemented — see each
+# role's README.md). Left commented so they don't shadow role defaults
+# until real values are decided.
+# system_baseline_autoupdate_enabled: false
+# monitoring_agents_promtail_enabled: false
+# monitoring_agents_node_exporter_enabled: false
+# backup_enabled: false

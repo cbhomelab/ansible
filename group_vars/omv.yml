@@ -27,3 +27,8 @@ access_control_sudoers:
     rule: "christian ALL=(ALL) NOPASSWD:ALL"
   - name: hermes
     rule: "hermes ALL=(ALL) NOPASSWD:ALL"
+
+# compose_stacks placeholder (scaffolded, not implemented — see
+# roles/compose_stacks/README.md). Real project list to be enumerated
+# from saturn:/opt/docker-compose/ when implemented.
+# compose_stacks_projects: []

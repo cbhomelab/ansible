@@ -1,0 +1,15 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED.
+# Placeholder for the fleet-wide Promtail/node-exporter agent installer.
+# See README.md for scope and its relationship to the narrower
+# audit-logging task (t_d72f45fd), which should depend on this role once
+# it's implemented rather than duplicating agent-install logic.
+#
+# This stub is deliberately check-mode-safe and makes zero changes.
+
+- name: monitoring_agents — not yet implemented (no-op)
+  ansible.builtin.debug:
+    msg: >-
+      roles/monitoring_agents is scaffolded but not implemented.
+      No monitoring agents were installed on {{ inventory_hostname }}.
+      See roles/monitoring_agents/README.md.

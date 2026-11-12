@@ -15,3 +15,8 @@ webui_identity_automation_accounts:
     role: readonly
     api_base_url: "https://10.20.0.107"
     api_password: "{{ lookup('community.general.bitwarden', 'homelab-unifi-api', field='password') }}"
+
+# network_appliances placeholder (scaffolded, not implemented — see
+# roles/network_appliances/README.md). Reuses the webui_identity
+# credentials above once that role is implemented.
+# network_appliances_enabled: false

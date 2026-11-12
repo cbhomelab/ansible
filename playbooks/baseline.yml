@@ -1,0 +1,9 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED — roles/system_baseline is a no-op stub.
+# Targets the same Linux-host groups as access.yml.
+
+- name: Apply system baseline
+  hosts: proxmox_host:lxc_guests:vm_guests:omv
+  become: true
+  roles:
+    - system_baseline

@@ -1,0 +1,16 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED.
+# Placeholder for API-based OPNsense/UniFi config management. All real
+# tasks here MUST use ansible.builtin.uri (or a dedicated collection
+# module) against each appliance's REST API — never a shell-assuming
+# module, since `appliances` hosts have no generic SSH/Ansible access.
+# See README.md for scope and its relationship to roles/webui_identity.
+#
+# This stub is deliberately check-mode-safe and makes zero changes.
+
+- name: network_appliances — not yet implemented (no-op)
+  ansible.builtin.debug:
+    msg: >-
+      roles/network_appliances is scaffolded but not implemented.
+      No appliance config changes were made for {{ inventory_hostname }}.
+      See roles/network_appliances/README.md.

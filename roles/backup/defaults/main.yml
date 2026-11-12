@@ -1,0 +1,15 @@
+---
+# Scaffolded defaults — deliberately empty. No backup strategy has been
+# decided yet (see README.md open questions: what/where/retention/
+# mechanism). Do not add real values here without those answers.
+
+backup_enabled: false
+backup_targets: []
+# Example shape ONLY — not a real decision, mechanism/retention/target
+# are all open questions per README.md:
+# backup_targets:
+#   - name: "omv-appdata"
+#     mechanism: "restic"   # vzdump | restic | borg | rsync (undecided)
+#     source: "/srv/.../appdata"
+#     destination: ""        # undecided
+#     retention_days: 0      # undecided

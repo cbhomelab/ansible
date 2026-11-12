@@ -1,0 +1,9 @@
+---
+# SCAFFOLDED, NOT IMPLEMENTED — roles/compose_stacks is a no-op stub.
+# Targets saturn (OMV) only.
+
+- name: Apply compose stack management
+  hosts: omv
+  become: true
+  roles:
+    - compose_stacks

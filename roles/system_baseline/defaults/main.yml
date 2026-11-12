@@ -1,0 +1,16 @@
+---
+# Scaffolded defaults — intentionally no-op until system_baseline is
+# implemented. See README.md for intended scope and open questions.
+
+system_baseline_autoupdate_enabled: false
+system_baseline_unattended_upgrades: false
+system_baseline_base_packages: []
+# Example shape (not applied yet):
+# system_baseline_base_packages:
+#   - curl
+#   - vim
+#   - htop
+#   - ca-certificates
+
+system_baseline_timezone: "America/Los_Angeles"
+system_baseline_locale: "en_US.UTF-8"
