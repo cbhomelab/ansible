@@ -1,19 +1,38 @@
 ---
-# Scaffolded defaults — intentionally no-op until network_appliances is
-# implemented. See README.md for scope, relationship to
-# roles/webui_identity, and open questions.
+# network_appliances defaults — DHCP reservations surface (t_022a83c7).
+# UniFi config management and OPNsense firewall/VLAN surfaces are still
+# scaffolded/not implemented — see README.md "Scope".
 
-network_appliances_enabled: false
+network_appliances_enabled: true
+
+# Set true only once you've reviewed the check-mode plan output and are
+# ready to actually write to the live router. Defaults to false (plan-only)
+# on purpose — this touches a live router's DHCP config.
+network_appliances_dhcp_apply: false
 
 network_appliances_opnsense:
   api_base_url: "https://10.20.0.1"
-  api_key: ""
-  api_secret: ""
-  # Sourced via Bitwarden once populated — see group_vars/appliances.yml
-  # webui_identity_accounts entry for opnsense.
+  # Needs a user/group with at least "Services: Kea DHCP" + "Services:
+  # DHCPv4" page privileges — the existing `homelab-opnsense-api` Bitwarden
+  # item referenced from group_vars/appliances.yml is documented there as
+  # read-only (status/syslog use), which is NOT sufficient for the writes
+  # this role makes. See README.md "Credentials" before running for real.
+  api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-dhcp-api', field='username') }}"
+  api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-dhcp-api', field='password') }}"
+
+# CIDR of the LAN subnet reservations are created in. Used to resolve the
+# Kea subnet UUID via kea/dhcpv4/search_subnet (OPNsense doesn't take a
+# plain CIDR on add_reservation — it wants the subnet's internal UUID).
+network_appliances_dhcp_subnet_cidr: "10.20.0.0/24"
+
+# Built from inventory in tasks/dhcp_reservations.yml: every host across
+# lxc_guests + vm_guests with `dhcp_reservation: true` and a `mac` set in
+# inventory/hosts.yml. Not meant to be overridden directly; override the
+# inventory vars instead.
 
 network_appliances_unifi:
   api_base_url: "https://10.20.0.107"
   username: ""
   password: ""
-  # Session-cookie auth (not a static API key) — see README.md.
+  # Session-cookie auth (not a static API key) — see README.md. UniFi
+  # config management is still out of scope for this pass.

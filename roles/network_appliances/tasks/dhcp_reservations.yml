@@ -1,0 +1,195 @@
+---
+# OPNsense DHCP reservations/static-IP assignment (t_022a83c7).
+#
+# IMPORTANT: OPNsense ships TWO DHCPv4 backends with two different API
+# surfaces. Verified against docs.opnsense.org/development/api/ (Nov 2026):
+#   - legacy ISC backend: /api/dhcpv4/... — LeasesController +
+#     ServiceController ONLY. There is NO reservation CRUD here anymore
+#     (removed upstream; see opnsense/core#4062, "help wanted"/wontfix).
+#   - Kea backend (current default since OPNsense 24.1): /api/kea/dhcpv4/...
+#     — has full add_reservation / set_reservation / del_reservation /
+#     get_reservation / search_reservation, plus search_subnet to resolve
+#     the subnet UUID a reservation belongs to, and apply via
+#     /api/kea/service/reconfigure (NOT /api/dhcpv4/service/reconfigure).
+# This role targets the Kea endpoints. It does NOT verify which backend
+# this router actually has active before running (requires a live,
+# authenticated call this pass never got — see README.md "Known gap"). If
+# this router is still on the legacy ISC backend, every call below 404s
+# cleanly rather than touching the wrong config; it fails loud, not silent.
+#
+# Scope: only hosts inventory marks `dhcp_reservation: true` with a `mac`
+# set (see inventory/hosts.yml) get a reservation. Hosts pinned via a
+# static `ip=` in their own Proxmox LXC net0 config are intentionally
+# excluded — OPNsense's DHCP server never sees a request from them, so a
+# reservation there is a no-op; see README.md "Pilot findings".
+
+- name: Build reservation plan (hostname -> desired ip/mac) from inventory
+  ansible.builtin.set_fact:
+    network_appliances_dhcp_plan: "{{ network_appliances_dhcp_plan | default([]) + [{'host': item, 'ip': hostvars[item].ansible_host, 'mac': hostvars[item].mac | lower, 'description': 'ansible: ' + item}] }}"
+  loop: "{{ (groups['lxc_guests'] | default([])) + (groups['vm_guests'] | default([])) }}"
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - hostvars[item].dhcp_reservation | default(false)
+    - hostvars[item].mac is defined
+  run_once: true
+
+- name: No reservations to manage — nothing in inventory opted in
+  ansible.builtin.debug:
+    msg: "No hosts have dhcp_reservation: true + mac set in inventory/hosts.yml. Nothing to do."
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - (network_appliances_dhcp_plan | default([]) | length) == 0
+
+- name: DHCP reservation plan
+  ansible.builtin.debug:
+    msg: "Planned reservations: {{ network_appliances_dhcp_plan | default([]) }}"
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - (network_appliances_dhcp_plan | default([]) | length) > 0
+
+- name: Resolve the Kea subnet UUID for network_appliances_dhcp_subnet_cidr
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/kea/dhcpv4/search_subnet"
+    method: GET
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_kea_subnets
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - (network_appliances_dhcp_plan | default([]) | length) > 0
+
+- name: Extract the matching subnet UUID
+  ansible.builtin.set_fact:
+    network_appliances_kea_subnet_uuid: >-
+      {{
+        (network_appliances_kea_subnets.json.rows
+         | selectattr('subnet', 'equalto', network_appliances_dhcp_subnet_cidr)
+         | map(attribute='uuid') | list | first)
+        if (network_appliances_kea_subnets.json.rows | selectattr('subnet', 'equalto', network_appliances_dhcp_subnet_cidr) | list | length) > 0
+        else omit
+      }}
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - (network_appliances_dhcp_plan | default([]) | length) > 0
+    - network_appliances_kea_subnets is defined
+
+- name: Fail loudly if the target subnet doesn't exist on this router
+  ansible.builtin.fail:
+    msg: >-
+      No Kea DHCPv4 subnet matching {{ network_appliances_dhcp_subnet_cidr }}
+      was found via search_subnet. Refusing to guess — either this router
+      isn't on the Kea backend (see note at top of this file) or the subnet
+      CIDR default is wrong for this install. Not making any changes.
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - (network_appliances_dhcp_plan | default([]) | length) > 0
+    - network_appliances_kea_subnet_uuid is not defined
+
+- name: Fetch existing Kea reservations (for idempotency + conflict checks)
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/kea/dhcpv4/search_reservation"
+    method: GET
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_kea_existing
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - (network_appliances_dhcp_plan | default([]) | length) > 0
+    - network_appliances_kea_subnet_uuid is defined
+
+- name: Classify each planned reservation (create / already-correct / conflict)
+  ansible.builtin.set_fact:
+    network_appliances_dhcp_classified: "{{ network_appliances_dhcp_classified | default([]) + [classification] }}"
+  vars:
+    existing_by_mac: "{{ network_appliances_kea_existing.json.rows | selectattr('hw_address', 'equalto', item.mac) | list }}"
+    existing_by_ip: "{{ network_appliances_kea_existing.json.rows | selectattr('ip_address', 'equalto', item.ip) | list }}"
+    classification: >-
+      {{
+        item | combine({'action': 'unchanged'})
+        if (existing_by_mac | length) > 0 and existing_by_mac[0].ip_address == item.ip
+        else item | combine({'action': 'conflict', 'reason': 'MAC already reserved to a different IP: ' + existing_by_mac[0].ip_address})
+        if (existing_by_mac | length) > 0
+        else item | combine({'action': 'conflict', 'reason': 'Desired IP already reserved to a different MAC: ' + existing_by_ip[0].hw_address})
+        if (existing_by_ip | length) > 0
+        else item | combine({'action': 'create'})
+      }}
+  loop: "{{ network_appliances_dhcp_plan | default([]) }}"
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - network_appliances_kea_existing is defined
+
+- name: Report conflicts — these are NOT auto-resolved, flagging per task spec
+  ansible.builtin.debug:
+    msg: "CONFLICT for {{ item.host }} ({{ item.mac }} -> {{ item.ip }}): {{ item.reason }}"
+  loop: "{{ network_appliances_dhcp_classified | default([]) | selectattr('action', 'equalto', 'conflict') | list }}"
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Report already-correct reservations (no-op, idempotent)
+  ansible.builtin.debug:
+    msg: "OK (already reserved correctly): {{ item.host }} -> {{ item.ip }}"
+  loop: "{{ network_appliances_dhcp_classified | default([]) | selectattr('action', 'equalto', 'unchanged') | list }}"
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Plan-only — report what WOULD be created (network_appliances_dhcp_apply is false)
+  ansible.builtin.debug:
+    msg: >-
+      WOULD CREATE reservation for {{ item.host }}: {{ item.mac }} -> {{ item.ip }}.
+      Set network_appliances_dhcp_apply: true (after reviewing this plan) to apply.
+  loop: "{{ network_appliances_dhcp_classified | default([]) | selectattr('action', 'equalto', 'create') | list }}"
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - not network_appliances_dhcp_apply
+
+- name: Create missing reservations (only when network_appliances_dhcp_apply is true)
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/kea/dhcpv4/add_reservation"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      reservation:
+        subnet: "{{ network_appliances_kea_subnet_uuid }}"
+        ip_address: "{{ item.ip }}"
+        hw_address: "{{ item.mac }}"
+        hostname: "{{ item.host }}"
+        description: "{{ item.description }}"
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_dhcp_created
+  loop: "{{ network_appliances_dhcp_classified | default([]) | selectattr('action', 'equalto', 'create') | list }}"
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - network_appliances_dhcp_apply
+
+- name: Apply (reconfigure the Kea DHCP service) if anything was created
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/kea/service/reconfigure"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body: ""
+    validate_certs: false
+    status_code: [200]
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - network_appliances_dhcp_apply
+    - network_appliances_dhcp_created is defined
+    - network_appliances_dhcp_created.results | default([]) | selectattr('changed', 'defined') | list | length > 0
+
+- name: Summary
+  ansible.builtin.debug:
+    msg: >-
+      DHCP reservations — created: {{ network_appliances_dhcp_classified | default([]) | selectattr('action', 'equalto', 'create') | list | length }},
+      unchanged: {{ network_appliances_dhcp_classified | default([]) | selectattr('action', 'equalto', 'unchanged') | list | length }},
+      conflicts: {{ network_appliances_dhcp_classified | default([]) | selectattr('action', 'equalto', 'conflict') | list | length }}.
+      apply mode: {{ network_appliances_dhcp_apply }}.
+  when: inventory_hostname == 'vm100-opnsense'

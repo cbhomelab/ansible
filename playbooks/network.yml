@@ -1,5 +1,7 @@
 ---
-# SCAFFOLDED, NOT IMPLEMENTED — roles/network_appliances is a no-op stub.
+# roles/network_appliances: DHCP reservations implemented (not yet
+# executed for real — see roles/network_appliances/README.md
+# "Credentials"). UniFi config management still scaffolded.
 # Runs locally against the `appliances` group, same pattern as webui.yml.
 
 - name: Apply network appliance config management

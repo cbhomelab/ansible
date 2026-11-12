@@ -16,7 +16,12 @@ webui_identity_automation_accounts:
     api_base_url: "https://10.20.0.107"
     api_password: "{{ lookup('community.general.bitwarden', 'homelab-unifi-api', field='password') }}"
 
-# network_appliances placeholder (scaffolded, not implemented — see
-# roles/network_appliances/README.md). Reuses the webui_identity
-# credentials above once that role is implemented.
-# network_appliances_enabled: false
+# network_appliances: DHCP reservations (implemented, not yet executed
+# for real — see roles/network_appliances/README.md "Credentials").
+# Deliberately a SEPARATE Bitwarden item from homelab-opnsense-api above
+# — that one is readonly (status/syslog reads), DHCP reservation writes
+# need a distinct, more-privileged key. Neither this item nor an
+# OPNsense admin login exists in Bitwarden yet as of this pass.
+# network_appliances_opnsense:
+#   api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-dhcp-api', field='username') }}"
+#   api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-dhcp-api', field='password') }}"
