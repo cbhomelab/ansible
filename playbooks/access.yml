@@ -1,0 +1,9 @@
+---
+# OS-level access control: users, SSH keys, sudoers.
+# Excludes `appliances` group (OPNsense/UniFi) — see webui.yml.
+
+- name: Apply access control
+  hosts: proxmox_host:lxc_guests:vm_guests:omv:windows
+  become: true
+  roles:
+    - access_control

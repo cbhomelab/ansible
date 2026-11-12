@@ -1,0 +1,15 @@
+---
+# STUB — not yet implemented. Intended shape below.
+
+# - name: Install SSH authorized_keys
+#   ansible.posix.authorized_key:
+#     user: "{{ item.name }}"
+#     key: "{{ item.ssh_authorized_keys | join('\n') }}"
+#     exclusive: false
+#   loop: "{{ access_control_users }}"
+#   when: item.ssh_authorized_keys | default([]) | length > 0
+#   become: true
+
+- name: ssh_keys.yml placeholder (TODO)
+  ansible.builtin.debug:
+    msg: "access_control/ssh_keys.yml is a stub — implement SSH key management here."

@@ -1,0 +1,7 @@
+---
+access_control_users:
+  - name: christian
+    groups: [sudo]
+    shell: /bin/bash
+    ssh_authorized_keys:
+      - "{{ lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes') }}"

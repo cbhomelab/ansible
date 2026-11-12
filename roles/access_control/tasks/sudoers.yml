@@ -1,0 +1,15 @@
+---
+# STUB — not yet implemented. Intended shape below.
+
+# - name: Install sudoers.d drop-ins
+#   ansible.builtin.copy:
+#     dest: "/etc/sudoers.d/{{ item.name }}"
+#     content: "{{ item.rule }}\n"
+#     mode: "0440"
+#     validate: "visudo -cf %s"
+#   loop: "{{ access_control_sudoers }}"
+#   become: true
+
+- name: sudoers.yml placeholder (TODO)
+  ansible.builtin.debug:
+    msg: "access_control/sudoers.yml is a stub — implement sudoers management here."

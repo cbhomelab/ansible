@@ -1,0 +1,4 @@
+---
+# OpenMediaVault-specific vars.
+omv_api_user: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='username') }}"
+omv_api_pass: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='password') }}"

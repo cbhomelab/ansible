@@ -1,0 +1,14 @@
+---
+# Appliance API credentials (OPNsense, UniFi) — consumed by
+# roles/webui_identity, not by generic SSH-based roles.
+webui_identity_accounts:
+  - service: opnsense
+    username: automation
+    role: readonly
+    api_base_url: "https://10.20.0.1"
+    api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='notes') }}"
+  - service: unifi
+    username: automation
+    role: readonly
+    api_base_url: "https://10.20.0.107"
+    api_password: "{{ lookup('community.general.bitwarden', 'homelab-unifi-api', field='password') }}"

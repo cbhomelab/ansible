@@ -1,0 +1,11 @@
+---
+# Per-service web UI / API account provisioning (OPNsense, UniFi, OMV,
+# Proxmox API tokens, app admin accounts). Runs locally since these
+# targets are driven over HTTP APIs, not SSH.
+
+- name: Apply web UI / appliance identity provisioning
+  hosts: appliances
+  connection: local
+  gather_facts: false
+  roles:
+    - webui_identity

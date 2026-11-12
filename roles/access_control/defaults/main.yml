@@ -1,0 +1,18 @@
+---
+# Default (empty) access control model. Override per-group/per-host in
+# group_vars/host_vars. Each entry is intentionally a no-op until wired up.
+
+access_control_users: []
+# Example shape:
+# access_control_users:
+#   - name: christian
+#     groups: [sudo]
+#     shell: /bin/bash
+#     ssh_authorized_keys:
+#       - "{{ lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes') }}"
+
+access_control_sudoers: []
+# Example shape:
+# access_control_sudoers:
+#   - name: christian
+#     rule: "christian ALL=(ALL) NOPASSWD:ALL"

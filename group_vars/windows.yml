@@ -1,0 +1,4 @@
+---
+# Windows hosts — OpenSSH Server, PowerShell as default shell.
+ansible_shell_type: powershell
+ansible_user: christian

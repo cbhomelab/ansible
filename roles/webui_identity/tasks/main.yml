@@ -1,0 +1,16 @@
+---
+# webui_identity role — skeleton. Each service will likely need its own
+# include file since the account-creation API differs per appliance/app.
+
+- name: webui_identity placeholder (TODO)
+  ansible.builtin.debug:
+    msg: >
+      webui_identity is a stub — implement per-service account provisioning
+      (OPNsense, UniFi, OMV, Proxmox API tokens, app admin accounts) here,
+      one include file per service under tasks/.
+  when: webui_identity_accounts | length == 0
+
+- name: Provision per-service accounts
+  ansible.builtin.include_tasks: "{{ item.service }}.yml"
+  loop: "{{ webui_identity_accounts }}"
+  when: webui_identity_accounts | length > 0

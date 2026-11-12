@@ -1,0 +1,15 @@
+---
+# STUB — not yet implemented. Intended shape below.
+
+# - name: Ensure users exist
+#   ansible.builtin.user:
+#     name: "{{ item.name }}"
+#     groups: "{{ item.groups | default([]) }}"
+#     shell: "{{ item.shell | default('/bin/bash') }}"
+#     append: true
+#   loop: "{{ access_control_users }}"
+#   become: true
+
+- name: users.yml placeholder (TODO)
+  ansible.builtin.debug:
+    msg: "access_control/users.yml is a stub — implement user management here."

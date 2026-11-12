@@ -1,0 +1,10 @@
+---
+# Secrets for all hosts, sourced from Bitwarden via the community.general
+# bitwarden lookup plugin. Requires `bw` CLI logged in/unlocked on the
+# control node (or BW_SESSION exported) — see the Bitwarden integration
+# task for control-node setup. Until that's done, these are placeholder
+# item names: update them to match the real Bitwarden vault entries.
+
+pve_user: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='username') }}"
+pve_pass: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='password') }}"
+pve_host: "10.20.0.6"

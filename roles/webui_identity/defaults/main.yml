@@ -1,0 +1,13 @@
+---
+webui_identity_accounts: []
+# Example shape:
+# webui_identity_accounts:
+#   - service: opnsense
+#     username: automation
+#     role: readonly
+#     api_base_url: "https://10.20.0.1"
+#     api_key: "{{ lookup('community.general.bitwarden', 'opnsense-api', field='notes') }}"
+#   - service: unifi
+#     username: automation
+#     role: readonly
+#     api_base_url: "https://10.20.0.107"

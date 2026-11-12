@@ -1,0 +1,9 @@
+---
+# Top-level playbook — runs the full access/permissions domain.
+# Add other domain imports here as the repo grows beyond access control.
+
+- name: Import access control playbook
+  ansible.builtin.import_playbook: access.yml
+
+- name: Import webui identity playbook
+  ansible.builtin.import_playbook: webui.yml

@@ -1,0 +1,15 @@
+---
+# access_control role — skeleton. Fill in once the Bitwarden-backed
+# credential model (group_vars) is finalized.
+
+- name: Create users
+  ansible.builtin.include_tasks: users.yml
+  when: access_control_users | length > 0
+
+- name: Configure SSH authorized_keys
+  ansible.builtin.include_tasks: ssh_keys.yml
+  when: access_control_users | length > 0
+
+- name: Configure sudoers
+  ansible.builtin.include_tasks: sudoers.yml
+  when: access_control_sudoers | length > 0

@@ -1,0 +1,8 @@
+---
+galaxy_info:
+  author: cbhomelab
+  description: Per-service web UI / API account provisioning for homelab appliances and apps
+  license: MIT
+  min_ansible_version: "2.14"
+
+dependencies: []

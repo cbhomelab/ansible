@@ -1,3 +1,4 @@
-group_vars
 host_vars
 hosts.yaml
+*.retry
+.vault-pass
