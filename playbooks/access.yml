@@ -1,15 +1,33 @@
 ---
 # OS-level access control: users, SSH keys, sudoers.
-# Linux hosts only (proxmox_host, lxc_guests, vm_guests, omv) — the 3-tier
-# model (christian/hermes/sudoers) targets "every Linux host" per spec.
-# Excludes `appliances` (OPNsense/UniFi, see webui.yml) and `windows`:
-# Windows access is already handled by the pre-existing christian_windows
-# SSH-key pattern and doesn't have sudoers/sshd_config in the same sense —
-# bringing it under this role is tracked as separate follow-up work, not
-# silently assumed here.
+# Linux hosts only (proxmox_host, lxc_guests, vm_guests, omv), plus
+# lxc107-unifi (a real Debian LXC underneath its appliance-group identity
+# for webui_identity purposes — see host_vars/lxc107-unifi.yml).
+#
+# Explicitly excludes vm101-homeassistant even though it's nominally in
+# vm_guests: it's genuine Home Assistant OS (HAOS), an immutable
+# supervisor-managed appliance OS with no useradd/sudoers/sshd_config in
+# the normal Debian sense (confirmed 2026-11-12: qemu-guest-agent only
+# reports loopback, and the SSH & Terminal add-on's port 22222 is closed —
+# there is no generic root shell to manage this way). Treat HA identity the
+# same as OPNsense: out of scope for this role, handled via the HA web UI
+# / webui_identity's documented manual step instead.
+#
+# Excludes `appliances` as a whole group and `windows`: Windows access is
+# already handled by the pre-existing christian_windows SSH-key pattern and
+# doesn't have sudoers/sshd_config in the same sense — bringing it under
+# this role is tracked as separate follow-up work, not silently assumed
+# here. vm100-opnsense (BSD, API-managed only) is out of scope entirely —
+# see the webui_identity task for its OPNsense handling.
+#
+# Also excludes lxc103-hermesagent (this Hermes control node itself) —
+# the fleet-rollout task that drove this playbook's scope explicitly did
+# not list it among the targets ("handle with care"); self-modifying the
+# control node's own users/sudoers/sshd mid-rollout is deliberately kept
+# as separate, deliberate follow-up work rather than silently swept in.
 
 - name: Apply access control
-  hosts: proxmox_host:lxc_guests:vm_guests:omv
+  hosts: proxmox_host:lxc_guests:vm_guests:omv:lxc107-unifi:!vm101-homeassistant:!lxc103-hermesagent
   become: true
   roles:
     - access_control

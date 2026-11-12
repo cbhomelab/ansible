@@ -9,6 +9,17 @@ pve_user: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field
 pve_pass: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='password') }}"
 pve_host: "10.20.0.6"
 
+# Set true once christian's real SSH pubkey is supplied (user-provided, or
+# a Bitwarden "homelab-ssh-christian" item created) and the fleet rollout
+# has verified it. Until then, every access_control_users christian entry
+# below resolves to an EMPTY ssh_authorized_keys list rather than calling
+# the Bitwarden lookup — the lookup throws "item undefined" today, which
+# would hard-fail every host's play. Flipping this on is a prerequisite
+# for ever setting access_control_disable_password_auth: true anywhere,
+# since disabling password auth before christian's key is verified would
+# lock him out.
+access_control_christian_key_ready: false
+
 # webui_identity: unify WebUI/API logins to "christian" across every
 # service with its own user DB. Runs once from localhost
 # (playbooks/webui.yml), so these vars live here at the all.yml level

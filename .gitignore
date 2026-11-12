@@ -1,4 +1,7 @@
-host_vars
+# NOTE: previously "host_vars" was blanket-ignored here, which silently
+# excluded inventory/host_vars/ entirely once that directory started being
+# used for real (lxc107-unifi.yml, see playbooks/access.yml) — fixed
+# 2026-11-12 during the access_control fleet rollout (t_6fe4b6c0).
 hosts.yaml
 *.retry
 .vault-pass

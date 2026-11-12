@@ -1,0 +1,31 @@
+---
+# LXC107 (unifi) sits in the "appliances" inventory group for
+# webui_identity purposes (its UniFi controller app is API-managed), but
+# at the OS level it's a normal Debian LXC on the same "proxmox" trust
+# boundary as the other neptune guests. access_control needs a real SSH
+# connection here, so override the group default back to ssh, and supply
+# the same proxmox-boundary access vars used by group_vars/lxc_guests.yml
+# (duplicated here rather than moving this host out of `appliances`, to
+# avoid disturbing other playbooks/vars keyed off that group membership).
+
+ansible_connection: ssh
+
+access_control_users:
+  - name: christian
+    groups: [sudo]
+    shell: /bin/bash
+    ssh_authorized_keys: >-
+      {{ [lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes')]
+      if access_control_christian_key_ready else [] }}
+  - name: hermes
+    groups: [sudo]
+    shell: /bin/bash
+    # Same hermes_proxmox boundary key as group_vars/lxc_guests.yml.
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHQtpJWpshP+DhNGHcjkafWcgCUorc9T72wJ1AAD6UnN hermes@proxmox-boundary"
+
+access_control_sudoers:
+  - name: christian
+    rule: "christian ALL=(ALL) NOPASSWD:ALL"
+  - name: hermes
+    rule: "hermes ALL=(ALL) NOPASSWD:ALL"

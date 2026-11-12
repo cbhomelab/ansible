@@ -6,10 +6,9 @@ access_control_users:
   - name: christian
     groups: [sudo]
     shell: /bin/bash
-    ssh_authorized_keys:
-      # Pending the Bitwarden secrets backend (task t_eab3e60d, blocked on
-      # user action). Will fail with "item undefined" until that lands.
-      - "{{ lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes') }}"
+    ssh_authorized_keys: >-
+      {{ [lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes')]
+      if access_control_christian_key_ready else [] }}
   - name: hermes
     groups: [sudo]
     shell: /bin/bash
