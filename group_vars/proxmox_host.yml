@@ -1,2 +1,26 @@
 ---
 # proxmox_host-specific vars.
+# Same "proxmox" trust boundary as lxc_guests/vm_guests — shares the
+# hermes_proxmox keypair (one key for the hypervisor + everything it hosts).
+
+access_control_users:
+  - name: christian
+    groups: [sudo]
+    shell: /bin/bash
+    ssh_authorized_keys:
+      # Pending the Bitwarden secrets backend (task t_eab3e60d, blocked on
+      # user action). Will fail with "item undefined" until that lands.
+      - "{{ lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes') }}"
+  - name: hermes
+    groups: [sudo]
+    shell: /bin/bash
+    # TODO(bitwarden-migration): see group_vars/lxc_guests.yml note — same
+    # hermes_proxmox boundary key, local value until t_eab3e60d unblocks.
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHQtpJWpshP+DhNGHcjkafWcgCUorc9T72wJ1AAD6UnN hermes@proxmox-boundary"
+
+access_control_sudoers:
+  - name: christian
+    rule: "christian ALL=(ALL) NOPASSWD:ALL"
+  - name: hermes
+    rule: "hermes ALL=(ALL) NOPASSWD:ALL"

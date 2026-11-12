@@ -1,2 +1,6 @@
 ---
-# No handlers defined yet.
+- name: Restart sshd
+  ansible.builtin.service:
+    name: ssh
+    state: restarted
+  become: true

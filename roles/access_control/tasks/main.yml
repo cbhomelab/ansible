@@ -1,6 +1,7 @@
 ---
-# access_control role — skeleton. Fill in once the Bitwarden-backed
-# credential model (group_vars) is finalized.
+# access_control: enforces the 3-tier user model (christian, hermes, and
+# declared sudoers) across every Linux host. Each sub-task is independently
+# gated so a group with no relevant vars set is a true no-op.
 
 - name: Create users and groups
   ansible.builtin.include_tasks: users.yml
@@ -13,3 +14,7 @@
 - name: Configure sudoers
   ansible.builtin.include_tasks: sudoers.yml
   when: access_control_sudoers | length > 0
+
+- name: Harden sshd (disable password auth)
+  ansible.builtin.include_tasks: sshd_hardening.yml
+  when: access_control_disable_password_auth | bool

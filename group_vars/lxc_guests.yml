@@ -1,7 +1,29 @@
 ---
+# LXC guests on neptune — part of the "proxmox" trust boundary (hypervisor +
+# its LXC/VM guests share one hermes keypair since they're all reached
+# through the same network/trust zone).
+
 access_control_users:
   - name: christian
     groups: [sudo]
     shell: /bin/bash
     ssh_authorized_keys:
+      # Pending the Bitwarden secrets backend (task t_eab3e60d, blocked on
+      # user action). Will fail with "item undefined" until that lands.
       - "{{ lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes') }}"
+  - name: hermes
+    groups: [sudo]
+    shell: /bin/bash
+    # TODO(bitwarden-migration): once t_eab3e60d (Bitwarden backend) is
+    # unblocked, move this to a lookup like christian's above and delete the
+    # private key material from plain group_vars. For now this is a plain
+    # local value — private key lives ONLY on the Hermes host at
+    # ~/.ssh/hermes_proxmox, never committed anywhere.
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHQtpJWpshP+DhNGHcjkafWcgCUorc9T72wJ1AAD6UnN hermes@proxmox-boundary"
+
+access_control_sudoers:
+  - name: christian
+    rule: "christian ALL=(ALL) NOPASSWD:ALL"
+  - name: hermes
+    rule: "hermes ALL=(ALL) NOPASSWD:ALL"

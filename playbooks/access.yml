@@ -1,9 +1,15 @@
 ---
 # OS-level access control: users, SSH keys, sudoers.
-# Excludes `appliances` group (OPNsense/UniFi) — see webui.yml.
+# Linux hosts only (proxmox_host, lxc_guests, vm_guests, omv) — the 3-tier
+# model (christian/hermes/sudoers) targets "every Linux host" per spec.
+# Excludes `appliances` (OPNsense/UniFi, see webui.yml) and `windows`:
+# Windows access is already handled by the pre-existing christian_windows
+# SSH-key pattern and doesn't have sudoers/sshd_config in the same sense —
+# bringing it under this role is tracked as separate follow-up work, not
+# silently assumed here.
 
 - name: Apply access control
-  hosts: proxmox_host:lxc_guests:vm_guests:omv:windows
+  hosts: proxmox_host:lxc_guests:vm_guests:omv
   become: true
   roles:
     - access_control

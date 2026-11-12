@@ -23,3 +23,12 @@ access_control_sudoers: []
 # access_control_sudoers:
 #   - name: christian
 #     rule: "christian ALL=(ALL) NOPASSWD:ALL"
+# Drop-in filename is always "/etc/sudoers.d/<name>-nopasswd" regardless of
+# the exact rule text, so scoping a rule down later doesn't require a
+# matching filename change.
+
+# SSH password-auth hardening is OFF by default. Flip to true per-group (or
+# per-host) ONLY after confirming key-based login works for every account
+# on that host — this is deliberately not a blanket "all" default so a
+# typo'd/missing key can't lock a host out.
+access_control_disable_password_auth: false

@@ -1,11 +1,19 @@
 ---
-# Install sudoers.d drop-ins for declared rules.
+# Install sudoers.d drop-ins for declared rules. Filename convention is
+# fixed as "<name>-nopasswd" (per the access_control role contract) so that
+# re-running after a rule's text changes (e.g. scoping NOPASSWD:ALL down to
+# specific commands) updates the same file in place instead of leaving an
+# orphaned drop-in behind under the old name.
 
 - name: Install sudoers.d drop-ins
   ansible.builtin.copy:
-    dest: "/etc/sudoers.d/{{ item.name }}"
+    dest: "/etc/sudoers.d/{{ item.name }}-nopasswd"
     content: "{{ item.rule }}\n"
+    owner: root
+    group: root
     mode: "0440"
     validate: "visudo -cf %s"
   loop: "{{ access_control_sudoers }}"
+  loop_control:
+    label: "{{ item.name }}"
   become: true

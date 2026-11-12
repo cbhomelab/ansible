@@ -2,3 +2,28 @@
 # OpenMediaVault-specific vars.
 omv_api_user: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='username') }}"
 omv_api_pass: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='password') }}"
+
+# "saturn" trust boundary — its own dedicated hermes keypair, separate from
+# the proxmox-guest boundary.
+access_control_users:
+  - name: christian
+    groups: [sudo]
+    shell: /bin/bash
+    ssh_authorized_keys:
+      # Pending the Bitwarden secrets backend (task t_eab3e60d, blocked on
+      # user action). Will fail with "item undefined" until that lands.
+      - "{{ lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes') }}"
+  - name: hermes
+    groups: [sudo]
+    shell: /bin/bash
+    # TODO(bitwarden-migration): once t_eab3e60d (Bitwarden backend) is
+    # unblocked, move this to a lookup and drop the plain value here.
+    # Private key lives ONLY on the Hermes host at ~/.ssh/hermes_saturn.
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKER3dq4Vbt22t1aHUEXzDdZJ/yTTNX3PIxP5Ua72G3z hermes@saturn-boundary"
+
+access_control_sudoers:
+  - name: christian
+    rule: "christian ALL=(ALL) NOPASSWD:ALL"
+  - name: hermes
+    rule: "hermes ALL=(ALL) NOPASSWD:ALL"
