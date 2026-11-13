@@ -1,0 +1,14 @@
+---
+# Promtail's existing syslog scrape listener — the same one OPNsense and
+# UniFi already forward their router/controller syslog into (see the
+# 90-logging compose project / promtail-config.yaml on saturn).
+audit_log_shipping_loki_syslog_host: "10.20.0.2"
+audit_log_shipping_loki_syslog_port: 1514
+
+audit_log_shipping_rsyslog_conf_path: /etc/rsyslog.d/60-audit-log-forward.conf
+
+# Matches the pre-existing fleet-wide forwarding convention found already
+# in place on 6/7 target hosts when this role was first run (see
+# tasks/main.yml comment) — one shared "forward everything" drop-in per
+# host, not a narrower auth-only one.
+audit_log_shipping_rsyslog_forward_all_path: /etc/rsyslog.d/90-loki-forward.conf

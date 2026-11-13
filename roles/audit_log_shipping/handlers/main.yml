@@ -1,0 +1,9 @@
+---
+# A full restart (new PID), not a reload/HUP — per the homelab-infrastructure
+# skill's logging-monitoring reference, rsyslog does not reliably pick up a
+# newly-added action() on a HUP/reload in practice.
+- name: Restart rsyslog
+  ansible.builtin.systemd:
+    name: rsyslog
+    state: restarted
+  become: true

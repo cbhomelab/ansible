@@ -1,0 +1,29 @@
+---
+# Ships sshd/sudo audit logs into the central Loki/Promtail stack.
+# See roles/audit_log_shipping/README.md for the mechanism and full scope
+# rationale. Mirrors access_control's host-exclusion pattern exactly
+# (same "handle with care"/HAOS/appliance exclusions), since it's the
+# same host set that now has hermes key+sudo access from the
+# access_control fleet rollout (t_6fe4b6c0).
+#
+# Two plays, one per trust-boundary keypair (same boundaries
+# access_control established) — set directly here rather than in
+# group_vars, to avoid touching those shared/hot files.
+
+- name: Ship sshd/sudo audit logs — proxmox trust boundary
+  hosts: proxmox_host:lxc_guests:lxc107-unifi:!vm101-homeassistant:!lxc103-hermesagent
+  become: true
+  vars:
+    ansible_user: hermes
+    ansible_ssh_private_key_file: "~/.ssh/hermes_proxmox"
+  roles:
+    - audit_log_shipping
+
+- name: Ship sshd/sudo audit logs — saturn trust boundary
+  hosts: omv
+  become: true
+  vars:
+    ansible_user: hermes
+    ansible_ssh_private_key_file: "~/.ssh/hermes_saturn"
+  roles:
+    - audit_log_shipping

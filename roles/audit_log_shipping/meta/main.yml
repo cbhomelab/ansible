@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  author: cbhomelab
+  description: >-
+    Forwards sshd/sudo (auth,authpriv) rsyslog facilities to the central
+    Loki/Promtail syslog listener for fleet-wide privilege-use auditing.
+  license: MIT
+  min_ansible_version: "2.14"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
+dependencies: []

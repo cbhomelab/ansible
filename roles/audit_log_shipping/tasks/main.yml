@@ -1,0 +1,36 @@
+---
+# DISCOVERY (2026-11-12, this task): every in-scope host except saturn
+# already had a fleet-wide "forward everything" rsyslog drop-in
+# (/etc/rsyslog.d/90-loki-forward.conf, *.* -> the same Promtail syslog
+# listener), predating this task and undocumented anywhere in kanban/the
+# skill. It already ships sshd+sudo lines (confirmed: `app="sshd"` and
+# `app="sudo"` were already present in Loki's label values before this
+# role ran). A narrower auth-only forwarding rule would just double-ship
+# those same lines. So this role:
+#   1. Removes any leftover narrower 60-audit-log-forward.conf from an
+#      earlier iteration of this same role (avoids duplicate ingestion).
+#   2. Ensures the SAME fleet-wide 90-loki-forward.conf exists everywhere
+#      in scope, closing the one real gap: saturn didn't have it.
+# This keeps one single forwarding mechanism/file per host rather than
+# two overlapping ones, and is idempotent (no-op) on the 6 hosts that
+# already had 90-loki-forward.conf before this role ever ran.
+
+- name: Remove superseded narrow auth-only forwarding rule (if present)
+  ansible.builtin.file:
+    path: "{{ audit_log_shipping_rsyslog_conf_path }}"
+    state: absent
+  become: true
+  notify: Restart rsyslog
+
+- name: Deploy fleet-wide rsyslog -> Loki forwarding rule (ensures sshd/sudo coverage)
+  ansible.builtin.copy:
+    dest: "{{ audit_log_shipping_rsyslog_forward_all_path }}"
+    content: |
+      # Forward all local syslog/journald messages to central Loki (via Promtail syslog receiver on saturn)
+      # omfwd is a core rsyslog module, already loaded by rsyslog.conf - no module(load=...) needed/available here.
+      *.* action(type="omfwd" target="{{ audit_log_shipping_loki_syslog_host }}" port="{{ audit_log_shipping_loki_syslog_port }}" protocol="tcp" Template="RSYSLOG_SyslogProtocol23Format" action.resumeRetryCount="-1" queue.type="linkedList" queue.filename="loki_fwd")
+    owner: root
+    group: root
+    mode: "0644"
+  become: true
+  notify: Restart rsyslog
