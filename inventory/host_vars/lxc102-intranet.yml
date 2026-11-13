@@ -1,0 +1,4 @@
+---
+# Password auth disabled once christian's + hermes' key logins were
+# verified end-to-end on this host (t_94d8a27c, 2026-11-12).
+access_control_disable_password_auth: true
