@@ -49,3 +49,18 @@ else. **Executing it for real** against live services does:
 
 Both are tracked as separate upstream tasks; this role should not be run
 for real until both report done.
+
+## Execution status (live, 2026-11-13 — t_5a11ba20)
+
+| service          | status | retired vs demoted default admin |
+|-------------------|--------|-----------------------------------|
+| `proxmox`         | **done** - `christian@pam` has `Administrator` ACL (required a one-time `access/users` user-record creation first, see tasks/proxmox.yml note) | `root@pam` **cannot be retired or restricted** - Proxmox grants it implicit full access regardless of ACLs, by design. Documented as "stop using day-to-day", not "retired". |
+| `omv`             | **done** - christian's OS account already carried `openmediavault-admin` from `access_control`'s useradd; confirmed via `UserMgmt.getUserList` | no separate default/generic OMV admin account exists (OMV auth is OS-user-based) - nothing to retire |
+| `npm`             | **done** - christian's admin account pre-existed since 2024-08-14; confirmed via `/api/users` | no leftover default admin account found - already clean |
+| `grafana`         | **done** - christian created, granted Grafana Admin, login verified via API | built-in `admin` account **demoted** (isGrafanaAdmin set false) - NOT deleted, per the task's confirm-before-delete rule |
+| `home_assistant`  | **manual step pending** - no REST user-create API; needs a human to create christian via Settings > People > Users | not touched |
+| `unifi`           | **blocked** - hermes's automation account lacks super-admin (invite-admin 400s `api.err.NoPermission`); the Bitwarden "Unifi Controller" christian credential is stale (`api.err.Invalid`). Entry temporarily commented out of `webui_identity_accounts`. Needs either: grant hermes super-admin, or refresh christian's stored password. | not touched |
+| `opnsense`        | **deferred** - this install (24.1.5_3) predates the `Core\Api\UserController` the role targets; local user CRUD only exists via the legacy PHP form, not the API. Re-enable once OPNsense is upgraded. `hermes` config-management already goes through its API key, independent of this. | interactive `hermes` WebUI login kept alive intentionally per user decision (retire once OPNsense is upgraded) |
+| `pihole`          | **done** - single shared password confirmed; it was NOT actually in Bitwarden despite the task's assumption, so it was rotated live and the new value stored as `homelab-pihole-admin` | n/a - no per-user model |
+
+**Still open for a follow-up task**: Home Assistant manual account creation, UniFi credential/permission fix, OPNsense re-enablement once upgraded.
