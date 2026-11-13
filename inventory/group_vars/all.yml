@@ -127,7 +127,7 @@ webui_identity_accounts:
 # Next-phase domain placeholders (scaffolded, not implemented — see each
 # role's README.md). Left commented so they don't shadow role defaults
 # until real values are decided.
-# system_baseline_autoupdate_enabled: false
+# system_baseline: implemented; opt-in via system_baseline_enabled (see roles/system_baseline/README.md)
 # monitoring_agents_promtail_enabled: false
 # monitoring_agents_node_exporter_enabled: false
 # backup_enabled: false

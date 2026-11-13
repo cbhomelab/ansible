@@ -35,3 +35,10 @@ access_control_sudoers:
 # roles/compose_stacks/README.md). Real project list to be enumerated
 # from saturn:/opt/docker-compose/ when implemented.
 # compose_stacks_projects: []
+
+# system_baseline: opt-in; OMV manages its own updates, so only
+# packages + timezone-name-compatible bits, no unattended-upgrades/journald.
+system_baseline_enabled: true
+system_baseline_unattended_upgrades: false
+system_baseline_journald_enabled: false
+system_baseline_timezone_enabled: false

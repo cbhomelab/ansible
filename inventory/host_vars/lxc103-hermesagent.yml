@@ -1,0 +1,3 @@
+
+# system_baseline: this is the Hermes host itself; excluded from the baseline.
+system_baseline_enabled: false

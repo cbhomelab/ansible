@@ -1,15 +1,88 @@
 ---
-# SCAFFOLDED, NOT IMPLEMENTED.
-# This role is a placeholder for fleet-wide OS baseline management
-# (patching, base packages, timezone/locale, unattended-upgrades).
-# See README.md for intended scope, relationship to roles/common, and
-# open questions that need a decision before real tasks are written here.
-#
-# This stub is deliberately check-mode-safe and makes zero changes.
+# system_baseline: fleet OS hygiene for Debian-family hosts.
+# Opt-in per host via system_baseline_enabled. NEVER applied to proxmox_host
+# (neptune) or appliances/HAOS: they are not targeted by playbooks/baseline.yml.
+# Nothing here reboots a host or upgrades packages directly.
 
-- name: system_baseline — not yet implemented (no-op)
+- name: system_baseline — skip assertion
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] == 'Debian'
+      - inventory_hostname not in groups['proxmox_host'] | default([])
+    fail_msg: "system_baseline refuses to run on non-Debian or Proxmox hosts"
+  when: system_baseline_enabled
+
+# A broken third-party repo (expired key, renamed release) must not fail the
+# baseline: tolerate cache-refresh errors; the install below still fails
+# loudly if a package genuinely cannot be fetched.
+- name: Refresh apt cache (tolerant of broken third-party repos)
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  register: system_baseline_apt_update
+  failed_when: false
+  changed_when: false
+  when: system_baseline_enabled and (system_baseline_packages_enabled or system_baseline_unattended_upgrades)
+  tags: [packages, unattended_upgrades]
+
+- name: Warn when apt cache refresh had errors
   ansible.builtin.debug:
-    msg: >-
-      roles/system_baseline is scaffolded but not implemented.
-      No OS baseline changes were made to {{ inventory_hostname }}.
-      See roles/system_baseline/README.md.
+    msg: "apt update reported errors on {{ inventory_hostname }} (likely a third-party repo): {{ (system_baseline_apt_update.msg | default(''))[:300] }}"
+  when: system_baseline_enabled and (system_baseline_apt_update.failed | default(false))
+  tags: [packages, unattended_upgrades]
+
+- name: Base packages
+  ansible.builtin.apt:
+    name: "{{ system_baseline_base_packages }}"
+    state: present
+  when: system_baseline_enabled and system_baseline_packages_enabled
+  tags: [packages]
+
+- name: Timezone
+  community.general.timezone:
+    name: "{{ system_baseline_timezone }}"
+  when: system_baseline_enabled and system_baseline_timezone_enabled
+  tags: [timezone]
+
+- name: journald size cap
+  when: system_baseline_enabled and system_baseline_journald_enabled
+  tags: [journald]
+  block:
+    - name: journald drop-in directory
+      ansible.builtin.file:
+        path: /etc/systemd/journald.conf.d
+        state: directory
+        mode: "0755"
+    - name: journald drop-in
+      ansible.builtin.template:
+        src: journald.conf.j2
+        dest: /etc/systemd/journald.conf.d/50-homelab.conf
+        mode: "0644"
+      notify: Restart journald
+
+- name: Security-only unattended-upgrades
+  when: system_baseline_enabled and system_baseline_unattended_upgrades
+  tags: [unattended_upgrades]
+  block:
+    - name: Install unattended-upgrades
+      ansible.builtin.apt:
+        name: unattended-upgrades
+        state: present
+    - name: Periodic upgrade schedule
+      ansible.builtin.template:
+        src: 20auto-upgrades.j2
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        mode: "0644"
+    - name: Security-only origin policy
+      ansible.builtin.template:
+        src: 52-homelab-unattended-upgrades.conf.j2
+        dest: /etc/apt/apt.conf.d/52homelab-unattended-upgrades
+        mode: "0644"
+      register: system_baseline_uu_conf
+    - name: Validate effective unattended-upgrades config (dry run)
+      ansible.builtin.command: unattended-upgrade --dry-run --debug
+      register: system_baseline_uu_dry
+      changed_when: false
+      failed_when: system_baseline_uu_dry.rc != 0
+      check_mode: false
+      when: system_baseline_uu_conf is changed and not ansible_check_mode

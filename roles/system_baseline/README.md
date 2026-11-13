@@ -1,56 +1,29 @@
 # system_baseline
 
-**Status: scaffolded, not implemented.**
+**Status: implemented** (Nov 2026). Opt-in OS hygiene for Debian-family hosts.
 
-Fleet-wide OS baseline for homelab Linux hosts: patching/updates, base
-package set, timezone/locale, and unattended-upgrades (or the Debian
-equivalent). Intended scope: `proxmox_host`, `lxc_guests`, `vm_guests`,
-`omv` — the same Linux-host groups `access_control` targets.
+## What it does (per host, each part toggleable)
+- **Base packages** (`system_baseline_base_packages`): curl, vim, htop, rsync, tmux, jq, ca-certificates.
+- **Timezone** `America/Los_Angeles` (`system_baseline_timezone`).
+- **journald cap** `SystemMaxUse=200M` via drop-in `/etc/systemd/journald.conf.d/50-homelab.conf`.
+- **Security-only unattended-upgrades**: only `origin=Debian,codename=<release>-security,label=Debian-Security`.
+  Third-party repos (tailscale, openresty, corretto, UniFi, mongodb, ...) never match, so they are never auto-upgraded.
+  Debian point updates (`-updates`) are NOT applied automatically. `#clear` directives replace the distro default origins.
+  **No automatic reboots**; `/var/run/reboot-required` is left for a human.
 
-## Relationship to `roles/common`
+The role never runs `apt upgrade` and never reboots anything.
 
-`roles/common` already does generic host-prep (Debian package install via
-`os_pkg`, hostfile entries, directory creation, NFS mounts, zsh setup).
-This role is NOT meant to duplicate that. Once implemented, the intent is:
+## Scope / opt-in
+`system_baseline_enabled` defaults to `false`. Enabled in `group_vars/lxc_guests.yml`, `group_vars/omv.yml`
+and `host_vars/lxc107-unifi.yml` (UniFi is in `appliances` but is a normal Debian LXC; the playbook lists it explicitly).
+- `playbooks/baseline.yml` targets `lxc_guests:omv:lxc107-unifi`.
+- **Excluded by design:** neptune/`proxmox_host` (user decision, role asserts and refuses), HAOS, OPNsense,
+  Windows, and lxc103 (Hermes itself, `system_baseline_enabled: false` in its host_vars).
+- **saturn (OMV):** packages only. OMV manages its own updates, so unattended-upgrades, journald and timezone are off (its timezone is already `US/Pacific`).
 
-- `system_baseline` absorbs/extends the **patching and OS-hygiene** half of
-  host-prep (apt upgrade policy, unattended-upgrades, timezone/locale,
-  reboot-after-kernel-update handling) — concerns `common` doesn't currently
-  cover at all.
-- `common`'s existing package-install/dirs/NFS/hostfile/zsh tasks stay where
-  they are; this role does not touch them.
-- A future cleanup pass may rename/fold `common`'s `debian.yaml` package
-  install into `system_baseline` if that turns out to be a cleaner home for
-  "base package set" too — deferred until this role is actually implemented
-  (don't guess the merge now).
-
-## Intended scope (not yet implemented)
-
-- OS patching: `apt upgrade`/`apt full-upgrade` on a schedule or on-demand,
-  with a `system_baseline_autoupdate_enabled` style toggle per host/group.
-- `unattended-upgrades` package install + config (security-only vs. all
-  updates, auto-reboot window) on Debian-family hosts.
-- Base package set distinct from per-role packages (e.g. `curl`, `vim`,
-  `htop`, `ca-certificates`) — currently every host gets whatever `os_pkg`
-  happens to be set to in `common`; this role's job is to define a sane
-  fleet-wide floor that doesn't depend on a per-host var being set correctly.
-- Timezone (`community.general.timezone` or `timedatectl`) and locale
-  consistency across the fleet.
-
-## Open questions
-
-- Should Proxmox host itself (`proxmox_host` group) auto-update, or does
-  that need to stay manual/scheduled-maintenance-window only given it hosts
-  every other guest? Needs a user decision before `system_baseline_autoupdate_enabled`
-  defaults to `true` anywhere.
-- Does OMV (saturn) manage its own updates via its web UI already, making
-  this role redundant/conflicting there? Needs verification before enabling.
-- HAOS (vm101-homeassistant) is an immutable appliance OS — this role
-  should explicitly exclude it (no generic apt/shell access), same caveat
-  as noted elsewhere in this repo for appliance-style hosts.
-
-## Variables
-
-See `defaults/main.yml`. All default to a no-op/disabled state — enabling
-real patching behavior per host/group is a deliberate future change, not
-something this scaffold should turn on by default.
+## Notes
+- The apt cache refresh tolerates errors (a broken third-party repo must not fail the run). On lxc107 `apt update`
+  currently errors: the UniFi repo changed release name (unifi-8.0 -> unifi-10.5, needs explicit acceptance via
+  `apt-get update --allow-releaseinfo-change`) and the old MongoDB 3.6 repo key is expired.
+- Test: `ansible-playbook -i inventory/hosts.yml playbooks/baseline.yml --limit <host> --check --diff`, then a second real run must report `changed=0`.
+- Non-security updates and the Java/UniFi/Minecraft restarts after library updates remain manual.

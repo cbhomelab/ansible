@@ -1,9 +1,10 @@
 ---
-# SCAFFOLDED, NOT IMPLEMENTED — roles/system_baseline is a no-op stub.
-# Targets the same Linux-host groups as access.yml.
-
+# system_baseline: opt-in per host (system_baseline_enabled in inventory).
+# Deliberately excludes proxmox_host (neptune), vm_guests (HAOS) and the
+# OPNsense appliance. lxc107-unifi lives in `appliances` but is a normal
+# Debian LXC, so it is listed explicitly.
 - name: Apply system baseline
-  hosts: proxmox_host:lxc_guests:vm_guests:omv
+  hosts: lxc_guests:omv:lxc107-unifi
   become: true
   roles:
     - system_baseline

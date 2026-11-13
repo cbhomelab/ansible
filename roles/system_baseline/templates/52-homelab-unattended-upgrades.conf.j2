@@ -1,0 +1,11 @@
+// Managed by Ansible (roles/system_baseline). Do not edit by hand.
+// Replace distro default origins: Debian SECURITY archive only.
+// Point releases, -updates, backports and all third-party repos are excluded.
+#clear Unattended-Upgrade::Origins-Pattern;
+#clear Unattended-Upgrade::Allowed-Origins;
+Unattended-Upgrade::Origins-Pattern {
+        "origin=Debian,codename=${distro_codename}-security,label=Debian-Security";
+};
+Unattended-Upgrade::Automatic-Reboot "{{ 'true' if system_baseline_uu_automatic_reboot else 'false' }}";
+Unattended-Upgrade::Remove-Unused-Dependencies "{{ 'true' if system_baseline_uu_remove_unused else 'false' }}";
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "false";

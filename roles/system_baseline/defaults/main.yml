@@ -1,16 +1,31 @@
 ---
-# Scaffolded defaults — intentionally no-op until system_baseline is
-# implemented. See README.md for intended scope and open questions.
+# system_baseline: master switch. Default OFF so a host only gets this role's
+# changes when a group_vars/host_vars file opts it in (see inventory).
+system_baseline_enabled: false
 
-system_baseline_autoupdate_enabled: false
-system_baseline_unattended_upgrades: false
-system_baseline_base_packages: []
-# Example shape (not applied yet):
-# system_baseline_base_packages:
-#   - curl
-#   - vim
-#   - htop
-#   - ca-certificates
+# Components (each independently toggleable per host/group)
+system_baseline_packages_enabled: true
+system_baseline_timezone_enabled: true
+system_baseline_journald_enabled: true
+system_baseline_unattended_upgrades: true
+
+system_baseline_base_packages:
+  - curl
+  - vim
+  - htop
+  - rsync
+  - tmux
+  - jq
+  - ca-certificates
 
 system_baseline_timezone: "America/Los_Angeles"
-system_baseline_locale: "en_US.UTF-8"
+
+# journald size cap
+system_baseline_journald_max_use: "200M"
+
+# unattended-upgrades: SECURITY updates from Debian's own security archive
+# only. Third-party repos (tailscale, openresty, corretto, UniFi, mongodb,
+# OMV, ...) are never matched, so they are never auto-upgraded.
+# Reboots are never automatic; a reboot-required flag is left for a human.
+system_baseline_uu_automatic_reboot: false
+system_baseline_uu_remove_unused: false

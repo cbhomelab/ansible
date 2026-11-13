@@ -32,3 +32,6 @@ access_control_sudoers:
     rule: "christian ALL=(ALL) NOPASSWD:ALL"
   - name: hermes
     rule: "hermes ALL=(ALL) NOPASSWD:ALL"
+
+# system_baseline: opt-in (see roles/system_baseline)
+system_baseline_enabled: true
