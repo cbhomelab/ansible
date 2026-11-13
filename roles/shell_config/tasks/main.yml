@@ -1,0 +1,17 @@
+---
+# shell_config: deploys cbhomelab/dotfiles via chezmoi for christian + hermes
+# (Linux) or christian only (Windows - hermes has no separate Windows OS
+# account, just a distinct SSH key into christian's, per t_6fe4b6c0).
+#
+# Branches on inventory group membership (group_names), not gathered facts:
+# the Windows host is reached over plain SSH with ansible_shell_type:
+# powershell, and relying on the `setup` module's Win32NT detection there
+# is flakier than just checking the group.
+
+- name: Apply Linux shell config
+  ansible.builtin.include_tasks: linux.yml
+  when: "'windows' not in group_names"
+
+- name: Apply Windows shell config
+  ansible.builtin.include_tasks: windows.yml
+  when: "'windows' in group_names"

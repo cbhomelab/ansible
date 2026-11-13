@@ -1,0 +1,36 @@
+---
+# Shared across OSes.
+shell_config_repo_url: "https://github.com/cbhomelab/dotfiles.git"
+
+# chezmoi install location (Linux). Installed once as root, shared by every
+# account on the host.
+shell_config_chezmoi_bin: /usr/local/bin/chezmoi
+shell_config_chezmoi_version: "2.74.1"
+
+# Per-account chezmoi `profile` + any extra --promptString values. Every
+# Linux host in scope gets BOTH accounts; Windows gets christian only (no
+# separate hermes OS account on Windows — see roles/shell_config/README.md).
+#
+# Decision (2026-11-12, user): hermes gets the PARED-DOWN automation
+# profile baked into cbhomelab/dotfiles (bash+Starship only, no git
+# identity/porcelain aliases) rather than an identical copy of christian's
+# dotfiles. See that repo's README "Profiles: christian vs hermes".
+shell_config_linux_accounts:
+  - user: christian
+    profile: christian
+    extra_prompts:
+      name: "Christian Bishop"
+      email: "christian@cbho.me"
+    # Needs zsh installed for the full dotfiles experience (Oh My Zsh).
+    ensure_zsh: true
+  - user: hermes
+    profile: hermes
+    extra_prompts: {}
+    ensure_zsh: false
+
+shell_config_windows_accounts:
+  - user: christian
+    profile: christian
+    extra_prompts:
+      name: "Christian Bishop"
+      email: "christian@cbho.me"

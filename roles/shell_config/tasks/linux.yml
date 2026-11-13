@@ -1,0 +1,95 @@
+---
+# Install chezmoi once (root), then run `chezmoi init --apply` per-account.
+
+- name: Ensure git and curl are present (chezmoi + dotfiles bootstrap need them)
+  become: true
+  ansible.builtin.package:
+    name: ["git", "curl", "ca-certificates"]
+    state: present
+  register: shell_config_pkg_result
+  until: shell_config_pkg_result is succeeded
+  retries: 2
+
+- name: Ensure zsh is present for accounts that want it
+  become: true
+  ansible.builtin.package:
+    name: zsh
+    state: present
+  when: shell_config_linux_accounts | selectattr('ensure_zsh', 'defined') | selectattr('ensure_zsh') | list | length > 0
+
+- name: Check whether chezmoi is already installed
+  ansible.builtin.stat:
+    path: "{{ shell_config_chezmoi_bin }}"
+  register: shell_config_chezmoi_stat
+
+- name: Download chezmoi release tarball
+  become: true
+  ansible.builtin.get_url:
+    url: "https://github.com/twpayne/chezmoi/releases/download/v{{ shell_config_chezmoi_version }}/chezmoi_{{ shell_config_chezmoi_version }}_linux_{{ 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}.tar.gz"
+    dest: "/tmp/chezmoi_{{ shell_config_chezmoi_version }}.tar.gz"
+    mode: "0644"
+  when: not shell_config_chezmoi_stat.stat.exists
+
+- name: Extract chezmoi binary to /usr/local/bin
+  become: true
+  ansible.builtin.unarchive:
+    src: "/tmp/chezmoi_{{ shell_config_chezmoi_version }}.tar.gz"
+    dest: /usr/local/bin
+    remote_src: true
+    include: ["chezmoi"]
+    mode: "0755"
+  when: not shell_config_chezmoi_stat.stat.exists
+
+- name: Verify chezmoi is now on PATH
+  ansible.builtin.command: "{{ shell_config_chezmoi_bin }} --version"
+  changed_when: false
+  register: shell_config_chezmoi_version_out
+
+- name: Check whether a chezmoi source checkout already exists per account
+  ansible.builtin.stat:
+    path: "{{ ('/home/' + item.user if item.user != 'root' else '/root') }}/.local/share/chezmoi/.git"
+  become: true
+  become_user: "{{ item.user }}"
+  register: shell_config_source_stat
+  loop: "{{ shell_config_linux_accounts }}"
+  loop_control:
+    label: "{{ item.user }}"
+
+# chezmoi's own `init --apply` does NOT reliably pull the latest commit
+# from an already-cloned source dir on every run (observed: HEAD stayed
+# pinned to the commit from the first-ever clone on a host, silently
+# serving stale/pre-fix dotfiles templates on every later rerun). Force a
+# hard reset to the remote's default branch tip first so reruns always
+# pick up new commits - cheap (it's a small repo) and safe (chezmoi
+# source checkouts are never hand-edited in place on target hosts).
+- name: Force chezmoi source checkout to latest origin/HEAD (existing checkouts only)
+  become: true
+  become_user: "{{ item.item.user }}"
+  ansible.builtin.shell:
+    cmd: >-
+      git fetch origin &&
+      git reset --hard origin/HEAD
+  args:
+    chdir: "{{ ('/home/' + item.item.user if item.item.user != 'root' else '/root') }}/.local/share/chezmoi"
+  when: item.stat.exists
+  register: shell_config_source_refresh
+  changed_when: "'HEAD is now at' in shell_config_source_refresh.stdout"
+  loop: "{{ shell_config_source_stat.results }}"
+  loop_control:
+    label: "{{ item.item.user }}"
+
+- name: Run chezmoi init --apply for each account
+  become: true
+  become_user: "{{ item.user }}"
+  ansible.builtin.command:
+    cmd: >-
+      {{ shell_config_chezmoi_bin }} init --apply
+      --promptString="profile={{ item.profile }}{% for k, v in (item.extra_prompts | default({})).items() %},{{ k }}={{ v }}{% endfor %}"
+      {{ shell_config_repo_url }}
+  environment:
+    HOME: "{{ '/home/' + item.user if item.user != 'root' else '/root' }}"
+  register: shell_config_apply_result
+  changed_when: "'diff' in shell_config_apply_result.stdout or shell_config_apply_result.stdout != ''"
+  loop: "{{ shell_config_linux_accounts }}"
+  loop_control:
+    label: "{{ item.user }} (profile={{ item.profile }})"

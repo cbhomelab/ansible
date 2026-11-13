@@ -2,3 +2,7 @@
 # Windows hosts — OpenSSH Server, PowerShell as default shell.
 ansible_shell_type: powershell
 ansible_user: christian
+# Must be set explicitly: Ansible connects via ansible_host (the raw IP),
+# so it never consults the hermes host's ~/.ssh/config "windows-christian"
+# alias (that's only matched when ssh is invoked with that literal name).
+ansible_ssh_private_key_file: ~/.ssh/christian_windows

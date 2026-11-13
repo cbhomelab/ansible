@@ -1,0 +1,46 @@
+---
+# Windows (CB-GAMING): christian only - no separate hermes Windows OS
+# account exists (hermes reaches this host over SSH using its own key into
+# christian's account, see t_6fe4b6c0). Runs over the existing OpenSSH +
+# ansible_shell_type: powershell connection - no winrm/ansible.windows
+# collection dependency.
+#
+# Uses `raw` (not `command`/`shell`) deliberately: those modules need a
+# Python interpreter on the target to deserialize JSON results, and
+# CB-GAMING has none. `raw` just runs the command string directly over
+# SSH and returns rc/stdout/stderr with no interpreter dependency.
+
+- name: Check whether chezmoi.exe is already installed
+  ansible.builtin.raw: >-
+    powershell.exe -NoProfile -Command
+    "if (Get-Command chezmoi.exe -ErrorAction SilentlyContinue) { 'present' } else { 'absent' }"
+  register: shell_config_win_chezmoi_check
+  changed_when: false
+
+- name: Download + install chezmoi for Windows
+  ansible.builtin.raw: >-
+    powershell.exe -NoProfile -Command
+    "$dir = \"$env:LOCALAPPDATA\chezmoi\"; New-Item -ItemType Directory -Force -Path $dir | Out-Null;
+    Invoke-WebRequest -UseBasicParsing -Uri 'https://github.com/twpayne/chezmoi/releases/download/v{{ shell_config_chezmoi_version }}/chezmoi_{{ shell_config_chezmoi_version }}_windows_amd64.zip' -OutFile \"$dir\chezmoi.zip\";
+    Expand-Archive -Path \"$dir\chezmoi.zip\" -DestinationPath $dir -Force;
+    [Environment]::SetEnvironmentVariable('PATH', \"$env:PATH;$dir\", 'User')"
+  when: "'absent' in shell_config_win_chezmoi_check.stdout"
+  changed_when: true
+
+- name: Force chezmoi source checkout to latest origin/HEAD on Windows (existing checkouts only)
+  ansible.builtin.raw: >-
+    powershell.exe -NoProfile -Command
+    "$src = \"$env:USERPROFILE\.local\share\chezmoi\";
+    if (Test-Path \"$src\.git\") { Set-Location $src; git fetch origin; git reset --hard origin/HEAD }"
+  register: shell_config_win_source_refresh
+  changed_when: "'HEAD is now at' in shell_config_win_source_refresh.stdout"
+
+- name: Run chezmoi init --apply for each Windows account
+  ansible.builtin.raw: >-
+    powershell.exe -NoProfile -Command
+    "chezmoi.exe init --apply --promptString='profile={{ item.profile }}{% for k, v in (item.extra_prompts | default({})).items() %},{{ k }}={{ v }}{% endfor %}' {{ shell_config_repo_url }}"
+  register: shell_config_win_apply_result
+  changed_when: "shell_config_win_apply_result.stdout != ''"
+  loop: "{{ shell_config_windows_accounts }}"
+  loop_control:
+    label: "{{ item.user }} (profile={{ item.profile }})"
