@@ -36,7 +36,7 @@
     body_format: json
     body:
       service: "UserMgmt"
-      method: "getList"
+      method: "getUserList"
       params:
         start: 0
         limit: -1
@@ -64,7 +64,7 @@
         disabled: false
     status_code: [200]
   when: >
-    webui_identity_omv_existing.json.response
+    webui_identity_omv_existing.json.response.data
     | selectattr('name', 'equalto', item.username) | list | length == 0
   register: webui_identity_omv_create
 

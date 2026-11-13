@@ -17,6 +17,41 @@
 # yet is harmless but pointless, and running it early is a signal this
 # task jumped ahead of its dependency.
 
+- name: "Proxmox: check whether christian@pam user record already exists"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}:8006/api2/json/access/users"
+    method: GET
+    headers:
+      Authorization: "PVEAPIToken={{ item.extra.token_id }}={{ item.extra.token_secret }}"
+    validate_certs: false
+    status_code: [200]
+  register: webui_identity_proxmox_users
+
+# NOTE (discovered live 2026-11-13): PAM-realm auth works against the OS
+# user automatically, but Proxmox still keeps its OWN user record
+# (pveum/user.cfg) separate from the OS account - ACL grants 500 with
+# "user 'christian@pam' does not exist" until this record is created.
+# `pveum user add christian@pam` (or this POST) is required even though
+# no password is set - PAM handles auth, this just registers the userid
+# so ACLs can attach to it.
+- name: "Proxmox: create christian@pam user record (PAM auth, no password stored here)"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}:8006/api2/json/access/users"
+    method: POST
+    headers:
+      Authorization: "PVEAPIToken={{ item.extra.token_id }}={{ item.extra.token_secret }}"
+    body_format: json
+    body:
+      userid: "{{ item.username }}@pam"
+      enable: 1
+    validate_certs: false
+    status_code: [200]
+  when: >
+    webui_identity_proxmox_users.json.data
+    | selectattr('userid', 'equalto', item.username ~ '@pam')
+    | list | length == 0
+  register: webui_identity_proxmox_user_create
+
 - name: "Proxmox: check whether christian@pam already has an ACL entry"
   ansible.builtin.uri:
     url: "https://{{ item.api_base_url }}:8006/api2/json/access/acl"
@@ -37,8 +72,7 @@
     body:
       path: "/"
       roles: "Administrator"
-      type: "user"
-      ugid: "{{ item.username }}@pam"
+      users: "{{ item.username }}@pam"
     validate_certs: false
     status_code: [200]
   when: >

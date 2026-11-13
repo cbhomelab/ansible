@@ -36,9 +36,27 @@
     | selectattr('login', 'equalto', item.username) | list | length == 0
   register: webui_identity_grafana_create
 
+# NOTE (discovered live 2026-11-13): the uri module's POST to
+# /api/admin/users returns HTTP 200 whether or not Ansible considers the
+# call "changed" - don't gate the admin-flag grant on
+# webui_identity_grafana_create.changed, it under-fires. Instead
+# re-fetch the user list and look up christian's id + current isAdmin
+# flag directly, and grant whenever it's not already true (covers both
+# "just created, still a non-admin viewer by default" and "pre-existing
+# non-admin account").
+- name: "Grafana: re-list users to find christian's id/admin status"
+  ansible.builtin.uri:
+    url: "http://{{ item.api_base_url }}/api/users"
+    method: GET
+    url_username: "{{ item.extra.admin_user | default('admin') }}"
+    url_password: "{{ item.extra.admin_pass }}"
+    force_basic_auth: true
+    status_code: [200]
+  register: webui_identity_grafana_recheck
+
 - name: "Grafana: grant Grafana Admin (superadmin) flag"
   ansible.builtin.uri:
-    url: "http://{{ item.api_base_url }}/api/admin/users/{{ webui_identity_grafana_create.json.id }}/permissions"
+    url: "http://{{ item.api_base_url }}/api/admin/users/{{ (webui_identity_grafana_recheck.json | selectattr('login', 'equalto', item.username) | first).id }}/permissions"
     method: PUT
     url_username: "{{ item.extra.admin_user | default('admin') }}"
     url_password: "{{ item.extra.admin_pass }}"
@@ -47,10 +65,14 @@
     body:
       isGrafanaAdmin: true
     status_code: [200]
-  when: webui_identity_grafana_create.changed | default(false)
+  when: >
+    not (webui_identity_grafana_recheck.json
+    | selectattr('login', 'equalto', item.username) | first).isAdmin
+  register: webui_identity_grafana_admin_grant
 
 - name: "Grafana: report result"
   ansible.builtin.debug:
     msg: >
       christian Grafana user {{ 'created' if (webui_identity_grafana_create.changed | default(false))
-      else 'already present' }} on {{ item.api_base_url }}.
+      else 'already present' }} on {{ item.api_base_url }}; admin flag
+      {{ 'granted' if (webui_identity_grafana_admin_grant.changed | default(false)) else 'already set' }}.

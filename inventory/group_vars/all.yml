@@ -4,9 +4,16 @@
 # control node (or BW_SESSION exported) — see the Bitwarden integration
 # task for control-node setup. Until that's done, these are placeholder
 # item names: update them to match the real Bitwarden vault entries.
+#
+# GOTCHA (hit live 2026-11-12): community.general.bitwarden lookup always
+# returns a LIST (one entry per matching item), even for a single-value
+# field lookup. Interpolating the bare lookup() into a Jinja string yields
+# Python's list repr ("['secret']"), not the secret itself - this silently
+# produced a garbage Proxmox API token ("invalid token value" 401) before
+# being caught. ALWAYS index [0] (or pipe | first) on every lookup here.
 
-pve_user: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='username') }}"
-pve_pass: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='password') }}"
+pve_user: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='username')[0] }}"
+pve_pass: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='password')[0] }}"
 pve_host: "10.20.0.6"
 
 # Set true once christian's real SSH pubkey is supplied (user-provided, or
@@ -41,32 +48,39 @@ webui_identity_accounts:
     api_base_url: "10.20.0.6"
     extra:
       token_id: "hermes@pve!hermes"
-      token_secret: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='password') }}"
+      token_secret: "{{ lookup('community.general.bitwarden', 'homelab-proxmox-api', field='password')[0] }}"
 
   - service: omv
     username: christian
-    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-omv', field='password') }}"
+    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-omv', field='password')[0] }}"
     api_base_url: "10.20.0.2"
     extra:
-      admin_user: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='username') }}"
-      admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='password') }}"
+      admin_user: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='username')[0] }}"
+      admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='password')[0] }}"
       email: "christian@cbho.me"
 
-  - service: unifi
-    username: christian
-    api_base_url: "10.20.0.107"
-    extra:
-      admin_user: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='username') }}"
-      admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='password') }}"
-      email: "christian@cbho.me"
+  # TEMP DEFERRED 2026-11-13: hermes's "homelab-unifi-admin" account is
+  # NOT a super-admin (is_super:false) so invite-admin 400s on
+  # api.err.NoPermission-adjacent SMTP/permission errors; christian's
+  # existing "Unifi Controller" Bitwarden credential also fails login
+  # (api.err.Invalid - stale password). Needs a human fix (either grant
+  # hermes super-admin, or refresh christian's stored password) before
+  # this can run unattended. See kanban task t_5a11ba20 comment thread.
+  # - service: unifi
+  #   username: christian
+  #   api_base_url: "10.20.0.19"
+  #   extra:
+  #     admin_user: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='username')[0] }}"
+  #     admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='password')[0] }}"
+  #     email: "christian@cbho.me"
 
   - service: npm
     username: christian
-    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-npm', field='password') }}"
-    api_base_url: "10.20.0.102"
+    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-npm', field='password')[0] }}"
+    api_base_url: "10.20.0.4:81"
     extra:
-      admin_email: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='username') }}"
-      admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='password') }}"
+      admin_email: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='username')[0] }}"
+      admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='password')[0] }}"
       email: "christian@cbho.me"
       full_name: "Christian Bishop"
 
@@ -76,34 +90,43 @@ webui_identity_accounts:
     # no password/extra needed - this one is a documented manual step,
     # see roles/webui_identity/tasks/home_assistant.yml
 
-  - service: opnsense
-    username: christian
-    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-opnsense', field='password') }}"
-    api_base_url: "10.20.0.1"
-    extra:
-      api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='username') }}"
-      api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='password') }}"
-      full_name: "Christian Bishop"
+  # DEFERRED (verified live 2026-11-12): this OPNsense install is 24.1.5_3,
+  # which predates the Core\Api\UserController the opnsense.yml task
+  # targets - POST /api/core/user/searchUser 400s with "controller ...
+  # UserController not found" (confirmed via curl). On this version, local
+  # user CRUD only exists at the legacy /system_usermanager.php form, not
+  # the REST API. Re-enable this entry once OPNsense is upgraded past the
+  # version that ships the User API controller (tracked alongside the
+  # "OPNsense Config Review" firmware-update note - 60 pending updates as
+  # of 2026-11-12). hermes's automation already goes through the API key
+  # in ~/.config/opnsense/env (no interactive hermes login configured for
+  # Ansible), so that part of this task is satisfied independent of this.
+  # - service: opnsense
+  #   username: christian
+  #   password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-opnsense', field='password')[0] }}"
+  #   api_base_url: "10.10.0.1"
+  #   extra:
+  #     api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='username')[0] }}"
+  #     api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='password')[0] }}"
+  #     full_name: "Christian Bishop"
 
   - service: pihole
     username: christian
     # no-op - single shared admin password, see tasks/pihole.yml
 
-# Grafana entry intentionally omitted here - add it only once Grafana is
-# confirmed deployed (e.g. the 90-logging OMV compose stack), since there
-# is no inventory group guaranteeing its presence on every homelab
-# checkout of this repo:
-#
-# webui_identity_accounts:
-#   - service: grafana
-#     username: christian
-#     password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-grafana', field='password') }}"
-#     api_base_url: "10.20.0.161:3000"
-#     extra:
-#       admin_user: "{{ lookup('community.general.bitwarden', 'homelab-grafana-admin', field='username') }}"
-#       admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-grafana-admin', field='password') }}"
-#       email: "christian@cbho.me"
-#       full_name: "Christian Bishop"
+# Grafana: confirmed deployed as part of the 90-logging OMV compose stack
+# (Loki+Promtail+Grafana), reachable at 10.20.0.161:3000 (mgmt_bridge
+# static IP, plain HTTP, no host-port publish). Added 2026-11-12 once
+# verified via `docker compose` on saturn.
+  - service: grafana
+    username: christian
+    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-grafana', field='password')[0] }}"
+    api_base_url: "10.20.0.161:3000"
+    extra:
+      admin_user: "{{ lookup('community.general.bitwarden', 'homelab-grafana-admin', field='username')[0] }}"
+      admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-grafana-admin', field='password')[0] }}"
+      email: "christian@cbho.me"
+      full_name: "Christian Bishop"
 
 # Next-phase domain placeholders (scaffolded, not implemented — see each
 # role's README.md). Left commented so they don't shadow role defaults
