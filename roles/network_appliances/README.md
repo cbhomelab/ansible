@@ -82,7 +82,7 @@ reservation pins each corrected IP so it stops drifting again.
 | lxc102-intranet | 10.20.0.102 | **10.20.0.4** | DHCP | `true` |
 | lxc103-hermesagent | 10.20.0.103 | **10.20.0.21** | DHCP | `true` |
 | lxc104-glance | 10.20.0.104 | **10.20.0.202** | DHCP | `true` (matches the drift already surfaced by t_34f25463) |
-| lxc105-minecraft | 10.20.0.105 | **10.20.0.130** | static `ip=` in Proxmox LXC net0 (not DHCP) | `false` — reservation would be a no-op; see "Open follow-up" |
+| lxc105-minecraft | 10.20.0.105 | **10.20.0.130** | DHCP (migrated from static in t_9e0f009d, Nov 2026) | `true` |
 | lxc108-pihole | 10.20.0.108 | **10.20.0.8** | static `ip=` in Proxmox LXC net0 (not DHCP) | `false` — same as above |
 | vm101-homeassistant | 10.20.0.5 | 10.20.0.5 (already correct) | DHCP | `true` — reservation just pins what's already correct |
 
