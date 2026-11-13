@@ -7,6 +7,21 @@
 
 monitoring_agents_promtail_enabled: true
 
+# node_exporter (host metrics), scraped by Prometheus on saturn
+# (/opt/docker-compose/90-metrics). Pinned upstream binary + systemd unit.
+monitoring_agents_node_exporter_enabled: true
+monitoring_agents_node_exporter_version: "1.8.2"
+monitoring_agents_node_exporter_sha256: "6809dd0b3ec45fd6e992c19071d6b5253aed3ead7bf0686885a51d85c6643c66"  # linux-amd64 tarball
+monitoring_agents_node_exporter_url: >-
+  https://github.com/prometheus/node_exporter/releases/download/v{{ monitoring_agents_node_exporter_version }}/node_exporter-{{ monitoring_agents_node_exporter_version }}.linux-amd64.tar.gz
+monitoring_agents_node_exporter_tarball: "/var/cache/node_exporter-{{ monitoring_agents_node_exporter_version }}.tar.gz"
+monitoring_agents_node_exporter_bin: /usr/local/bin/node_exporter
+monitoring_agents_node_exporter_user: node_exporter
+# Bound to the host's MGMT address only (never 0.0.0.0). ansible_host is the
+# MGMT IP for every target; Prometheus' scrape list uses the same addresses.
+monitoring_agents_node_exporter_listen: "{{ ansible_host }}"
+monitoring_agents_node_exporter_port: 9100
+
 # Pinned to match the grafana/promtail container already running on saturn.
 monitoring_agents_promtail_version: "3.3.2"
 monitoring_agents_promtail_deb_url: >-

@@ -1,0 +1,19 @@
+# Managed by Ansible (roles/monitoring_agents)
+[Unit]
+Description=Prometheus node_exporter
+Documentation=https://prometheus.io/docs/guides/node-exporter/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User={{ monitoring_agents_node_exporter_user }}
+Group={{ monitoring_agents_node_exporter_user }}
+ExecStart={{ monitoring_agents_node_exporter_bin }} --web.listen-address={{ monitoring_agents_node_exporter_listen }}:{{ monitoring_agents_node_exporter_port }}
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

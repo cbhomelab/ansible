@@ -9,8 +9,8 @@
 # SSH keys come from group_vars/host_vars (lxc_guests and lxc107-unifi both
 # use the proxmox-boundary hermes key).
 
-- name: Apply monitoring agents (Promtail applogs)
-  hosts: lxc_guests:lxc107-unifi:!lxc103-hermesagent
+- name: Apply monitoring agents (Promtail applogs + node_exporter)
+  hosts: lxc_guests:lxc107-unifi:omv:!lxc103-hermesagent
   become: true
   vars:
     ansible_user: hermes

@@ -1,6 +1,6 @@
 # monitoring_agents
 
-**Status: implemented (Promtail applogs on LXC guests). Metrics: not implemented, by decision.**
+**Status: implemented (Promtail applogs on LXC guests + node_exporter metrics on guests and saturn).**
 
 Installs Promtail (pinned Debian package, systemd) on LXC guests and ships
 **file-based application logs** straight to Loki. It is deliberately
@@ -55,13 +55,34 @@ Verify: `curl -G http://10.20.0.160:3100/loki/api/v1/series --data-urlencode 'ma
   (no `promtail` group), hence `monitoring_agents_promtail_group: nogroup`.
 - First start on an existing log seeks from offset 0 (backfills the current file).
 
-## Prometheus / node-exporter finding
+## Prometheus / node-exporter (t_299916fe, user approved)
 
-**No Prometheus exists.** saturn's monitoring containers are only
-`promtail`, `loki`, `grafana`; no prometheus, node-exporter or cadvisor.
-Nothing metrics-related was installed and the scaffold's
-`node_exporter_enabled` variable was removed. Adding metrics
-(Prometheus + node-exporter) is a separate decision.
+- **node_exporter** 1.8.2 (pinned tarball, sha256-checked, systemd unit
+  `node_exporter`, runs as user `node_exporter`) on lxc102/104/105/107/108
+  and saturn, listening **only** on the host's MGMT address
+  (`{{ ansible_host }}:9100`). Toggle: `monitoring_agents_node_exporter_enabled`.
+  Idempotent (second run changed=0), check-mode safe. `playbooks/monitoring.yml`
+  now also targets `omv`; saturn has no Promtail jobs so it only gets
+  node_exporter. **Excluded:** `proxmox_host` (neptune, hands-off by user
+  decision) and lxc103.
+- **Prometheus** v3.0.1 is NOT part of this role: it is a separate OMV Compose
+  project `90-metrics` on saturn (own file so the live `90-logging` project
+  is never rewritten). Docker `docker` bridge network (a macvlan container
+  could not scrape saturn's own :9100), UI `http://10.20.0.2:9090`, 30d
+  retention, scrape config `<appdata>/prometheus/config/prometheus.yml`
+  (static targets; keep in sync with inventory, then
+  `curl -X POST http://10.20.0.2:9090/-/reload`).
+- **Grafana**: datasource `Prometheus` (uid `prometheus`,
+  `http://prometheus:9090`; provisioning file `prometheus.yaml` + API) and
+  dashboard *Node Exporter Full* (grafana.com 1860).
+- **Rollback:** `ansible-playbook playbooks/monitoring.yml --tags node_exporter`
+  with the enabled flag false does NOT uninstall; to remove, `systemctl
+  disable --now node_exporter` and delete the unit/binary. For Prometheus:
+  OMV Compose `down` + `deleteFile` on project `90-metrics`; delete the
+  Grafana datasource.
+- **Not done (proposal):** neptune metrics via `prometheus-pve-exporter` with
+  a read-only (PVEAuditor) Proxmox API token, run as a container beside
+  Prometheus, so nothing is installed on the hypervisor.
 
 ## Relationship to audit_log_shipping (t_d72f45fd)
 
