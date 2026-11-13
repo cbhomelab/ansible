@@ -1,33 +1,60 @@
 ---
 # UniFi Controller (LXC 107, self-hosted Network Application - NOT the
-# UniFi OS console): create a christian admin account. Demoting/retiring
-# the generic default admin is done in the EXECUTION task (t_5a11ba20),
-# not here, once christian's login has been confirmed to work.
+# UniFi OS console).
+#
+# STATUS (2026-11-13): christian's admin account was created manually via
+# the UI per the deferred human-action note (see kanban t_70dafa15) - this
+# was switched from "invite-admin via hermes" to a verify-only check
+# because:
+#   - hermes's "homelab-unifi-admin" account is still is_super:false, so
+#     `cmd/sitemgr create-admin` 400s with api.err.NoPermission.
+#   - `cmd/sitemgr invite-admin` gets past the permission check but then
+#     fails with api.err.SmtpNotEnabled (this controller has no outbound
+#     mail configured, and invite-admin is an email-invite flow).
+#   - Re-running invite/create against an account that already exists
+#     would just fail/error every playbook run instead of being a safe
+#     no-op, so this stays a verify-only idempotent check rather than an
+#     unattended create path until hermes is made super-admin AND/OR SMTP
+#     is configured on the controller.
 #
 # Login: try the legacy cookie session first (POST /api/login) - works on
 # older/self-hosted controllers even when the newer /api/auth/login 401s
 # with LoginRequired (see homelab-infrastructure skill).
 # Site-scoped calls need the real site NAME (e.g. "1alwstz1"), never the
 # literal string "default" - fetch it via GET /api/self/sites first.
-#
-# NOTE: local-admin creation on a self-hosted controller is normally
-# driven through Settings > Admins in the UI, backed by
-# POST /api/s/<site>/cmd/sitemgr {"cmd":"invite-admin", ...}. This exact
-# endpoint/payload was not re-verified live against this install's
-# controller version while writing the role - confirm with --check /
-# a dry run against a real session before trusting it unattended.
 
-- name: "UniFi: legacy cookie login"
+- name: "UniFi: login as christian (legacy cookie session)"
   ansible.builtin.uri:
     url: "https://{{ item.api_base_url }}:8443/api/login"
     method: POST
     body_format: json
     body:
-      username: "{{ item.extra.admin_user }}"
-      password: "{{ item.extra.admin_pass }}"
+      username: "{{ item.username }}"
+      password: "{{ item.password }}"
     validate_certs: false
     status_code: [200]
   register: webui_identity_unifi_login
+
+- name: "UniFi: confirm christian's own account state"
+  ansible.builtin.uri:
+    url: "https://{{ item.api_base_url }}:8443/api/self"
+    method: GET
+    headers:
+      Cookie: "{{ webui_identity_unifi_login.cookies_string }}"
+    validate_certs: false
+    status_code: [200]
+  register: webui_identity_unifi_self
+
+- name: "UniFi: fail if christian isn't actually an admin"
+  ansible.builtin.assert:
+    that:
+      - webui_identity_unifi_self.json.data[0].name == item.username
+      - webui_identity_unifi_self.json.data[0].is_super == true
+    fail_msg: >
+      christian's UniFi account exists and can log in but is not
+      is_super:true - admin rights were not actually granted. Fix via the
+      UniFi UI (Settings > Admins) before trusting this account.
+    success_msg: "christian confirmed as a super-admin on the UniFi controller."
 
 - name: "UniFi: fetch real site name"
   ansible.builtin.uri:
@@ -39,7 +66,7 @@
     status_code: [200]
   register: webui_identity_unifi_sites
 
-- name: "UniFi: invite/create christian as a local admin"
+- name: "UniFi: list all local admins on the site"
   ansible.builtin.uri:
     url: "https://{{ item.api_base_url }}:8443/api/s/{{ webui_identity_unifi_sites.json.data[0].name }}/cmd/sitemgr"
     method: POST
@@ -47,15 +74,18 @@
       Cookie: "{{ webui_identity_unifi_login.cookies_string }}"
     body_format: json
     body:
-      cmd: "invite-admin"
-      email: "{{ item.extra.email }}"
-      for_sso: false
-      name: "{{ item.username }}"
-      role: "admin"
+      cmd: "get-admins"
     validate_certs: false
     status_code: [200]
-  register: webui_identity_unifi_create
+  register: webui_identity_unifi_admins
 
-- name: "UniFi: report result"
+- name: "UniFi: report any leftover admin distinct from christian/hermes"
   ansible.builtin.debug:
-    var: webui_identity_unifi_create.json
+    msg: >
+      {{ webui_identity_unifi_admins.json.data
+         | map(attribute='name')
+         | reject('in', [item.username, 'hermes'])
+         | list }}
+      {{ 'Leftover admin account(s) above need manual review/demotion in the UniFi UI.'
+         if (webui_identity_unifi_admins.json.data | map(attribute='name') | reject('in', [item.username, 'hermes']) | list | length > 0)
+         else 'No leftover generic/default admin accounts found - only christian and hermes exist.' }}

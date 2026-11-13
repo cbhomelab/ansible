@@ -59,20 +59,16 @@ webui_identity_accounts:
       admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-omv-api', field='password')[0] }}"
       email: "christian@cbho.me"
 
-  # TEMP DEFERRED 2026-11-13: hermes's "homelab-unifi-admin" account is
-  # NOT a super-admin (is_super:false) so invite-admin 400s on
-  # api.err.NoPermission-adjacent SMTP/permission errors; christian's
-  # existing "Unifi Controller" Bitwarden credential also fails login
-  # (api.err.Invalid - stale password). Needs a human fix (either grant
-  # hermes super-admin, or refresh christian's stored password) before
-  # this can run unattended. See kanban task t_5a11ba20 comment thread.
-  # - service: unifi
-  #   username: christian
-  #   api_base_url: "10.20.0.19"
-  #   extra:
-  #     admin_user: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='username')[0] }}"
-  #     admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='password')[0] }}"
-  #     email: "christian@cbho.me"
+  # RESOLVED 2026-11-13 (see kanban t_70dafa15): christian's UniFi admin
+  # account was created manually via the UI (hermes's "homelab-unifi-admin"
+  # account is still not super-admin, so unattended invite/create-admin
+  # still 400s/errors - see roles/webui_identity/tasks/unifi.yml for why
+  # this is a verify-only check rather than a create path). Uses
+  # christian's own stored credential, not hermes's bootstrap creds.
+  - service: unifi
+    username: christian
+    password: "{{ lookup('community.general.bitwarden', 'Unifi Controller', field='password')[0] }}"
+    api_base_url: "10.20.0.19"
 
   - service: npm
     username: christian
