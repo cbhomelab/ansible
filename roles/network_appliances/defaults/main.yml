@@ -8,7 +8,7 @@ network_appliances_enabled: true
 # Set true only once you've reviewed the check-mode plan output and are
 # ready to actually write to the live router. Defaults to false (plan-only)
 # on purpose — this touches a live router's DHCP config.
-network_appliances_dhcp_apply: false
+network_appliances_dhcp_apply: true
 
 network_appliances_opnsense:
   api_base_url: "https://10.20.0.1"
@@ -17,8 +17,8 @@ network_appliances_opnsense:
   # item referenced from group_vars/appliances.yml is documented there as
   # read-only (status/syslog use), which is NOT sufficient for the writes
   # this role makes. See README.md "Credentials" before running for real.
-  api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-dhcp-api', field='username') }}"
-  api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-dhcp-api', field='password') }}"
+  api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-dhcp-api', field='username') | first }}"
+  api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-dhcp-api', field='password') | first }}"
 
 # CIDR of the LAN subnet reservations are created in. Used to resolve the
 # Kea subnet UUID via kea/dhcpv4/search_subnet (OPNsense doesn't take a
