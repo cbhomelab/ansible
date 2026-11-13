@@ -80,9 +80,29 @@ Verify: `curl -G http://10.20.0.160:3100/loki/api/v1/series --data-urlencode 'ma
   disable --now node_exporter` and delete the unit/binary. For Prometheus:
   OMV Compose `down` + `deleteFile` on project `90-metrics`; delete the
   Grafana datasource.
-- **Not done (proposal):** neptune metrics via `prometheus-pve-exporter` with
-  a read-only (PVEAuditor) Proxmox API token, run as a container beside
-  Prometheus, so nothing is installed on the hypervisor.
+- **Neptune metrics: IMPLEMENTED (t_03920b33, 2026-11-13, user approved).**
+  `prometheus-pve-exporter` (`prompve/prometheus-pve-exporter:3.11.0`)
+  runs as service `pve-exporter` in the `90-metrics` compose project on
+  saturn (docker bridge net, :9221 not published; Prometheus reaches it as
+  `pve-exporter:9221`). Nothing is installed on neptune. Auth is a dedicated
+  Proxmox user `prometheus@pve` + API token `exporter` (privsep=1), role
+  built-in `PVEAuditor` at `/` granted to BOTH the user and the token
+  (privsep tokens need their own ACL). Secret lives in Bitwarden
+  (Homelab-Infra / `proxmox-prometheus-exporter`) and in a chmod 600 file
+  `<APPDATA_DIR>/pve-exporter/pve.yml` on saturn (`verify_ssl: false`,
+  neptune's cert is self-signed) -- never in compose or git. Scrape job `pve`
+  (`/pve`, target 10.20.0.6, label host=neptune) in
+  `<APPDATA_DIR>/prometheus/config/prometheus.yml`, applied with
+  `POST :9090/-/reload`. Grafana dashboard "Proxmox via Prometheus"
+  (grafana.com 10347, uid Dp7Cd57Zza) against datasource `prometheus`.
+  Not Ansible-managed yet (hand-built via OMV RPC/ssh).
+  **Rollback:** on neptune `pveum user token remove prometheus@pve exporter`
+  ; `pveum acl delete / --users prometheus@pve --roles PVEAuditor` ;
+  `pveum user delete prometheus@pve` (self-created objects only). On saturn
+  remove the `pve-exporter` service from the 90-metrics compose (OMV
+  Compose setFile + `up`), delete `appdata/pve-exporter`, remove the `pve`
+  job from prometheus.yml and reload (backups: `/root/backups/t_03920b33/`),
+  delete the Grafana dashboard and the Bitwarden item.
 
 ## Relationship to audit_log_shipping (t_d72f45fd)
 

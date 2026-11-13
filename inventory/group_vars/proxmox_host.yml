@@ -27,3 +27,9 @@ access_control_sudoers:
     rule: "christian ALL=(ALL) NOPASSWD:ALL"
   - name: hermes
     rule: "hermes ALL=(ALL) NOPASSWD:ALL"
+
+# Metrics (t_03920b33): neptune is NOT given any agent. It is scraped remotely by
+# prometheus-pve-exporter on saturn (90-metrics) using Proxmox user
+# prometheus@pve, token "exporter" (PVEAuditor at /, privsep). Secret is in
+# Bitwarden (Homelab-Infra / proxmox-prometheus-exporter). See
+# roles/monitoring_agents/README.md for rollback.
