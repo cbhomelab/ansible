@@ -22,8 +22,9 @@ and `host_vars/lxc107-unifi.yml` (UniFi is in `appliances` but is a normal Debia
 - **saturn (OMV):** packages only. OMV manages its own updates, so unattended-upgrades, journald and timezone are off (its timezone is already `US/Pacific`).
 
 ## Notes
-- The apt cache refresh tolerates errors (a broken third-party repo must not fail the run). On lxc107 `apt update`
-  currently errors: the UniFi repo changed release name (unifi-8.0 -> unifi-10.5, needs explicit acceptance via
-  `apt-get update --allow-releaseinfo-change`) and the old MongoDB 3.6 repo key is expired.
+- lxc107 apt repair (Nov 13, done by hand, snapshot `pre-unifi-repo-20261113`): disabled the EOL MongoDB 3.6 repo
+  (`/etc/apt/sources.list.d/mongodb-org-3.6.list`, expired key), accepted UniFi's release rename with
+  `apt-get update --allow-releaseinfo-change`, and `apt-mark hold unifi` (stays on 8.0.24; the repo's `stable` now
+  carries 10.x). Upgrading UniFi is a deliberate manual step. The apt cache refresh in the role still tolerates errors.
 - Test: `ansible-playbook -i inventory/hosts.yml playbooks/baseline.yml --limit <host> --check --diff`, then a second real run must report `changed=0`.
 - Non-security updates and the Java/UniFi/Minecraft restarts after library updates remain manual.
