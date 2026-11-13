@@ -2,12 +2,16 @@
 # VM guests on neptune — same "proxmox" trust boundary as proxmox_host and
 # lxc_guests, sharing the hermes_proxmox keypair.
 
+ansible_ssh_private_key_file: ~/.ssh/hermes_proxmox
+
 access_control_users:
   - name: christian
     groups: [sudo]
     shell: /bin/bash
+    # NOTE: see lxc_guests.yml — lookup() already returns a list natively,
+    # don't re-wrap in [...] (t_94d8a27c).
     ssh_authorized_keys: >-
-      {{ [lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes')]
+      {{ lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes')
       if access_control_christian_key_ready else [] }}
   - name: hermes
     groups: [sudo]

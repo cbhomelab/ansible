@@ -3,12 +3,18 @@
 # its LXC/VM guests share one hermes keypair since they're all reached
 # through the same network/trust zone).
 
+ansible_ssh_private_key_file: ~/.ssh/hermes_proxmox
+
 access_control_users:
   - name: christian
     groups: [sudo]
     shell: /bin/bash
+    # NOTE: community.general.bitwarden's lookup() already returns a list
+    # (native jinja templating preserves the plugin's list-of-results
+    # return type for a single term) — wrapping it in [...] here produced
+    # a double-nested list and broke ansible.posix.authorized_key (t_94d8a27c).
     ssh_authorized_keys: >-
-      {{ [lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes')]
+      {{ lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes')
       if access_control_christian_key_ready else [] }}
   - name: hermes
     groups: [sudo]

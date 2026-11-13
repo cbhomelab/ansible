@@ -18,7 +18,7 @@ pve_host: "10.20.0.6"
 # for ever setting access_control_disable_password_auth: true anywhere,
 # since disabling password auth before christian's key is verified would
 # lock him out.
-access_control_christian_key_ready: false
+access_control_christian_key_ready: true
 
 # webui_identity: unify WebUI/API logins to "christian" across every
 # service with its own user DB. Runs once from localhost
