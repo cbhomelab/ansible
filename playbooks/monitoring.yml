@@ -1,11 +1,18 @@
 ---
-# SCAFFOLDED, NOT IMPLEMENTED — roles/monitoring_agents is a no-op stub.
-# Excludes `appliances` (OPNsense/UniFi have their own native syslog
-# forwarding, see the logging-monitoring skill reference) and
-# vm101-homeassistant (HAOS, no shell — needs a separate mechanism).
+# Promtail file-log shipping on LXC guests only. Deliberately excludes:
+#   proxmox_host (neptune) - hands-off by user decision
+#   omv (saturn)           - already runs a Promtail container w/ docker_sd
+#   vm101-homeassistant    - HAOS, no shell
+#   lxc103-hermesagent     - handle with care; nothing to ship
+#   appliances             - native syslog forwarding
+# Hosts with an empty monitoring_agents_promtail_jobs are no-ops (lxc104).
+# SSH keys come from group_vars/host_vars (lxc_guests and lxc107-unifi both
+# use the proxmox-boundary hermes key).
 
-- name: Apply monitoring agents
-  hosts: proxmox_host:lxc_guests:vm_guests:omv
+- name: Apply monitoring agents (Promtail applogs)
+  hosts: lxc_guests:lxc107-unifi:!lxc103-hermesagent
   become: true
+  vars:
+    ansible_user: hermes
   roles:
     - monitoring_agents

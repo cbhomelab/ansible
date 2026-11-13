@@ -1,58 +1,71 @@
 # monitoring_agents
 
-**Status: scaffolded, not implemented.**
+**Status: implemented (Promtail applogs on LXC guests). Metrics: not implemented, by decision.**
 
-General-purpose fleet-wide monitoring-agent installer: rolls out
-Promtail and node-exporter to every manageable host, feeding the existing
-central Loki/Grafana stack (see the homelab-infrastructure skill's
-`references/logging-monitoring.md` for the real deployment/relabeling
-details already learned for that stack).
+Installs Promtail (pinned Debian package, systemd) on LXC guests and ships
+**file-based application logs** straight to Loki. It is deliberately
+complementary to what already exists:
 
-## Relationship to the audit-logging task (t_d72f45fd)
+| Source | Shipped by | Labels |
+|---|---|---|
+| journald/syslog/sshd/sudo on every guest + saturn | rsyslog `90-loki-forward.conf` -> saturn:1514 (Promtail syslog listener), i.e. `audit_log_shipping` | `job=syslog, host, app, severity, facility` |
+| Docker container logs on saturn | Promtail container (`grafana/promtail:3.3.2`, docker_sd) | `compose_project, compose_service, container` |
+| **File app logs on LXC guests (this role)** | Promtail systemd service -> Loki push API | `job=applogs, host, app` (+ `filename`) |
 
-This role is **broader** than t_d72f45fd, which only ships ssh/sudo audit
-logs. `monitoring_agents` is meant to be the general-purpose agent
-installer (Promtail for logs, node-exporter for metrics) that
-t_d72f45fd — and any future per-domain log-shipping need — should
-eventually depend on/reuse rather than each task hand-rolling its own
-installer. Don't duplicate t_d72f45fd's work here; when this role is
-implemented, t_d72f45fd's audit-log shipping should become a
-`monitoring_agents_promtail_jobs` entry (or similar) layered on top of
-the base agent install, not a separate installation path.
+`host` is the short hostname, same as the syslog stream, so you can join
+`{job="syslog",host="X"}` and `{job="applogs",host="X"}`.
 
-## Intended scope (not yet implemented)
+## Scope
 
-- Promtail: install as a container (preferred, consistent with the rest
-  of the compose fleet) or system package per host type; configure
-  `docker_sd_configs` service discovery for Docker-hosted log sources
-  (per the logging-monitoring reference) and/or static scrape config for
-  non-Docker hosts (bare LXC/VM syslog, journald).
-- node-exporter: container or systemd service per host, scraped by the
-  existing Prometheus/Grafana stack (verify which metrics backend is
-  actually in place before assuming Prometheus specifically — needs
-  confirming).
-- Host coverage: `proxmox_host`, `lxc_guests`, `vm_guests`, `omv`. Explicitly
-  NOT `appliances` (OPNsense/UniFi — see the logging-monitoring reference's
-  notes on OPNsense's native syslog-forwarding API being the right
-  mechanism there instead) and NOT HAOS (`vm101-homeassistant` — immutable
-  appliance OS, no shell; see the reference's HAOS-specific
-  WebSocket-based log-shipping workaround, which is a separate mechanism
-  entirely, not something this role's generic agent install can reach).
-- Windows (`cb-gaming`) coverage is an open question (see below).
+- Hosts: `lxc_guests` + `lxc107-unifi`, minus `lxc103-hermesagent` (see `playbooks/monitoring.yml`).
+- **Excluded:** `proxmox_host` (hands-off, user decision), `omv`/saturn (has Promtail), HAOS, appliances.
+- A host with an empty `monitoring_agents_promtail_jobs` is a no-op (e.g. lxc104-glance has no app logs outside syslog).
+- journald is **not** scraped (would double-ship what rsyslog already sends).
 
-## Open questions
+Current jobs (host_vars): lxc102 NPM `npm-access`/`npm-error`; lxc105
+`minecraft-server`/`minecraft-proxy` (promtail runs as `minecraft` because
+`/var/lib/minecraft` is 0700); lxc107 `unifi-server` (group `unifi`);
+lxc108 `pihole-dns`/`pihole-ftl` (group `pihole`).
 
-- What metrics backend is actually running today (Prometheus? Something
-  else?) — confirm before writing node-exporter scrape-config wiring.
-- Does `cb-gaming` (Windows) get a monitoring agent at all, and if so
-  which one (Windows doesn't have Promtail/node-exporter in the same
-  Linux-native form)?
-- Should this role deploy Promtail/node-exporter as yet more entries in
-  the OMV compose fleet (via `roles/compose_stacks` once that exists) for
-  saturn specifically, vs. a systemd-managed binary on the Proxmox
-  host/LXC/VM guests? Likely different answers per host type — don't
-  assume one mechanism fits all hosts.
+## Loki endpoint
 
-## Variables
+`http://10.20.0.160:3100/loki/api/v1/push`. Loki has its own address on
+`mgmt_bridge`; port 3100 is **not** published on saturn's host IP
+(10.20.0.2:3100 is closed). Reachability verified from all guests.
 
-See `defaults/main.yml`.
+## Usage
+
+```
+ansible-playbook playbooks/monitoring.yml --check --diff
+ansible-playbook playbooks/monitoring.yml --limit lxc105-minecraft
+ansible-playbook playbooks/monitoring.yml --tags promtail
+```
+
+Idempotent (second run: changed=0). Check-mode safe; where Promtail is not
+installed yet, config/service steps are skipped or tolerated in `--check`.
+
+Add a log source: append `{app, paths: [globs]}` to the host's
+`monitoring_agents_promtail_jobs`; grant read access via
+`monitoring_agents_promtail_supplementary_groups` (or the `_user` override).
+Verify: `curl -G http://10.20.0.160:3100/loki/api/v1/series --data-urlencode 'match[]={job="applogs"}'`.
+
+## Gotchas
+
+- The promtail deb creates user `promtail` with primary group `nogroup`
+  (no `promtail` group), hence `monitoring_agents_promtail_group: nogroup`.
+- First start on an existing log seeks from offset 0 (backfills the current file).
+
+## Prometheus / node-exporter finding
+
+**No Prometheus exists.** saturn's monitoring containers are only
+`promtail`, `loki`, `grafana`; no prometheus, node-exporter or cadvisor.
+Nothing metrics-related was installed and the scaffold's
+`node_exporter_enabled` variable was removed. Adding metrics
+(Prometheus + node-exporter) is a separate decision.
+
+## Relationship to audit_log_shipping (t_d72f45fd)
+
+`audit_log_shipping` ships ssh/sudo via rsyslog and does not need Promtail
+on guests. If it later moves to Promtail jobs, add `monitoring_agents` as a
+role dependency and express its sources as `monitoring_agents_promtail_jobs`
+entries (use a different `job_label` to keep the `job=syslog` stream unchanged).

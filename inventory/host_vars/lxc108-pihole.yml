@@ -1,2 +1,10 @@
 ---
 access_control_disable_password_auth: true
+
+# monitoring_agents (t_07bcd212): pihole.log is 0640 pihole:pihole.
+monitoring_agents_promtail_supplementary_groups: [pihole]
+monitoring_agents_promtail_jobs:
+  - app: pihole-dns
+    paths: [/var/log/pihole/pihole.log]
+  - app: pihole-ftl
+    paths: [/var/log/pihole/FTL.log]

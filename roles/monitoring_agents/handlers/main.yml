@@ -1,0 +1,9 @@
+---
+- name: Restart promtail
+  ansible.builtin.systemd:
+    name: promtail
+    state: restarted
+    daemon_reload: true
+  # Under --check on a host where the package isn't installed yet the unit
+  # doesn't exist; that is expected, not a failure.
+  ignore_errors: "{{ ansible_check_mode }}"

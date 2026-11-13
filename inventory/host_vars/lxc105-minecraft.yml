@@ -1,2 +1,13 @@
 ---
 access_control_disable_password_auth: true
+
+# monitoring_agents (t_07bcd212): file logs not covered by rsyslog.
+# /var/lib/minecraft is mode 0700, so promtail runs AS minecraft here
+# rather than loosening the game server's directory permissions.
+monitoring_agents_promtail_user: minecraft
+monitoring_agents_promtail_group: minecraft
+monitoring_agents_promtail_jobs:
+  - app: minecraft-server
+    paths: [/var/lib/minecraft/deploy/server/logs/latest.log]
+  - app: minecraft-proxy
+    paths: [/var/lib/minecraft/deploy/proxy/logs/latest.log]

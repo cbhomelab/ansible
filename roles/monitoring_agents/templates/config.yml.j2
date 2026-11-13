@@ -1,0 +1,28 @@
+# {{ ansible_managed }}
+server:
+  http_listen_address: {{ monitoring_agents_promtail_http_listen }}
+  http_listen_port: {{ monitoring_agents_promtail_http_port }}
+  grpc_listen_port: 0
+
+positions:
+  filename: {{ monitoring_agents_promtail_positions_dir }}/positions.yaml
+
+clients:
+  - url: {{ monitoring_agents_loki_push_url }}
+
+scrape_configs:
+{% for j in monitoring_agents_promtail_jobs %}
+  - job_name: applogs-{{ j.app }}
+    static_configs:
+{% for p in j.paths %}
+      - targets: [localhost]
+        labels:
+          job: {{ monitoring_agents_promtail_job_label }}
+          host: {{ monitoring_agents_promtail_host_label }}
+          app: {{ j.app }}
+{% for k, v in (j.extra_labels | default({})).items() %}
+          {{ k }}: "{{ v }}"
+{% endfor %}
+          __path__: "{{ p }}"
+{% endfor %}
+{% endfor %}

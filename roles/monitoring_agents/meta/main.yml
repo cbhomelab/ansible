@@ -2,9 +2,14 @@
 galaxy_info:
   author: cbhomelab
   description: >-
-    Fleet-wide Promtail/node-exporter monitoring-agent installer feeding
-    the Loki/Grafana stack. SCAFFOLDED, NOT IMPLEMENTED — see README.md.
+    Promtail (systemd, Debian package) shipping file-based application logs
+    from LXC guests to the central Loki. journald/syslog is shipped by
+    audit_log_shipping's rsyslog rule, saturn by its own Promtail container.
   license: MIT
   min_ansible_version: "2.14"
-
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - trixie
 dependencies: []

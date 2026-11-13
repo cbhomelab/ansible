@@ -2,3 +2,10 @@
 # Password auth disabled once christian's + hermes' key logins were
 # verified end-to-end on this host (t_94d8a27c, 2026-11-12).
 access_control_disable_password_auth: true
+
+# monitoring_agents (t_07bcd212): NPM/openresty logs (world-readable).
+monitoring_agents_promtail_jobs:
+  - app: npm-access
+    paths: ["/data/logs/*_access.log"]
+  - app: npm-error
+    paths: ["/data/logs/*_error.log"]

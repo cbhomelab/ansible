@@ -1,14 +1,44 @@
 ---
-# Scaffolded defaults — intentionally no-op until monitoring_agents is
-# implemented. See README.md for scope, relationship to t_d72f45fd
-# (audit-logging-specific task), and open questions.
+# monitoring_agents: Promtail (Debian package, systemd) shipping FILE-BASED
+# application logs from LXC guests straight to the central Loki.
+# See README.md for scope, the no-duplication rules and the Prometheus
+# finding. journald/syslog is deliberately NOT shipped here (rsyslog
+# 90-loki-forward.conf -> saturn:1514 already does it).
 
-monitoring_agents_promtail_enabled: false
-monitoring_agents_node_exporter_enabled: false
-monitoring_agents_loki_push_url: ""
-# e.g. "http://10.20.0.2:3100/loki/api/v1/push" — confirm real Loki
-# endpoint when this role is implemented.
+monitoring_agents_promtail_enabled: true
 
+# Pinned to match the grafana/promtail container already running on saturn.
+monitoring_agents_promtail_version: "3.3.2"
+monitoring_agents_promtail_deb_url: >-
+  https://github.com/grafana/loki/releases/download/v{{ monitoring_agents_promtail_version }}/promtail_{{ monitoring_agents_promtail_version }}_amd64.deb
+monitoring_agents_promtail_deb_dest: "/var/cache/promtail_{{ monitoring_agents_promtail_version }}_amd64.deb"
+
+# Loki's own mgmt_bridge LAN address (port 3100 is NOT published on saturn's
+# host IP; 10.20.0.2:3100 is closed). Verified reachable from all LXC guests.
+monitoring_agents_loki_push_url: "http://10.20.0.160:3100/loki/api/v1/push"
+
+# Account the service runs as. Default is the package's `promtail` user; a
+# host may override (e.g. minecraft, whose log dir is mode 0700) via host_vars.
+monitoring_agents_promtail_user: promtail
+# The deb creates user `promtail` with primary group `nogroup` (no
+# `promtail` group exists), hence this default.
+monitoring_agents_promtail_group: nogroup
+# Extra read groups for the service (e.g. [pihole], [unifi], [adm]).
+monitoring_agents_promtail_supplementary_groups: []
+
+monitoring_agents_promtail_config_path: /etc/promtail/config.yml
+monitoring_agents_promtail_positions_dir: /var/lib/promtail
+monitoring_agents_promtail_http_port: 9080
+monitoring_agents_promtail_http_listen: 127.0.0.1
+
+# Label values. `host` mirrors what the rsyslog->syslog listener produces
+# (the short hostname), so applogs and syslog can be joined on `host`.
+monitoring_agents_promtail_host_label: "{{ ansible_facts['hostname'] }}"
+monitoring_agents_promtail_job_label: applogs
+
+# Per-host list of file log sources. Each item:
+#   app:   value of the `app` label (required)
+#   paths: list of globs for __path__ (required)
+#   extra_labels: optional dict of additional static labels
+# Empty list => role does nothing (no point running an idle agent).
 monitoring_agents_promtail_jobs: []
-# Future home for per-domain scrape jobs (e.g. the ssh/sudo audit logs
-# from t_d72f45fd) once this role exists as the shared base installer.

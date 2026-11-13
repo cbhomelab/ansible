@@ -1,15 +1,96 @@
 ---
-# SCAFFOLDED, NOT IMPLEMENTED.
-# Placeholder for the fleet-wide Promtail/node-exporter agent installer.
-# See README.md for scope and its relationship to the narrower
-# audit-logging task (t_d72f45fd), which should depend on this role once
-# it's implemented rather than duplicating agent-install logic.
-#
-# This stub is deliberately check-mode-safe and makes zero changes.
+# Promtail for file-based app logs on LXC guests. Check-mode safe: mutating
+# steps are native modules; steps needing the not-yet-installed package
+# tolerate its absence under --check.
 
-- name: monitoring_agents — not yet implemented (no-op)
-  ansible.builtin.debug:
-    msg: >-
-      roles/monitoring_agents is scaffolded but not implemented.
-      No monitoring agents were installed on {{ inventory_hostname }}.
-      See roles/monitoring_agents/README.md.
+- name: monitoring_agents - skip hosts with nothing to ship
+  ansible.builtin.meta: end_host
+  when: not monitoring_agents_promtail_enabled or (monitoring_agents_promtail_jobs | length == 0)
+  tags: [monitoring_agents, promtail]
+
+- name: Check installed promtail version
+  ansible.builtin.command: dpkg-query -W -f='${Version}' promtail
+  register: monitoring_agents_dpkg
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  tags: [monitoring_agents, promtail]
+
+- name: Work out whether the pinned version needs installing
+  ansible.builtin.set_fact:
+    monitoring_agents_needs_install: >-
+      {{ monitoring_agents_dpkg.rc != 0 or
+         not (monitoring_agents_dpkg.stdout is version(monitoring_agents_promtail_version, '==')) }}
+  tags: [monitoring_agents, promtail]
+
+- name: Download pinned promtail .deb
+  ansible.builtin.get_url:
+    url: "{{ monitoring_agents_promtail_deb_url }}"
+    dest: "{{ monitoring_agents_promtail_deb_dest }}"
+    mode: "0644"
+  when: monitoring_agents_needs_install
+  tags: [monitoring_agents, promtail]
+
+- name: Install promtail .deb
+  ansible.builtin.apt:
+    deb: "{{ monitoring_agents_promtail_deb_dest }}"
+    state: present
+  when: monitoring_agents_needs_install and not ansible_check_mode
+  notify: Restart promtail
+  tags: [monitoring_agents, promtail]
+
+- name: Positions directory
+  ansible.builtin.file:
+    path: "{{ monitoring_agents_promtail_positions_dir }}"
+    state: directory
+    owner: "{{ monitoring_agents_promtail_user }}"
+    group: "{{ monitoring_agents_promtail_group }}"
+    mode: "0750"
+  when: not ansible_check_mode or not monitoring_agents_needs_install
+  tags: [monitoring_agents, promtail]
+
+- name: Promtail config
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: "{{ monitoring_agents_promtail_config_path }}"
+    owner: root
+    group: "{{ monitoring_agents_promtail_group }}"
+    mode: "0640"
+  when: not ansible_check_mode or not monitoring_agents_needs_install
+  notify: Restart promtail
+  tags: [monitoring_agents, promtail]
+
+- name: systemd drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/promtail.service.d
+    state: directory
+    mode: "0755"
+  tags: [monitoring_agents, promtail]
+
+- name: systemd drop-in (run user, read groups)
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/promtail.service.d/10-monitoring-agents.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (roles/monitoring_agents)
+      [Service]
+      User={{ monitoring_agents_promtail_user }}
+      Group={{ monitoring_agents_promtail_group }}
+      SupplementaryGroups={{ monitoring_agents_promtail_supplementary_groups | join(' ') }}
+  notify: Restart promtail
+  tags: [monitoring_agents, promtail]
+
+- name: Flush handlers so a restart happens before the enable/start check
+  ansible.builtin.meta: flush_handlers
+  tags: [monitoring_agents, promtail]
+
+- name: Enable and start promtail
+  ansible.builtin.systemd:
+    name: promtail
+    enabled: true
+    state: started
+    daemon_reload: true
+  ignore_errors: "{{ ansible_check_mode }}"
+  tags: [monitoring_agents, promtail]
