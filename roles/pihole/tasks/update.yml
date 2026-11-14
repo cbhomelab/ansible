@@ -1,0 +1,72 @@
+---
+# Update Pi-hole in place: backup -> pihole -up -> health check -> rollback hint.
+# Pi-hole is intentionally unpinned; this is the single place it moves.
+# --tags update ; add -e pihole_update_check_only=true to only report.
+- name: Versions before
+  ansible.builtin.command: pihole -v
+  register: ph_before
+  changed_when: false
+
+- name: Is an update available?
+  ansible.builtin.command: pihole -up --check-only
+  register: ph_check
+  changed_when: false
+  failed_when: false
+
+- ansible.builtin.debug:
+    msg: ["{{ ph_before.stdout_lines }}", "{{ ph_check.stdout_lines | default([]) }}"]
+
+- name: Update path
+  when: not (pihole_update_check_only | default(false) | bool)
+  block:
+    - name: Teleporter backup (settings, lists, DB config)
+      ansible.builtin.shell: |
+        set -e; mkdir -p {{ pihole_backup_dir }}
+        cd {{ pihole_backup_dir }}; pihole-FTL --teleporter >/dev/null
+        ls -1t pi-hole_*teleporter*.zip | head -1
+      args: {executable: /bin/bash}
+      register: ph_bk
+      changed_when: true
+
+    - name: Fetch backup to controller
+      ansible.builtin.fetch: {src: "{{ pihole_backup_dir }}/{{ ph_bk.stdout }}", dest: "{{ pihole_backup_fetch_dir }}/", flat: true}
+      when: pihole_backup_fetch_dir | length > 0
+
+    - name: pihole -up
+      ansible.builtin.command: pihole -up
+      register: ph_up
+      changed_when: "'up to date' not in ph_up.stdout | lower"
+
+    - name: Health - FTL active
+      ansible.builtin.command: systemctl is-active pihole-FTL
+      register: ph_ftl
+      retries: 10
+      delay: 3
+      until: ph_ftl.rc == 0
+      changed_when: false
+
+    - name: Health - resolves a name and blocks a domain taken from the live gravity list
+      ansible.builtin.shell: |
+        set -e
+        dig +short +time=3 +tries=2 @127.0.0.1 example.com | grep -q .
+        d=$(sqlite3 /etc/pihole/gravity.db "select domain from gravity limit 1")
+        [ -n "$d" ] || { echo "gravity empty"; exit 1; }
+        r=$(dig +short +time=3 @127.0.0.1 "$d" | head -1)
+        case "$r" in 0.0.0.0|::|"") exit 0;; *) echo "$d not blocked: $r"; exit 1;; esac
+      args: {executable: /bin/bash}
+      changed_when: false
+
+    - name: Versions after
+      ansible.builtin.command: pihole -v
+      register: ph_after
+      changed_when: false
+    - ansible.builtin.debug: {msg: "{{ ph_after.stdout_lines }}"}
+
+  rescue:
+    - ansible.builtin.debug:
+        msg: >-
+          Pi-hole update failed health checks. Pre-update teleporter archive is
+          {{ pihole_backup_dir }}/{{ ph_bk.stdout | default('(none)') }} (also in
+          {{ pihole_backup_fetch_dir | default('') }}). Restore with
+          `pihole-FTL --teleporter <zip>` via the web UI import, or pihole -r.
+    - ansible.builtin.fail: {msg: "pihole update failed; see previous message"}

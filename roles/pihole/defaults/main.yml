@@ -29,3 +29,6 @@ pihole_domains:                                  # type: 0 allow exact, 1 deny e
 # Web admin password comes from Bitwarden/vault at run time; never stored in git.
 pihole_web_password: "{{ lookup('env', 'PIHOLE_WEB_PASSWORD') | default('', true) }}"
 pihole_tailscale: true
+pihole_backup_dir: /var/backups/pihole
+pihole_backup_fetch_dir: ""
+pihole_update_check_only: false

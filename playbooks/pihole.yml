@@ -1,7 +1,12 @@
 ---
-# Build/converge Pi-hole v6 on lxc108. Use --check first. App state (gravity DB
-# customisations, query history) is restored by app_state, not here.
+# Build/converge Pi-hole v6 on lxc108 (default). Use --check first.
+#   --tags update   in-place update with backup + health check
+# App state (gravity DB customisations, query history) is restored by app_state.
 - name: Pi-hole
   hosts: lxc108-pihole
   become: true
-  roles: [pihole]
+  tasks:
+    - ansible.builtin.import_role: {name: pihole}
+      tags: [build]
+    - ansible.builtin.include_role: {name: pihole, tasks_from: update.yml, apply: {tags: [update]}}
+      tags: [never, update]
