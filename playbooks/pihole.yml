@@ -1,0 +1,7 @@
+---
+# Build/converge Pi-hole v6 on lxc108. Use --check first. App state (gravity DB
+# customisations, query history) is restored by app_state, not here.
+- name: Pi-hole
+  hosts: lxc108-pihole
+  become: true
+  roles: [pihole]

@@ -9,3 +9,55 @@ monitoring_agents_promtail_jobs:
   - app: pihole-ftl
     paths: [/var/log/pihole/FTL.log]
 system_baseline_tailscale_enabled: true
+
+# --- pihole role: CNAMEs -> intranet (captured from live v6 config) ---
+pihole_cname_names:
+  - aurral.cbhomelab.net
+  - bookmarks.cbhomelab.net
+  - discover-music.cbhomelab.net
+  - files.cbhomelab.net
+  - freshrss.cbhomelab.net
+  - frigate.cbhomelab.net
+  - glance.cbhomelab.net
+  - hass.cbhomelab.net
+  - home.cbhomelab.net
+  - homeassistant.cbhomelab.net
+  - homepage.cbhomelab.net
+  - indexers.cbhomelab.net
+  - jellyfin.cbhomelab.net
+  - lidarr.cbhomelab.net
+  - links.cbhomelab.net
+  - linkwarden.cbhomelab.net
+  - logs.cbhomelab.net
+  - movies.cbhomelab.net
+  - music.cbhomelab.net
+  - navidrome.cbhomelab.net
+  - neptune.cbhomelab.net
+  - nvr.cbhomelab.net
+  - omv.cbhomelab.net
+  - overseerr.cbhomelab.net
+  - pihole.cbhomelab.net
+  - plex.cbhomelab.net
+  - prowlarr.cbhomelab.net
+  - proxmox.cbhomelab.net
+  - pve.cbhomelab.net
+  - qbittorrent.cbhomelab.net
+  - radarr.cbhomelab.net
+  - romm.cbhomelab.net
+  - rss.cbhomelab.net
+  - sabnzbd.cbhomelab.net
+  - saturn.cbhomelab.net
+  - search.cbhomelab.net
+  - seerr.cbhomelab.net
+  - shows.cbhomelab.net
+  - sonarr.cbhomelab.net
+  - stash.cbhomelab.net
+  - sync.cbhomelab.net
+  - syncthing.cbhomelab.net
+  - tautulli.cbhomelab.net
+  - tdarr-2.cbhomelab.net
+  - tdarr.cbhomelab.net
+  - torrent.cbhomelab.net
+  - tv.cbhomelab.net
+  - unifi.cbhomelab.net
+  - whisparr.cbhomelab.net

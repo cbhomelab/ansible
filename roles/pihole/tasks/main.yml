@@ -1,0 +1,102 @@
+---
+- name: Base packages
+  ansible.builtin.apt:
+    name: [curl, dnsutils, git, ca-certificates, sqlite3]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Check for existing install
+  ansible.builtin.stat: {path: /usr/local/bin/pihole}
+  register: pihole_bin
+
+- name: Create /etc/pihole for unattended install
+  ansible.builtin.file: {path: /etc/pihole, state: directory, mode: "0755"}
+  when: not pihole_bin.stat.exists
+
+- name: Unattended-install seed (v6 reads pihole.toml)
+  ansible.builtin.copy:
+    dest: /etc/pihole/pihole.toml
+    mode: "0644"
+    force: false
+    content: |
+      [dns]
+        upstreams = {{ pihole_upstreams | to_json }}
+        interface = "{{ pihole_interface }}"
+  when: not pihole_bin.stat.exists
+
+- name: Install Pi-hole (official installer, unattended)
+  ansible.builtin.shell: curl -fsSL {{ pihole_installer_url }} | bash /dev/stdin --unattended
+  args: {creates: /usr/local/bin/pihole}
+  environment: {PIHOLE_SKIP_OS_CHECK: "true"}
+
+- name: Declarative settings via pihole-FTL --config (changed only if pihole.toml content changes)
+  ansible.builtin.shell: |
+    set -e
+    before=$(md5sum /etc/pihole/pihole.toml | cut -d' ' -f1)
+    {% for k, v in pihole_settings.items() %}
+    pihole-FTL --config {{ k }} '{{ v }}' >/dev/null
+    {% endfor %}
+    after=$(md5sum /etc/pihole/pihole.toml | cut -d' ' -f1)
+    [ "$before" = "$after" ] || echo changed
+  register: pihole_cfg
+  changed_when: "'changed' in pihole_cfg.stdout"
+  vars:
+    pihole_settings:
+      dns.upstreams: "{{ pihole_upstreams | to_json }}"
+      dns.interface: "{{ pihole_interface }}"
+      dns.dnssec: "{{ pihole_dnssec | lower }}"
+      dns.listeningMode: "{{ pihole_listening_mode }}"
+      dns.domainNeeded: "{{ pihole_domain_needed | lower }}"
+      dns.expandHosts: "{{ pihole_expand_hosts | lower }}"
+      dns.bogusPriv: "{{ pihole_bogus_priv | lower }}"
+      dns.domain.name: "{{ pihole_local_domain }}"
+      dns.hosts: "{{ pihole_hosts | to_json }}"
+      dns.revServers: "{{ pihole_rev_servers | to_json }}"
+      dns.cnameRecords: "{{ pihole_cname_names | map('regex_replace', '$', ',' ~ pihole_cname_target) | list | to_json }}"
+      webserver.interface.theme: "{{ pihole_web_theme }}"
+      database.maxDBdays: "{{ pihole_query_log_max_days }}"
+  notify: Restart pihole-FTL
+
+- name: Web admin password
+  ansible.builtin.command: pihole setpassword '{{ pihole_web_password }}'
+  no_log: true
+  when: pihole_web_password | length > 0
+  changed_when: false
+
+- name: Adlists
+  ansible.builtin.shell: |
+    Q="pihole-FTL sqlite3 -batch /etc/pihole/gravity.db"
+    $Q "INSERT OR IGNORE INTO adlist(address,enabled,comment) VALUES('{{ item.url }}',{{ 1 if item.enabled else 0 }},'ansible');
+        UPDATE adlist SET enabled={{ 1 if item.enabled else 0 }} WHERE address='{{ item.url }}';
+        SELECT changes();" | tail -1
+  register: pihole_ad
+  changed_when: false
+  loop: "{{ pihole_adlists }}"
+  notify: Update gravity
+
+- name: Groups
+  ansible.builtin.shell: |
+    pihole-FTL sqlite3 -batch /etc/pihole/gravity.db "INSERT OR IGNORE INTO \"group\"(name,enabled) VALUES('{{ item }}',1);"
+  changed_when: false
+  loop: "{{ pihole_groups }}"
+
+- name: Allow/deny domains
+  ansible.builtin.shell: |
+    pihole-FTL sqlite3 -batch /etc/pihole/gravity.db "INSERT OR IGNORE INTO domainlist(domain,type,enabled,comment) VALUES('{{ item.domain }}',{{ item.type }},1,'ansible');"
+  changed_when: false
+  loop: "{{ pihole_domains }}"
+  notify: Update gravity
+
+- name: Tailscale (installed by network_appliances/baseline; only checked here)
+  ansible.builtin.command: tailscale status
+  register: ts
+  changed_when: false
+  failed_when: false
+  when: pihole_tailscale
+
+- name: Final DNS self-test
+  ansible.builtin.command: dig +short +time=3 @127.0.0.1 google.com
+  register: pihole_dns
+  changed_when: false
+  failed_when: pihole_dns.stdout | length == 0

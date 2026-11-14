@@ -1,0 +1,31 @@
+---
+# pihole: install and configure Pi-hole v6 declaratively (build role; app state
+# is restored separately by the app_state role). Matches the live lxc108 config.
+pihole_installer_url: https://install.pi-hole.net
+pihole_interface: eth0
+pihole_web_theme: default-darker
+pihole_upstreams: ["10.20.0.1"]
+pihole_dnssec: true
+pihole_listening_mode: ALL
+pihole_domain_needed: true
+pihole_expand_hosts: true
+pihole_bogus_priv: false
+pihole_local_domain: lan
+pihole_query_log_max_days: 91
+# [enabled, network, server, domain]
+pihole_rev_servers: ["false,10.0.0.0/8,10.10.0.1,cbho.me"]
+pihole_hosts: ["10.20.0.4 intranet.cbhomelab.net"]
+# "name,target" pairs, rendered into dns.cnameRecords
+pihole_cname_target: intranet.cbhomelab.net
+pihole_cname_names: []        # e.g. [sonarr.cbhomelab.net, ...]; see host_vars
+pihole_adlists:
+  - {url: "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts", enabled: false}
+  - {url: "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/pro.txt", enabled: true}
+pihole_groups: ["NordicTrack", "Disable"]      # in addition to built-in Default (id 0 = Adblock here)
+pihole_domains:                                  # type: 0 allow exact, 1 deny exact, 2 allow regex, 3 deny regex
+  - {domain: "ifit-wolf.s3.amazonaws.com", type: 1}
+  - {domain: "ifit-wolf.s3-cdn.ifit.com", type: 1}
+  - {domain: '(\.|^)orca-slicer\.com$', type: 2}
+# Web admin password comes from Bitwarden/vault at run time; never stored in git.
+pihole_web_password: "{{ lookup('env', 'PIHOLE_WEB_PASSWORD') | default('', true) }}"
+pihole_tailscale: true
