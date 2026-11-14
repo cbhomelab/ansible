@@ -33,6 +33,6 @@ system_baseline_uu_remove_unused: false
 # Tailscale: opt-in per host (set true only on LXCs with tun: true). Lookup is lazy:
 # Bitwarden is only queried when a join is actually needed.
 system_baseline_tailscale_enabled: false
-system_baseline_tailscale_bw_item: tailscale-authkey   # TODO: confirm item name with user
+system_baseline_tailscale_bw_item: tailscale-ansible-authkey
 system_baseline_tailscale_authkey: "{{ lookup('community.general.bitwarden', system_baseline_tailscale_bw_item, field='password') | first }}"
 system_baseline_tailscale_up_args: []
