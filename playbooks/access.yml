@@ -27,7 +27,7 @@
 # as separate, deliberate follow-up work rather than silently swept in.
 
 - name: Apply access control
-  hosts: proxmox_host:lxc_guests:vm_guests:omv:lxc107-unifi:!vm101-homeassistant:!lxc103-hermesagent
+  hosts: proxmox_host:lxc_guests:debian_vms:vm_guests:omv:lxc107-unifi:!vm101-homeassistant:!lxc103-hermesagent
   become: true
   roles:
     - access_control
