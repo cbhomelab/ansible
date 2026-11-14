@@ -148,6 +148,9 @@ Unbound, so clients resolve internal names from the router without Pi-hole.
 - Run: `ansible-playbook playbooks/network.yml --tags unbound_dns`
 - Needs a read/write OPNsense API key (`network_appliances_opnsense`) and
   NPM admin creds (`network_appliances_npm`, Bitwarden by default).
+- OPNsense is on `.1` of every subnet (10.10.0.1, 10.20.0.1, 10.30.0.1, ...), so
+  `10.20.0.1` (inventory) and `10.10.0.1` are the same router; either works for
+  the API and for DNS.
 - Not covered: DHCP-handed DNS server per VLAN (still points wherever it did).
 
 ## UniFi (still scaffolded, not implemented)

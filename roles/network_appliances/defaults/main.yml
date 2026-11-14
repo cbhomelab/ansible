@@ -57,7 +57,9 @@ network_appliances_unbound_prune: false
 # cbhomelab.net -> Pi-hole forward) so Pi-hole is out of the path.
 network_appliances_unbound_remove_forward: true
 # Resolver used for the post-apply verification (run from the control node).
-network_appliances_unbound_resolver: 10.10.0.1
+# OPNsense owns .1 on every subnet (10.10.0.1, 10.20.0.1, 10.30.0.1, ...), so
+# the inventory address is as valid as any other.
+network_appliances_unbound_resolver: "{{ hostvars['vm100-opnsense'].ansible_host }}"
 
 network_appliances_npm:
   host: "{{ hostvars['lxc102-intranet'].ansible_host }}:81"
