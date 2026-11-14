@@ -1,6 +1,18 @@
 # compose_stacks
 
-**Status: scaffolded, not implemented.**
+**Status: implemented (audit + opt-in pull/up/down), Option B.**
+
+Run: `ansible-playbook playbooks/compose.yml -e '{"compose_stacks_enabled": true}' [--check]`
+(the `-e` value must be JSON, a bare `true` string fails the `when`).
+
+What it does today:
+- Discovers `NN-name/NN-name.yml` under `/opt/docker-compose` on saturn, validates each project with
+  `docker compose config -q` (read-only), compares defined vs running projects, and reports git state of the repo.
+- Only projects listed in `compose_stacks_projects` (opt-in, with per-project pull/state) are changed, and never
+  those in `compose_stacks_protected` (default `00-networks`, `00-ddns`) or ones that fail validation.
+- Known state (2026-11-14): 33 defined, 31 running; `20-auto-m4b` (indentation bug fixed, not started) and
+  `40-crafty` (abandoned, left alone) are the two not running.
+
 
 Manages the ~29-project docker-compose media/automation stack on
 `saturn` (OMV). Distinct from `roles/docker`, which is a legacy
@@ -53,7 +65,7 @@ reflecting CLI-driven changes correctly, or if finer per-project OMV
 metadata (e.g. its auto-generated env/compose templates under
 `/opt/docker-compose/`) turns out to need the RPC layer after all.
 
-## Intended scope (not yet implemented)
+## Original scope notes (partly implemented, see status above)
 
 - Per-project: `up -d` (ensure running), `down`, `pull` + recreate on
   image update, viewing `docker compose ps`/`logs` for drift detection.
