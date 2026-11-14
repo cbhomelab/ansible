@@ -22,6 +22,7 @@
     body: {}
     validate_certs: false
     status_code: [200]
+  check_mode: false
   register: webui_identity_opnsense_existing
 
 - name: "OPNsense: create christian account"

@@ -15,6 +15,7 @@
     url_password: "{{ item.extra.admin_pass }}"
     force_basic_auth: true
     status_code: [200]
+  check_mode: false
   register: webui_identity_grafana_existing
 
 - name: "Grafana: create christian admin user"
@@ -52,6 +53,7 @@
     url_password: "{{ item.extra.admin_pass }}"
     force_basic_auth: true
     status_code: [200]
+  check_mode: false
   register: webui_identity_grafana_recheck
 
 - name: "Grafana: grant Grafana Admin (superadmin) flag"

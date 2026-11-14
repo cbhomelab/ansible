@@ -25,6 +25,7 @@
         username: "{{ item.extra.admin_user }}"
         password: "{{ item.extra.admin_pass }}"
     status_code: [200]
+  check_mode: false
   register: webui_identity_omv_login
 
 - name: "OMV: list existing users"
@@ -41,6 +42,7 @@
         start: 0
         limit: -1
     status_code: [200]
+  check_mode: false
   register: webui_identity_omv_existing
 
 - name: "OMV: create christian admin user (only if not already present)"

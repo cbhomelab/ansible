@@ -12,6 +12,7 @@
       identity: "{{ item.extra.admin_email }}"
       secret: "{{ item.extra.admin_pass }}"
     status_code: [200]
+  check_mode: false
   register: webui_identity_npm_login
 
 - name: "NPM: list existing users"
@@ -21,6 +22,7 @@
     headers:
       Authorization: "Bearer {{ webui_identity_npm_login.json.token }}"
     status_code: [200]
+  check_mode: false
   register: webui_identity_npm_existing
 
 - name: "NPM: create christian user"

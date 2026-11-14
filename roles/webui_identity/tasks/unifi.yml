@@ -33,6 +33,7 @@
       password: "{{ item.password }}"
     validate_certs: false
     status_code: [200]
+  check_mode: false
   register: webui_identity_unifi_login
 
 - name: "UniFi: confirm christian's own account state"
@@ -43,6 +44,7 @@
       Cookie: "{{ webui_identity_unifi_login.cookies_string }}"
     validate_certs: false
     status_code: [200]
+  check_mode: false
   register: webui_identity_unifi_self
 
 - name: "UniFi: fail if christian isn't actually an admin"
@@ -64,6 +66,7 @@
       Cookie: "{{ webui_identity_unifi_login.cookies_string }}"
     validate_certs: false
     status_code: [200]
+  check_mode: false
   register: webui_identity_unifi_sites
 
 - name: "UniFi: list all local admins on the site"
@@ -77,6 +80,7 @@
       cmd: "get-admins"
     validate_certs: false
     status_code: [200]
+  check_mode: false
   register: webui_identity_unifi_admins
 
 - name: "UniFi: report any leftover admin distinct from christian/hermes"

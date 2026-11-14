@@ -25,6 +25,7 @@
       Authorization: "PVEAPIToken={{ item.extra.token_id }}={{ item.extra.token_secret }}"
     validate_certs: false
     status_code: [200]
+  check_mode: false
   register: webui_identity_proxmox_users
 
 # NOTE (discovered live 2026-11-13): PAM-realm auth works against the OS
@@ -60,6 +61,7 @@
       Authorization: "PVEAPIToken={{ item.extra.token_id }}={{ item.extra.token_secret }}"
     validate_certs: false
     status_code: [200]
+  check_mode: false
   register: webui_identity_proxmox_existing
 
 - name: "Proxmox: grant Administrator role to christian@pam"
