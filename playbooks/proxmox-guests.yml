@@ -1,6 +1,6 @@
 ---
 # Create/update Proxmox guests. CREATE + UPDATE ONLY (no destroy).
-# Needs the API token in the environment:  set -a; . ~/.config/proxmox/env; set +a
+# Needs creds in the environment:  set -a; . ~/.config/proxmox/env; . ~/.config/opnsense/env; set +a
 - name: Cloud-init template on the Proxmox host
   hosts: proxmox_host
   become: true

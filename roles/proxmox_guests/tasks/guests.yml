@@ -5,6 +5,42 @@
     fail_msg: "PVE_HOST / PVE_TOKEN_ID / PVE_TOKEN_SECRET not set. Run: set -a; . ~/.config/proxmox/env; set +a"
   no_log: true
 
+- name: Existing guests (for the pre-flight check)
+  ansible.builtin.uri:
+    url: "https://{{ proxmox_guests_api.api_host }}:{{ proxmox_guests_api.api_port }}/api2/json/cluster/resources?type=vm"
+    headers:
+      Authorization: "PVEAPIToken={{ proxmox_guests_api.api_user }}!{{ proxmox_guests_api.api_token_id }}={{ proxmox_guests_api.api_token_secret }}"
+    validate_certs: false
+    return_content: true
+  register: pg_existing
+  no_log: true
+  check_mode: false
+
+- name: Pre-flight - static IPs must be outside DHCP pools, unreserved and unused
+  ansible.builtin.command: "python3 {{ role_path }}/files/preflight.py"
+  args:
+    stdin: "{{ pg_preflight | to_json }}"
+  vars:
+    pg_ids: "{{ pg_existing.json.data | map(attribute='vmid') | list }}"
+    pg_preflight: >-
+      {%- set out = [] -%}
+      {%- for g in proxmox_guests_lxc -%}
+      {%- set _ = out.append({'id': g.vmid ~ ' ' ~ g.hostname, 'ip': g.ip | default('dhcp'), 'exists': g.vmid in pg_ids}) -%}
+      {%- endfor -%}
+      {%- for g in proxmox_guests_vms -%}
+      {%- set _ = out.append({'id': g.vmid ~ ' ' ~ g.name, 'ip': g.ip | default('dhcp'), 'exists': g.vmid in pg_ids}) -%}
+      {%- endfor -%}
+      {{ out }}
+  register: pg_pre
+  changed_when: false
+  check_mode: false
+  when: (proxmox_guests_lxc + proxmox_guests_vms) | length > 0
+  failed_when: pg_pre.rc != 0
+  environment:
+    OPN_HOST: "{{ lookup('env', 'OPN_HOST') }}"
+    OPN_KEY: "{{ lookup('env', 'OPN_KEY') }}"
+    OPN_SECRET: "{{ lookup('env', 'OPN_SECRET') }}"
+
 - name: Guest management
   module_defaults:
     group/community.proxmox.proxmox:
