@@ -27,6 +27,7 @@
       identity: "{{ network_appliances_npm.identity }}"
       secret: "{{ network_appliances_npm.secret }}"
     status_code: [200]
+  check_mode: false
   register: network_appliances_npm_token
   no_log: true
   when: inventory_hostname == 'vm100-opnsense'
@@ -37,6 +38,7 @@
     headers:
       Authorization: "Bearer {{ network_appliances_npm_token.json.token }}"
     status_code: [200]
+  check_mode: false
   register: network_appliances_npm_hosts
   loop: [proxy-hosts, redirection-hosts]
   no_log: true
@@ -80,6 +82,7 @@
     body: {rowCount: 5000, current: 1}
     validate_certs: false
     status_code: [200]
+  check_mode: false
   register: network_appliances_unbound_existing
   no_log: true
   when: inventory_hostname == 'vm100-opnsense'
@@ -195,6 +198,7 @@
     body: {rowCount: 1000, current: 1}
     validate_certs: false
     status_code: [200]
+  check_mode: false
   register: network_appliances_unbound_forwards
   no_log: true
   when: inventory_hostname == 'vm100-opnsense'

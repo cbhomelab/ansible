@@ -6,7 +6,7 @@ proxmox_guests_lxc:
   - {vmid: 106, hostname: iracing-team-manager, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 2048, swap: 512, disk: "local-lvm:10", features: ["nesting=1", "keyctl=1"], tags: [iracing, team-manager]}
   - {vmid: 102, hostname: intranet, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 1024, swap: 512, disk: "local-lvm:16", features: ["nesting=1", "keyctl=1"], tun: true}
   - {vmid: 103, hostname: hermesagent, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 4096, swap: 512, disk: "local-lvm:20", features: ["nesting=1", "keyctl=1"], tags: [agent, ai, automation, community-script], protection: false}
-  - {vmid: 105, hostname: minecraft, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 12288, swap: 512, disk: "local:64", nameserver: 10.20.0.8, features: ["nesting=1"], start: false}
+  - {vmid: 105, hostname: minecraft, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 12288, swap: 512, disk: "local:64", nameserver: 10.20.0.8, features: ["nesting=1"]}
   - {vmid: 107, hostname: unifi, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 2048, swap: 2048, disk: "local-lvm:16", features: ["nesting=1"], tun: true}
   - {vmid: 108, hostname: pihole, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 3, memory: 4096, swap: 4096, disk: "local-lvm:8", features: ["nesting=1"], tun: true}
 
