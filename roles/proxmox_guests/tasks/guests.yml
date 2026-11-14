@@ -83,6 +83,26 @@
       no_log: true
       changed_when: false
 
+    - name: LXC - TUN device for Tailscale/VPN (raw lxc.* lines; the API and module cannot set these)
+      ansible.builtin.lineinfile:
+        path: "/etc/pve/lxc/{{ item.0.vmid }}.conf"
+        regexp: "^{{ item.1.key | regex_escape }}:"
+        line: "{{ item.1.key }}: {{ item.1.value }}"
+        insertbefore: '^\['     # keep raw keys above any [snapshot] section
+        firstmatch: true
+        create: false
+      delegate_to: "{{ proxmox_guests_node }}"
+      become: true
+      register: pg_tun
+      loop: "{{ pg_tun_pairs }}"
+      loop_control: {label: "{{ item.0.vmid }} {{ item.1.key }}"}
+      vars:
+        ansible_connection: ssh   # the play is connection: local; delegation would inherit that
+        pg_tun_lines:
+          - {key: lxc.cgroup2.devices.allow, value: "c 10:200 rwm"}
+          - {key: lxc.mount.entry, value: "/dev/net/tun dev/net/tun none bind,create=file"}
+        pg_tun_pairs: "{{ proxmox_guests_lxc | selectattr('tun', 'defined') | selectattr('tun') | product(pg_tun_lines) | list }}"
+
     - name: LXC - start
       community.proxmox.proxmox:
         node: "{{ proxmox_guests_node }}"
