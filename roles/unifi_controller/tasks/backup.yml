@@ -1,0 +1,12 @@
+---
+# Controller-native backup: copy the newest autobackup (settings + devices + sites).
+- name: Newest autobackup
+  ansible.builtin.shell: ls -1t {{ unifi_backup_dir }}/*.unf | head -1
+  register: unifi_latest
+  changed_when: false
+- ansible.builtin.fail: {msg: "No autobackup in {{ unifi_backup_dir }}; enable Auto Backup in the controller."}
+  when: unifi_latest.stdout | length == 0
+- name: Fetch to controller
+  ansible.builtin.fetch: {src: "{{ unifi_latest.stdout }}", dest: "{{ unifi_backup_fetch_dir }}/", flat: true}
+  when: unifi_backup_fetch_dir | length > 0
+- ansible.builtin.debug: {msg: "{{ unifi_latest.stdout }}"}

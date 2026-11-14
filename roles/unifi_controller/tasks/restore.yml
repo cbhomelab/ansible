@@ -1,0 +1,9 @@
+---
+# Stages the .unf; the import itself is a controller action (wizard/Settings).
+- ansible.builtin.assert:
+    that: [unifi_restore_file | length > 0]
+    fail_msg: "pass -e unifi_restore_file=/path/on/controller/backup.unf"
+- name: Stage backup on the guest
+  ansible.builtin.copy: {src: "{{ unifi_restore_file }}", dest: /var/lib/unifi/backup/restore.unf, owner: unifi, group: unifi, mode: "0640"}
+- ansible.builtin.debug:
+    msg: "Open https://{{ ansible_host }}:8443 -> setup wizard 'Restore from backup' (or Settings > System > Backups) and upload restore.unf."

@@ -1,0 +1,65 @@
+---
+- name: Prerequisites
+  ansible.builtin.apt:
+    name: [curl, ca-certificates, gnupg, binutils, libcap2, adduser, tzdata, openjdk-17-jre-headless]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Download pinned debs (libssl1.1, MongoDB 3.6.23)
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "/var/cache/{{ item.url | basename }}"
+    checksum: "sha256:{{ item.sha }}"
+    mode: "0644"
+  loop:
+    - {url: "{{ unifi_libssl_deb_url }}", sha: "{{ unifi_libssl_deb_sha256 }}"}
+    - {url: "{{ unifi_mongodb_deb_url }}", sha: "{{ unifi_mongodb_deb_sha256 }}"}
+
+- name: libssl1.1 (needed by mongod 3.6)
+  ansible.builtin.apt: {deb: "/var/cache/{{ unifi_libssl_deb_url | basename }}"}
+
+- name: mongodb-org-server 3.6.23
+  ansible.builtin.apt: {deb: "/var/cache/{{ unifi_mongodb_deb_url | basename }}"}
+
+- name: Keep stock mongod unit off (UniFi spawns its own on 27117)
+  ansible.builtin.systemd: {name: mongod, enabled: false, state: stopped}
+  failed_when: false
+
+- name: UniFi deb (pinned; Ubiquiti's apt repo no longer carries 8.0.x)
+  ansible.builtin.get_url:
+    url: "{{ unifi_deb_url }}"
+    dest: "/var/cache/unifi_{{ unifi_version }}_all.deb"
+    checksum: "sha256:{{ unifi_deb_sha256 }}"
+    mode: "0644"
+
+- name: UniFi (pinned)
+  ansible.builtin.apt:
+    deb: "/var/cache/unifi_{{ unifi_version }}_all.deb"
+    state: present
+
+- name: Hold unifi (upgrades are deliberate)
+  ansible.builtin.dpkg_selections: {name: unifi, selection: hold}
+
+- name: Drop-in directory
+  ansible.builtin.file: {path: /etc/systemd/system/unifi.service.d, state: directory, mode: "0755"}
+
+- name: JVM options drop-in
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/unifi.service.d/jvm.conf
+    content: "[Service]\nEnvironment=\"UNIFI_JVM_OPTS={{ unifi_jvm_opts }}\"\n"
+    mode: "0644"
+  notify: [Reload systemd, Restart unifi]
+
+- ansible.builtin.meta: flush_handlers
+
+- name: Enable (and start) unifi
+  ansible.builtin.systemd:
+    name: unifi
+    enabled: true
+    state: "{{ 'started' if unifi_start else omit }}"
+
+- name: Wait for the controller UI/inform ports
+  ansible.builtin.wait_for: {port: "{{ item }}", timeout: 300}
+  loop: [8080, 8443]
+  when: unifi_start

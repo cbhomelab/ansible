@@ -1,0 +1,6 @@
+---
+- name: Reload systemd
+  ansible.builtin.systemd: {daemon_reload: true}
+- name: Restart unifi
+  ansible.builtin.systemd: {name: unifi, state: restarted}
+  when: unifi_start

@@ -1,0 +1,18 @@
+---
+# UniFi Network Application as lxc107 runs it: unifi 8.0.24 (held; direct deb,
+# the Ubiquiti apt repo is now empty), its own
+# mongod 3.6.23 from MongoDB's archive (repo is EOL/expired key => direct deb,
+# checksum pinned), openjdk-17. Site/device/settings data is STATE and comes
+# back through a controller .unf backup (tasks/restore.yml), not this build.
+unifi_version: "8.0.24-24385-1"
+unifi_jvm_opts: "-Xmx1024M -XX:+UseParallelGC"
+unifi_mongodb_deb_url: https://repo.mongodb.org/apt/debian/dists/stretch/mongodb-org/3.6/main/binary-amd64/mongodb-org-server_3.6.23_amd64.deb
+unifi_mongodb_deb_sha256: 01978f3f534727b8c709568bfe835784525393eccb7d13cc1fcf49ade8dfefbe
+unifi_libssl_deb_url: https://deb.debian.org/debian/pool/main/o/openssl/libssl1.1_1.1.1w-0+deb11u1_amd64.deb
+unifi_libssl_deb_sha256: aadf8b4b197335645b230c2839b4517aa444fd2e8f434e5438c48a18857988f7
+unifi_deb_url: https://dl.ui.com/unifi/8.0.24/unifi_sysvinit_all.deb
+unifi_deb_sha256: 7e6bdfff6ec9e0ad8b7f69d8d6d022c6493ebc883e48a6c6a062ef6251269368
+unifi_start: true
+unifi_backup_dir: /var/lib/unifi/backup/autobackup
+unifi_backup_fetch_dir: ""
+unifi_restore_file: ""        # .unf ON THE CONTROLLER, for restore.yml

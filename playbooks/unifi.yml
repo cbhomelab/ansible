@@ -1,0 +1,12 @@
+---
+# Build (default) / --tags backup / --tags restore for lxc107.
+- name: UniFi Network Application
+  hosts: lxc107-unifi
+  become: true
+  tasks:
+    - ansible.builtin.import_role: {name: unifi_controller}
+      tags: [build]
+    - ansible.builtin.include_role: {name: unifi_controller, tasks_from: backup.yml, apply: {tags: [backup]}}
+      tags: [never, backup]
+    - ansible.builtin.include_role: {name: unifi_controller, tasks_from: restore.yml, apply: {tags: [restore]}}
+      tags: [never, restore]
