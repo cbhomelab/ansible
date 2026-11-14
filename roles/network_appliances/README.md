@@ -127,6 +127,32 @@ instance was available to this pass either** (checked Bitwarden; none
 found) — creating the key above needs a human with existing admin
 access.
 
+## Unbound DNS (implemented) — `tasks/unbound_dns.yml`
+
+Split-horizon DNS for `cbhomelab.net`: every enabled NPM proxy/redirection
+host (read live from the NPM API) plus `network_appliances_unbound_extra_hosts`
+becomes an explicit A host override -> NPM (`lxc102-intranet`) in OPNsense
+Unbound, so clients resolve internal names from the router without Pi-hole.
+
+- **No wildcards, ever.** A `*` host override stops Unbound from starting;
+  the role asserts against it. New NPM host => re-run the role.
+- **Ownership marker:** only overrides whose description contains
+  `network_appliances_unbound_marker` are modified/pruned. Hand-made
+  overrides are never touched (a differing one is reported as `conflict`).
+- **Plan-only by default.** Apply with `-e '{"network_appliances_unbound_apply": true}'`
+  (pass JSON, not `key=true`, or the `when:` sees a string). Stale managed
+  records are only deleted with `network_appliances_unbound_prune: true`.
+- `network_appliances_unbound_remove_forward` (default true) deletes any
+  Unbound domain-override forward for the zone (the old Pi-hole forward).
+- Verifies every name against `network_appliances_unbound_resolver` after apply.
+- Run: `ansible-playbook playbooks/network.yml --tags unbound_dns`
+- Needs a read/write OPNsense API key (`network_appliances_opnsense`) and
+  NPM admin creds (`network_appliances_npm`, Bitwarden by default).
+- OPNsense is on `.1` of every subnet (10.10.0.1, 10.20.0.1, 10.30.0.1, ...), so
+  `10.20.0.1` (inventory) and `10.10.0.1` are the same router; either works for
+  the API and for DNS.
+- Not covered: DHCP-handed DNS server per VLAN (still points wherever it did).
+
 ## UniFi (still scaffolded, not implemented)
 
 - `ansible.builtin.uri` against the controller's REST API

@@ -11,3 +11,11 @@
 - name: DHCP reservations (OPNsense/Kea)
   ansible.builtin.include_tasks: dhcp_reservations.yml
   when: network_appliances_enabled
+
+- name: Unbound DNS records (OPNsense, from NPM)
+  ansible.builtin.include_tasks:
+    file: unbound_dns.yml
+    apply:
+      tags: [unbound_dns]
+  when: network_appliances_enabled and network_appliances_unbound_enabled
+  tags: [unbound_dns]
