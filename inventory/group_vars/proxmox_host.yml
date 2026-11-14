@@ -33,3 +33,5 @@ access_control_sudoers:
 # prometheus@pve, token "exporter" (PVEAuditor at /, privsep). Secret is in
 # Bitwarden (Homelab-Infra / proxmox-prometheus-exporter). See
 # roles/monitoring_agents/README.md for rollback.
+
+backup_pve_config_enabled: true

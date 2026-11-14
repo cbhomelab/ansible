@@ -32,3 +32,10 @@ backup_borg_archives:
   - name: homelab
     paths: [/opt/docker-compose, /srv/remotemount/homeassistant]
     excludes: ["*/.git", "*/home-assistant.log*", "*/home-assistant_v2.db*", "*/__pycache__"]
+
+# Proxmox host config (runs on neptune, writes a small tar to the NFS storage).
+backup_pve_config_enabled: false
+backup_pve_config_dest: /mnt/pve/saturn-backups/neptune-config
+backup_pve_config_keep: 8
+backup_pve_config_schedule: "Sun *-*-* 04:00:00"
+backup_pve_config_paths: [/etc/pve, /etc/vzdump.conf, /etc/network/interfaces, /etc/hosts, /etc/fstab, /etc/ssh/sshd_config, /etc/apt/sources.list.d, /root/.ssh/authorized_keys]

@@ -19,3 +19,34 @@
       notify: Reload systemd
     - name: Enable timer
       ansible.builtin.systemd: {name: homelab-borg.timer, enabled: true, state: started, daemon_reload: true}
+
+- name: backup — Proxmox host config (neptune)
+  when: backup_pve_config_enabled | default(false)
+  block:
+    - name: Config backup script
+      ansible.builtin.template: {src: pve-config-backup.sh.j2, dest: /usr/local/sbin/homelab-pve-config-backup, mode: "0750"}
+    - name: systemd service
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/homelab-pve-config.service
+        content: |
+          [Unit]
+          Description=Backup Proxmox host config (Ansible managed)
+          RequiresMountsFor={{ backup_pve_config_dest | dirname }}
+          [Service]
+          Type=oneshot
+          ExecStart=/usr/local/sbin/homelab-pve-config-backup
+        mode: "0644"
+    - name: systemd timer
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/homelab-pve-config.timer
+        content: |
+          [Unit]
+          Description=Backup Proxmox host config timer
+          [Timer]
+          OnCalendar={{ backup_pve_config_schedule }}
+          Persistent=true
+          [Install]
+          WantedBy=timers.target
+        mode: "0644"
+    - name: Enable timer
+      ansible.builtin.systemd: {name: homelab-pve-config.timer, enabled: true, state: started, daemon_reload: true}

@@ -1,0 +1,6 @@
+---
+- name: Backup Proxmox host config
+  hosts: proxmox_host
+  become: true
+  roles:
+    - backup

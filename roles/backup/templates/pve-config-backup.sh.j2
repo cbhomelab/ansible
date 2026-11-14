@@ -1,0 +1,9 @@
+#!/bin/bash
+# Managed by Ansible (roles/backup). Tar of Proxmox host config; keeps last {{ backup_pve_config_keep }}.
+set -eu
+D={{ backup_pve_config_dest }}
+mkdir -p "$D"; umask 077
+F="$D/neptune-config-$(date +%Y%m%d-%H%M).tar.zst"
+tar --zstd -cf "$F" --ignore-failed-read {{ backup_pve_config_paths | join(' ') }} 2>/dev/null || [ $? -eq 1 ]
+ls -1t "$D"/neptune-config-*.tar.zst | tail -n +{{ backup_pve_config_keep + 1 }} | xargs -r rm -f
+echo "wrote $F"
