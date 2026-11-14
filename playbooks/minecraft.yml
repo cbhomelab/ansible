@@ -1,14 +1,20 @@
 ---
 # Build (default) / back up (--tags backup) / restore (--tags restore) lxc105.
-# Secrets: wrap with scripts/minecraft_secrets.sh, e.g.
-#   scripts/minecraft_secrets.sh ansible-playbook playbooks/minecraft.yml
+# Secrets: wrap with scripts/minecraft_secrets.sh. Proxy is always up; Paper is
+# parked behind server/start.block until a player joins (intended).
 - name: Minecraft (Paper + Velocity)
   hosts: lxc105-minecraft
   become: true
   tasks:
     - ansible.builtin.import_role: {name: minecraft}
       tags: [build]
-    - ansible.builtin.include_role: {name: minecraft, tasks_from: backup.yml}
+    - ansible.builtin.include_role:
+        name: minecraft
+        tasks_from: backup.yml
+        apply: {tags: [backup]}
       tags: [never, backup]
-    - ansible.builtin.include_role: {name: minecraft, tasks_from: restore.yml}
+    - ansible.builtin.include_role:
+        name: minecraft
+        tasks_from: restore.yml
+        apply: {tags: [restore]}
       tags: [never, restore]

@@ -9,7 +9,7 @@
 
 - name: Prerequisites
   ansible.builtin.apt:
-    name: [tmux, git, curl, wget, jq, unzip, python3, gnupg, ca-certificates]
+    name: [tmux, zstd, git, curl, wget, jq, unzip, python3, gnupg, ca-certificates]
     state: present
     update_cache: true
     cache_valid_time: 3600

@@ -1,4 +1,7 @@
 ---
+- name: zstd for state archives
+  ansible.builtin.apt: {name: zstd, state: present}
+
 - ansible.builtin.assert:
     that: [minecraft_restore_archive | length > 0]
     fail_msg: "pass -e minecraft_restore_archive=/path/on/controller/minecraft-state-*.tar.zst"

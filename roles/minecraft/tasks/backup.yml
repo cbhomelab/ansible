@@ -3,6 +3,9 @@
 # server/start.block until a player joins, when vane-velocity deletes the block.
 # Backup preserves that: only stop Paper if it is really running, and leave
 # start.block exactly as found.
+- name: zstd for state archives
+  ansible.builtin.apt: {name: zstd, state: present}
+
 - name: Backup dir
   ansible.builtin.file: {path: "{{ minecraft_backup_dir }}", state: directory, mode: "0700"}
 
