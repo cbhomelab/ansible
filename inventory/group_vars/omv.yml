@@ -44,3 +44,5 @@ system_baseline_journald_enabled: false
 system_baseline_timezone_enabled: false
 
 backup_enabled: true
+
+compose_stacks_enabled: true

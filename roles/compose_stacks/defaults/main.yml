@@ -1,15 +1,12 @@
 ---
-# Scaffolded defaults — intentionally no-op until compose_stacks is
-# implemented. See README.md for the Option A/B decision (SSH + docker
-# compose CLI chosen over OMV's internal Compose RPC API) and open
-# questions.
-
+# compose_stacks: operate the OMV-managed compose projects on saturn via the
+# docker compose CLI (Option B, see README). Default is READ-ONLY audit.
 compose_stacks_enabled: false
-compose_stacks_base_dir: "/opt/docker-compose"
+compose_stacks_base_dir: /opt/docker-compose
+compose_stacks_global_env: "{{ compose_stacks_base_dir }}/global.env"
+# Actions are opt-in and per project. Nothing is pulled/recreated unless listed:
+#   compose_stacks_projects:
+#     - {name: 20-radarr, state: started, pull: true}   # state: started | stopped
 compose_stacks_projects: []
-# Example shape (not applied yet — real project list to be enumerated
-# from saturn:/opt/docker-compose/ when this role is implemented):
-# compose_stacks_projects:
-#   - name: "20-frigate"
-#     state: started   # started | stopped
-#     pull: false        # whether to pull images before (re)creating
+# Never touched by apply even if listed (networks/DNS others depend on).
+compose_stacks_protected: [00-networks, 00-ddns]

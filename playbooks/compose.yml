@@ -1,5 +1,5 @@
 ---
-# SCAFFOLDED, NOT IMPLEMENTED — roles/compose_stacks is a no-op stub.
+# compose_stacks: audit by default; actions opt-in per project
 # Targets saturn (OMV) only.
 
 - name: Apply compose stack management

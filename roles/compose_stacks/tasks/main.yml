@@ -1,14 +1,77 @@
 ---
-# SCAFFOLDED, NOT IMPLEMENTED.
-# This role is a placeholder for managing the OMV-hosted docker-compose
-# project fleet on saturn (SSH + `docker compose` CLI — see README.md for
-# why that was chosen over OMV's internal Compose RPC API).
-#
-# This stub is deliberately check-mode-safe and makes zero changes.
+- name: compose_stacks
+  when: compose_stacks_enabled
+  vars:
+    cs_cmd: >-
+      docker compose --project-name {{ cs_p }}
+      --env-file {{ compose_stacks_global_env }}
+      --env-file {{ compose_stacks_base_dir }}/{{ cs_p }}/{{ cs_p }}.env
+      -f {{ compose_stacks_base_dir }}/{{ cs_p }}/{{ cs_p }}.yml
+      -f {{ compose_stacks_base_dir }}/{{ cs_p }}/compose.override.yml
+  block:
+    - name: Find OMV compose project files (NN-name/NN-name.yml)
+      ansible.builtin.find:
+        paths: "{{ compose_stacks_base_dir }}"
+        patterns: '[0-9][0-9]-*.yml'
+        recurse: true
+        depth: 2
+      register: cs_files
 
-- name: compose_stacks — not yet implemented (no-op)
-  ansible.builtin.debug:
-    msg: >-
-      roles/compose_stacks is scaffolded but not implemented.
-      No compose project changes were made on {{ inventory_hostname }}.
-      See roles/compose_stacks/README.md.
+    - name: Build project list
+      ansible.builtin.set_fact:
+        cs_defined: "{{ cs_files.files | map(attribute='path') | map('dirname') | map('basename') | unique | sort | list }}"
+
+    - name: Validate each project's rendered config (read-only)
+      ansible.builtin.command:
+        cmd: "{{ cs_cmd }} config -q"
+      vars: {cs_p: "{{ item }}"}
+      loop: "{{ cs_defined }}"
+      register: cs_validate
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Running projects
+      ansible.builtin.command: docker compose ls --format json
+      register: cs_ls
+      changed_when: false
+      check_mode: false
+
+    - name: Git state of the compose repo (informational)
+      ansible.builtin.command: git -C {{ compose_stacks_base_dir }} status -sb --porcelain
+      register: cs_git
+      changed_when: false
+      failed_when: false
+      check_mode: false
+
+    - name: Compute drift
+      ansible.builtin.set_fact:
+        cs_running: "{{ (cs_ls.stdout | from_json) | map(attribute='Name') | sort | list }}"
+        cs_invalid: "{{ cs_validate.results | rejectattr('rc', 'equalto', 0) | map(attribute='item') | list }}"
+
+    - name: Audit report
+      ansible.builtin.debug:
+        msg:
+          - "defined projects: {{ cs_defined | length }}, running: {{ cs_running | length }}"
+          - "defined but NOT running: {{ cs_defined | difference(cs_running) }}"
+          - "running but NOT defined here: {{ cs_running | difference(cs_defined) }}"
+          - "config validation failures: {{ cs_invalid }}"
+          - "git: {{ cs_git.stdout_lines | first | default('n/a') }}; uncommitted entries: {{ (cs_git.stdout_lines | length) - 1 }}"
+
+    - name: Pull images for opted-in projects
+      ansible.builtin.command:
+        cmd: "{{ cs_cmd }} pull"
+      vars: {cs_p: "{{ item.name }}"}
+      loop: "{{ compose_stacks_projects | selectattr('pull', 'defined') | selectattr('pull') | list }}"
+      loop_control: {label: "{{ item.name }}"}
+      when: item.name not in compose_stacks_protected and item.name in cs_defined and item.name not in cs_invalid
+      changed_when: true
+
+    - name: Start/stop opted-in projects
+      ansible.builtin.command:
+        cmd: "{{ cs_cmd }} {{ 'up -d --remove-orphans' if (item.state | default('started')) == 'started' else 'stop' }}"
+      vars: {cs_p: "{{ item.name }}"}
+      loop: "{{ compose_stacks_projects }}"
+      loop_control: {label: "{{ item.name }}"}
+      when: item.name not in compose_stacks_protected and item.name in cs_defined and item.name not in cs_invalid
+      changed_when: true
