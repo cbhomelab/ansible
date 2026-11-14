@@ -6,3 +6,7 @@
 - name: Create/update guests (API, from the controller)
   ansible.builtin.include_tasks: guests.yml
   when: inventory_hostname == 'localhost'
+
+- name: Protection and update mode for existing guests
+  ansible.builtin.include_tasks: extras.yml
+  when: inventory_hostname == 'localhost'

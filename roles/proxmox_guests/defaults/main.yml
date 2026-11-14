@@ -34,3 +34,11 @@ proxmox_guests_lxc: []
 proxmox_guests_vms: []
 proxmox_guests_ssh_pubkeys: []     # root/ciuser keys injected at create time
 proxmox_guests_start: true
+
+# --- existing guests (extras.yml) ---
+# Guests to only set protection=1 on: [{vmid: 100, type: qemu}, {vmid: 102, type: lxc}, ...]
+proxmox_guests_protect_only: []
+# Per-guest `update: true` makes the role PUT any differing keys from this whitelist.
+proxmox_guests_update_keys:
+  lxc: [cores, memory, swap, onboot, tags, features, nameserver]
+  qemu: [cores, memory, onboot, tags, agent]

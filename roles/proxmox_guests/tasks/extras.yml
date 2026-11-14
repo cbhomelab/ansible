@@ -1,0 +1,84 @@
+---
+# Two things that run against EXISTING guests, via the API (never destroys):
+#  1. protect_only: set protection=1 on guests the role doesn't otherwise manage
+#  2. update mode: for guests with `update: true`, PUT only the keys that differ
+#     (whitelist below). Hot-applicable keys take effect immediately; some
+#     (features, cores/memory on LXC) may need a guest restart - reported, never forced.
+- name: Build API helpers
+  ansible.builtin.set_fact:
+    pg_base: "https://{{ proxmox_guests_api.api_host }}:{{ proxmox_guests_api.api_port }}/api2/json/nodes/{{ proxmox_guests_node }}"
+    pg_auth: "PVEAPIToken={{ proxmox_guests_api.api_user }}!{{ proxmox_guests_api.api_token_id }}={{ proxmox_guests_api.api_token_secret }}"
+  no_log: true
+
+- name: Protection on unmanaged guests - current config
+  ansible.builtin.uri:
+    url: "{{ pg_base }}/{{ item.type }}/{{ item.vmid }}/config"
+    headers: {Authorization: "{{ pg_auth }}"}
+    validate_certs: false
+  loop: "{{ proxmox_guests_protect_only }}"
+  loop_control: {label: "{{ item.vmid }}"}
+  register: pg_prot
+  no_log: true
+  check_mode: false
+
+- name: Protection on unmanaged guests - set where missing
+  ansible.builtin.uri:
+    url: "{{ pg_base }}/{{ item.item.type }}/{{ item.item.vmid }}/config"
+    method: PUT
+    headers: {Authorization: "{{ pg_auth }}"}
+    body_format: form-urlencoded
+    body: {protection: 1}
+    validate_certs: false
+  loop: "{{ pg_prot.results }}"
+  loop_control: {label: "{{ item.item.vmid }}"}
+  when: (item.json.data.protection | default(0) | int) != 1 and not ansible_check_mode
+  no_log: true
+  changed_when: true
+
+# ---- update mode ----
+- name: Update mode - current config of guests with update true
+  ansible.builtin.uri:
+    url: "{{ pg_base }}/{{ item.type }}/{{ item.vmid }}/config"
+    headers: {Authorization: "{{ pg_auth }}"}
+    validate_certs: false
+  loop: "{{ (proxmox_guests_lxc | map('combine', {'type': 'lxc'}) | list) + (proxmox_guests_vms | map('combine', {'type': 'qemu'}) | list) | selectattr('update', 'defined') | selectattr('update') | list }}"
+  loop_control: {label: "{{ item.vmid }}"}
+  register: pg_upd
+  no_log: true
+  check_mode: false
+
+- name: Update mode - compute differences
+  ansible.builtin.set_fact:
+    pg_diffs: >-
+      {%- set out = [] -%}
+      {%- for r in pg_upd.results -%}
+      {%- set want = {} -%}
+      {%- for k in proxmox_guests_update_keys[r.item.type] -%}
+      {%- if r.item[k] is defined -%}
+      {%- set v = (r.item[k] | join(',')) if k == 'features' else ((r.item[k] | join(';')) if k == 'tags' else r.item[k]) -%}
+      {%- if (r.json.data[k] | default('') | string) != (v | string) -%}{%- set _ = want.update({k: v}) -%}{%- endif -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- if want -%}{%- set _ = out.append({'vmid': r.item.vmid, 'type': r.item.type, 'set': want, 'was': r.json.data}) -%}{%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+
+- name: Update mode - report
+  ansible.builtin.debug:
+    msg: "{{ item.type }}/{{ item.vmid }}: {{ item.set }}"
+  loop: "{{ pg_diffs }}"
+  loop_control: {label: "{{ item.vmid }}"}
+
+- name: Update mode - apply differences
+  ansible.builtin.uri:
+    url: "{{ pg_base }}/{{ item.type }}/{{ item.vmid }}/config"
+    method: PUT
+    headers: {Authorization: "{{ pg_auth }}"}
+    body_format: form-urlencoded
+    body: "{{ item.set }}"
+    validate_certs: false
+  loop: "{{ pg_diffs }}"
+  loop_control: {label: "{{ item.vmid }}"}
+  when: not ansible_check_mode
+  no_log: true
+  changed_when: true

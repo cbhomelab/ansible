@@ -65,6 +65,7 @@
         tags: "{{ item.tags | default(['ansible']) }}"
         pubkey: "{{ proxmox_guests_ssh_pubkeys | join('\n') if proxmox_guests_ssh_pubkeys else omit }}"
         state: present
+        update: false   # existing guests are changed only by extras.yml (update: true per guest)
       loop: "{{ proxmox_guests_lxc }}"
       loop_control: {label: "{{ item.vmid }} {{ item.hostname }}"}
       register: pg_lxc
