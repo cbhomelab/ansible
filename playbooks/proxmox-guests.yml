@@ -1,0 +1,14 @@
+---
+# Create/update Proxmox guests. CREATE + UPDATE ONLY (no destroy).
+# Needs the API token in the environment:  set -a; . ~/.config/proxmox/env; set +a
+- name: Cloud-init template on the Proxmox host
+  hosts: proxmox_host
+  become: true
+  gather_facts: false
+  roles: [proxmox_guests]
+
+- name: Guests via the API
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  roles: [proxmox_guests]

@@ -1,0 +1,110 @@
+---
+- name: Require API credentials in the environment (source ~/.config/proxmox/env)
+  ansible.builtin.assert:
+    that: [proxmox_guests_api.api_host | length > 0, proxmox_guests_api.api_token_secret | length > 0]
+    fail_msg: "PVE_HOST / PVE_TOKEN_ID / PVE_TOKEN_SECRET not set. Run: set -a; . ~/.config/proxmox/env; set +a"
+  no_log: true
+
+- name: Guest management
+  module_defaults:
+    group/community.proxmox.proxmox:
+      "{{ proxmox_guests_api }}"
+  block:
+    - name: LXC - create/update
+      community.proxmox.proxmox:
+        node: "{{ proxmox_guests_node }}"
+        vmid: "{{ item.vmid }}"
+        hostname: "{{ item.hostname }}"
+        ostemplate: "{{ item.ostemplate }}"
+        cores: "{{ item.cores | default(1) }}"
+        memory: "{{ item.memory | default(512) }}"
+        swap: "{{ item.swap | default(256) }}"
+        disk: "{{ item.disk | default('local-lvm:8') }}"
+        netif:
+          net0: "name=eth0,bridge={{ item.bridge | default('vmbr0') }},ip={{ item.ip | default('dhcp') }}{{ (',gw=' ~ item.gw) if item.gw is defined else '' }}{{ (',tag=' ~ item.vlan) if item.vlan | default(none) else '' }}"
+        nameserver: "{{ item.nameserver | default(omit) }}"
+        onboot: "{{ item.onboot | default(true) }}"
+        unprivileged: "{{ item.unprivileged | default(true) }}"
+        features: "{{ ['nesting=1'] if item.nesting | default(false) else omit }}"
+        tags: "{{ item.tags | default(['ansible']) }}"
+        pubkey: "{{ proxmox_guests_ssh_pubkeys | join('\n') if proxmox_guests_ssh_pubkeys else omit }}"
+        state: present
+      loop: "{{ proxmox_guests_lxc }}"
+      loop_control: {label: "{{ item.vmid }} {{ item.hostname }}"}
+      register: pg_lxc
+
+    - name: LXC - protection flag (module has no option; PUT via API)
+      ansible.builtin.uri:
+        url: "https://{{ proxmox_guests_api.api_host }}:{{ proxmox_guests_api.api_port }}/api2/json/nodes/{{ proxmox_guests_node }}/lxc/{{ item.vmid }}/config"
+        method: PUT
+        headers:
+          Authorization: "PVEAPIToken={{ proxmox_guests_api.api_user }}!{{ proxmox_guests_api.api_token_id }}={{ proxmox_guests_api.api_token_secret }}"
+        body_format: form-urlencoded
+        body: {protection: "{{ 1 if item.protection | default(true) else 0 }}"}
+        validate_certs: false
+      loop: "{{ proxmox_guests_lxc }}"
+      loop_control: {label: "{{ item.vmid }}"}
+      no_log: true
+      changed_when: false
+
+    - name: LXC - start
+      community.proxmox.proxmox:
+        node: "{{ proxmox_guests_node }}"
+        vmid: "{{ item.vmid }}"
+        state: started
+      loop: "{{ proxmox_guests_lxc | selectattr('start', 'undefined') | list + proxmox_guests_lxc | selectattr('start', 'defined') | selectattr('start') | list }}"
+      loop_control: {label: "{{ item.vmid }}"}
+      when: proxmox_guests_start
+
+    - name: VM - clone from the cloud-init template (skipped if the name exists)
+      community.proxmox.proxmox_kvm:
+        node: "{{ proxmox_guests_node }}"
+        clone: "{{ proxmox_guests_template_name }}"
+        vmid: "{{ proxmox_guests_template_vmid }}"
+        newid: "{{ item.vmid }}"
+        name: "{{ item.name }}"
+        full: true
+        storage: "{{ item.storage | default(proxmox_guests_template_storage) }}"
+        timeout: 300
+      loop: "{{ proxmox_guests_vms }}"
+      loop_control: {label: "{{ item.vmid }} {{ item.name }}"}
+      register: pg_vm_clone
+
+    - name: VM - first-boot settings (only on freshly cloned VMs; update=true is never idempotent)
+      community.proxmox.proxmox_kvm:
+        node: "{{ proxmox_guests_node }}"
+        vmid: "{{ item.item.vmid }}"
+        name: "{{ item.item.name }}"
+        cores: "{{ item.item.cores | default(2) }}"
+        memory: "{{ item.item.memory | default(2048) }}"
+        ciuser: "{{ item.item.ciuser | default('hermes') }}"
+        sshkeys: "{{ proxmox_guests_ssh_pubkeys | join('\n') }}"
+        ipconfig:
+          ipconfig0: "ip={{ item.item.ip | default('dhcp') }}{{ (',gw=' ~ item.item.gw) if item.item.gw is defined else '' }}"
+        nameservers: "{{ item.item.nameserver | default(omit) }}"
+        onboot: "{{ item.item.onboot | default(true) }}"
+        tags: "{{ item.item.tags | default(['ansible']) }}"
+        protection: "{{ item.item.protection | default(true) }}"
+        update: true
+      loop: "{{ pg_vm_clone.results }}"
+      loop_control: {label: "{{ item.item.vmid }}"}
+      when: item.changed
+
+    - name: VM - grow disk when requested (freshly cloned only)
+      community.proxmox.proxmox_disk:
+        vmid: "{{ item.item.vmid }}"
+        disk: scsi0
+        size: "{{ item.item.disk_gb }}G"
+        state: resized
+      loop: "{{ pg_vm_clone.results }}"
+      loop_control: {label: "{{ item.item.vmid }}"}
+      when: item.changed and item.item.disk_gb is defined
+
+    - name: VM - start
+      community.proxmox.proxmox_kvm:
+        node: "{{ proxmox_guests_node }}"
+        vmid: "{{ item.vmid }}"
+        state: started
+      loop: "{{ proxmox_guests_vms }}"
+      loop_control: {label: "{{ item.vmid }}"}
+      when: proxmox_guests_start

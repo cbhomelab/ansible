@@ -1,0 +1,8 @@
+---
+- name: Build cloud-init VM template (on the Proxmox host)
+  ansible.builtin.include_tasks: template.yml
+  when: proxmox_guests_template_enabled and inventory_hostname == proxmox_guests_node
+
+- name: Create/update guests (API, from the controller)
+  ansible.builtin.include_tasks: guests.yml
+  when: inventory_hostname == 'localhost'

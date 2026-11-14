@@ -1,0 +1,33 @@
+---
+- name: Is the template vmid already present?
+  ansible.builtin.command: qm status {{ proxmox_guests_template_vmid }}
+  register: pg_tpl
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Build template
+  when: pg_tpl.rc != 0
+  block:
+    - name: Download Debian cloud image
+      ansible.builtin.get_url:
+        url: "{{ proxmox_guests_template_image_url }}"
+        dest: "{{ proxmox_guests_template_image_dir }}/{{ proxmox_guests_template_image_url | basename }}"
+        mode: "0644"
+    - name: Create VM shell
+      ansible.builtin.command: >-
+        qm create {{ proxmox_guests_template_vmid }} --name {{ proxmox_guests_template_name }}
+        --memory 2048 --cores 2 --cpu host --ostype l26 --machine q35 --bios seabios
+        --net0 virtio,bridge={{ proxmox_guests_template_bridge }}
+        --scsihw virtio-scsi-single --agent enabled=1 --serial0 socket --vga serial0
+        --tags ansible,template
+    - name: Import disk
+      ansible.builtin.command: >-
+        qm set {{ proxmox_guests_template_vmid }}
+        --scsi0 {{ proxmox_guests_template_storage }}:0,import-from={{ proxmox_guests_template_image_dir }}/{{ proxmox_guests_template_image_url | basename }},discard=on,ssd=1
+        --boot order=scsi0
+        --ide2 {{ proxmox_guests_template_storage }}:cloudinit
+    - name: Grow disk to 8G and convert to template
+      ansible.builtin.shell: |
+        qm resize {{ proxmox_guests_template_vmid }} scsi0 8G && qm set {{ proxmox_guests_template_vmid }} --protection 1 && qm template {{ proxmox_guests_template_vmid }}
+      changed_when: true
