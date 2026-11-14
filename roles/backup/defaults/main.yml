@@ -1,15 +1,34 @@
 ---
-# Scaffolded defaults — deliberately empty. No backup strategy has been
-# decided yet (see README.md open questions: what/where/retention/
-# mechanism). Do not add real values here without those answers.
-
+# backup: borg file-level backups of irreplaceable data, run on saturn (omv).
+# Proxmox guest backups are NOT here: they are the PVE job `weekly-saturn`
+# (vzdump -> NFS storage saturn-backups, keep-last=2, Sun 03:00).
 backup_enabled: false
-backup_targets: []
-# Example shape ONLY — not a real decision, mechanism/retention/target
-# are all open questions per README.md:
-# backup_targets:
-#   - name: "omv-appdata"
-#     mechanism: "restic"   # vzdump | restic | borg | rsync (undecided)
-#     source: "/srv/.../appdata"
-#     destination: ""        # undecided
-#     retention_days: 0      # undecided
+backup_borg_repo_base: /srv/dev-disk-by-uuid-61a64705-b6f5-4dfa-bc5a-8b5b9f04c475/backups/borg
+backup_borg_schedule: "*-*-* 02:00:00"
+backup_borg_keep: {daily: 7, weekly: 4, monthly: 2}
+# Unencrypted by decision (repos live on our own disk).
+backup_borg_archives:
+  - name: personal
+    paths:
+      - /srv/mergerfs/Personal/ally
+      - /srv/mergerfs/Personal/bishop
+      - /srv/mergerfs/Personal/christian
+      - /srv/mergerfs/Personal/kelly
+    excludes: []
+  - name: appdata
+    paths: [/srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata]
+    excludes:   # caches, trash, regenerable or already-monitored data
+      - "*/krusader"
+      - "*/prometheus"
+      - "*/loki"
+      - "*/tdarr"
+      - "*/tdarr2"
+      - "*/MediaCover"
+      - "*/image-proxy"
+      - "*/data.ms"
+      - "*/Cache"
+      - "*/cache"
+      - "*.log"
+  - name: homelab
+    paths: [/opt/docker-compose, /srv/remotemount/homeassistant]
+    excludes: ["*/.git", "*/home-assistant.log*", "*/home-assistant_v2.db*", "*/__pycache__"]

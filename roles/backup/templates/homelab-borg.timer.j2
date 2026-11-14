@@ -1,0 +1,8 @@
+[Unit]
+Description=Homelab borg backup timer
+[Timer]
+OnCalendar={{ backup_borg_schedule }}
+Persistent=true
+RandomizedDelaySec=300
+[Install]
+WantedBy=timers.target

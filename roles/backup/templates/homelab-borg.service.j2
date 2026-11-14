@@ -1,0 +1,7 @@
+[Unit]
+Description=Homelab borg backup (Ansible managed)
+[Service]
+Type=oneshot
+Nice=15
+IOSchedulingClass=idle
+ExecStart=/usr/local/sbin/homelab-borg-backup

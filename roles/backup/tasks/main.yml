@@ -1,14 +1,21 @@
 ---
-# SCAFFOLDED, NOT IMPLEMENTED.
-# No backup strategy exists yet — see README.md for the open questions
-# (what gets backed up, where to, retention, mechanism) that need user
-# decisions before any real task is written here.
-#
-# This stub is deliberately check-mode-safe and makes zero changes.
-
-- name: backup — not yet implemented (no-op)
-  ansible.builtin.debug:
-    msg: >-
-      roles/backup is scaffolded but not implemented; no backup strategy
-      has been decided yet. No changes were made on {{ inventory_hostname }}.
-      See roles/backup/README.md.
+- name: backup — borg (saturn)
+  when: backup_enabled
+  block:
+    - name: Repo base directory
+      ansible.builtin.file: {path: "{{ backup_borg_repo_base }}", state: directory, mode: "0700"}
+    - name: Init repos (unencrypted)
+      ansible.builtin.command: "borg init --encryption=none {{ backup_borg_repo_base }}/{{ item.name }}"
+      args: {creates: "{{ backup_borg_repo_base }}/{{ item.name }}/config"}
+      loop: "{{ backup_borg_archives }}"
+      loop_control: {label: "{{ item.name }}"}
+    - name: Backup script
+      ansible.builtin.template: {src: borg-backup.sh.j2, dest: /usr/local/sbin/homelab-borg-backup, mode: "0750"}
+    - name: systemd service
+      ansible.builtin.template: {src: homelab-borg.service.j2, dest: /etc/systemd/system/homelab-borg.service, mode: "0644"}
+      notify: Reload systemd
+    - name: systemd timer
+      ansible.builtin.template: {src: homelab-borg.timer.j2, dest: /etc/systemd/system/homelab-borg.timer, mode: "0644"}
+      notify: Reload systemd
+    - name: Enable timer
+      ansible.builtin.systemd: {name: homelab-borg.timer, enabled: true, state: started, daemon_reload: true}

@@ -1,0 +1,14 @@
+#!/bin/bash
+# Managed by Ansible (roles/backup). Unencrypted borg repos, one per archive set.
+set -u
+export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
+rc=0
+{% for a in backup_borg_archives %}
+R={{ backup_borg_repo_base }}/{{ a.name }}
+borg create --stats --compression zstd,3 --one-file-system \
+{% for e in a.excludes %}  --exclude '{{ e }}' \
+{% endfor %}  "$R::{{ a.name }}-{now:%Y%m%d-%H%M}" {{ a.paths | join(' ') }}
+r=$?; [ $r -gt 1 ] && rc=$r
+borg prune --keep-daily {{ backup_borg_keep.daily }} --keep-weekly {{ backup_borg_keep.weekly }} --keep-monthly {{ backup_borg_keep.monthly }} --glob-archives '{{ a.name }}-*' "$R" || rc=1
+{% endfor %}
+exit $rc
