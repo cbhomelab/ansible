@@ -1,0 +1,17 @@
+---
+- ansible.builtin.assert:
+    that: [minecraft_restore_archive | length > 0]
+    fail_msg: "pass -e minecraft_restore_archive=/path/on/controller/minecraft-state-*.tar.zst"
+- name: Ship archive
+  ansible.builtin.copy: {src: "{{ minecraft_restore_archive }}", dest: /tmp/mc-restore.tar.zst, mode: "0600"}
+- name: Stop server
+  ansible.builtin.systemd: {name: minecraft-server.service, state: stopped}
+- name: Extract state over the build
+  ansible.builtin.shell: |
+    set -e; cd {{ minecraft_deploy_dir }}
+    tar --zstd -xpf /tmp/mc-restore.tar.zst
+    chown -R {{ minecraft_user }}:{{ minecraft_user }} server proxy
+    rm -f /tmp/mc-restore.tar.zst
+  changed_when: true
+- name: Start server
+  ansible.builtin.systemd: {name: minecraft-server.service, state: started}

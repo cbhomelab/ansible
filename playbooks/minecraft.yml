@@ -1,0 +1,14 @@
+---
+# Build (default) / back up (--tags backup) / restore (--tags restore) lxc105.
+# Secrets: wrap with scripts/minecraft_secrets.sh, e.g.
+#   scripts/minecraft_secrets.sh ansible-playbook playbooks/minecraft.yml
+- name: Minecraft (Paper + Velocity)
+  hosts: lxc105-minecraft
+  become: true
+  tasks:
+    - ansible.builtin.import_role: {name: minecraft}
+      tags: [build]
+    - ansible.builtin.include_role: {name: minecraft, tasks_from: backup.yml}
+      tags: [never, backup]
+    - ansible.builtin.include_role: {name: minecraft, tasks_from: restore.yml}
+      tags: [never, restore]

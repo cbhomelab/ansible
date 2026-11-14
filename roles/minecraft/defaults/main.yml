@@ -1,0 +1,71 @@
+---
+# minecraft: build Paper + Velocity (oddlama/minecraft-server framework) the way
+# lxc105 runs today. World/player data is STATE and is restored with
+# tasks/restore.yml (tag: restore), never built here.
+minecraft_user: minecraft
+minecraft_home: /var/lib/minecraft
+minecraft_deploy_dir: "{{ minecraft_home }}/deploy"
+minecraft_repo: https://github.com/oddlama/minecraft-server
+minecraft_repo_version: 36c5f4b          # pinned to the commit lxc105 runs
+minecraft_java_packages: [java-25-amazon-corretto-jdk, openjdk-21-jre-headless]
+minecraft_paper_version: "26.2"          # pinned to live (build 123)
+minecraft_paper_build: 123
+minecraft_velocity_version: "3.4.0-SNAPSHOT"
+minecraft_velocity_build: 559
+minecraft_start: true                      # start services after converge
+minecraft_force_update: false              # re-run update.sh even if jars exist
+
+# Secrets: never in git. Supplied at run time (see scripts/minecraft_secrets.sh,
+# which reads them from Bitwarden) via environment variables.
+minecraft_forwarding_secret: "{{ lookup('env', 'MINECRAFT_FORWARDING_SECRET') }}"
+minecraft_discord_bot_token: "{{ lookup('env', 'MINECRAFT_DISCORD_BOT_TOKEN') }}"
+minecraft_management_secret: "{{ lookup('env', 'MINECRAFT_MANAGEMENT_SECRET') }}"
+
+# STATE (paths relative to deploy dir) captured by backup.yml / put back by restore.yml
+minecraft_state_paths:
+  - server/world
+  - server/whitelist.json
+  - server/ops.json
+  - server/banned-players.json
+  - server/banned-ips.json
+  - server/usercache.json
+  - server/permissions.yml
+  - server/plugins/vane-admin
+  - server/plugins/vane-bedtime
+  - server/plugins/vane-core
+  - server/plugins/vane-enchantments
+  - server/plugins/vane-permissions
+  - server/plugins/vane-portals
+  - server/plugins/vane-regions
+  - server/plugins/vane-trifles
+  - server/plugins/WorldEdit
+  - server/plugins/BlueMap/maps
+  - server/plugins/DiscordSRV
+  - proxy/plugins/vane-velocity
+minecraft_backup_dir: /var/backups/minecraft      # on the guest
+minecraft_backup_fetch_dir: ""                    # set to also fetch to the controller
+minecraft_restore_archive: ""                     # path ON THE CONTROLLER for restore.yml
+# config files rendered from templates/<path>.j2 (relative to deploy dir)
+minecraft_config_files:
+  - proxy/plugins/vane-velocity/config.toml
+  - proxy/velocity.toml
+  - server/bukkit.yml
+  - server/commands.yml
+  - server/config/paper-global.yml
+  - server/config/paper-world-defaults.yml
+  - server/help.yml
+  - server/permissions.yml
+  - server/plugins/BlueMap/core.conf
+  - server/plugins/BlueMap/maps/world.conf
+  - server/plugins/BlueMap/maps/world_nether.conf
+  - server/plugins/BlueMap/maps/world_the_end.conf
+  - server/plugins/BlueMap/plugin.conf
+  - server/plugins/BlueMap/storages/file.conf
+  - server/plugins/BlueMap/storages/sql.conf
+  - server/plugins/BlueMap/webapp.conf
+  - server/plugins/BlueMap/webserver.conf
+  - server/plugins/DiscordSRV/config.yml
+  - server/plugins/WorldEdit/config.yml
+  - server/server.properties
+  - server/spigot.yml
+  - server/wepif.yml
