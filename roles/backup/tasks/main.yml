@@ -93,3 +93,73 @@
     - name: Reload prometheus config if only rules/config changed
       ansible.builtin.uri: {url: "http://10.20.0.2:9090/-/reload", method: POST}
       when: (backup_rules.changed or backup_promcfg.changed) and not backup_compose.changed
+
+- name: backup — Alertmanager (Discord)
+  when: backup_alertmanager_enabled | default(false)
+  block:
+    - name: Alertmanager dirs
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+        owner: "{{ backup_appdata_uid }}"
+      loop: ["{{ backup_appdata }}/alertmanager", "{{ backup_appdata }}/alertmanager/config", "{{ backup_appdata }}/alertmanager/data"]
+    - name: Alertmanager config
+      ansible.builtin.template: {src: alertmanager.yml.j2, dest: "{{ backup_appdata }}/alertmanager/config/alertmanager.yml", mode: "0644"}
+      register: backup_am_cfg
+    - name: Alertmanager service in 90-metrics compose
+      ansible.builtin.blockinfile:
+        path: /opt/docker-compose/90-metrics/90-metrics.yml
+        insertafter: '^services:'
+        marker: "  # {mark} ANSIBLE alertmanager (roles/backup)"
+        backup: true
+        block: |2
+            alertmanager:
+              container_name: alertmanager
+              image: {{ backup_alertmanager_image }}
+              user: "${UID}:${GID}"
+              restart: unless-stopped
+              command:
+                - --config.file=/etc/alertmanager/alertmanager.yml
+                - --storage.path=/alertmanager
+              networks:
+                docker:
+              dns:
+                - ${DNS}
+              volumes:
+                - ${APPDATA_DIR}/alertmanager/config/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+                - ${APPDATA_DIR}/alertmanager/config/discord_webhook:/etc/alertmanager/discord_webhook:ro
+                - ${APPDATA_DIR}/alertmanager/data:/alertmanager
+              deploy:
+                resources:
+                  limits:
+                    pids: 256
+                    memory: 256M
+              logging:
+                options:
+                  max-size: 50m
+      register: backup_am_compose
+    - name: Prometheus points at alertmanager
+      ansible.builtin.blockinfile:
+        path: "{{ backup_prometheus_rules_dir }}/prometheus.yml"
+        marker: "# {mark} ANSIBLE alerting (roles/backup)"
+        insertbefore: '^scrape_configs:'
+        block: |
+          alerting:
+            alertmanagers:
+              - static_configs:
+                  - targets: ["alertmanager:9093"]
+      register: backup_am_prom
+    - name: Check webhook secret file exists
+      ansible.builtin.stat: {path: "{{ backup_appdata }}/alertmanager/config/discord_webhook"}
+      register: backup_am_secret
+    - name: Bring up alertmanager (only once the secret exists)
+      ansible.builtin.command: >-
+        docker compose --project-name 90-metrics --env-file /opt/docker-compose/global.env
+        --env-file /opt/docker-compose/90-metrics/90-metrics.env
+        -f /opt/docker-compose/90-metrics/90-metrics.yml -f /opt/docker-compose/90-metrics/compose.override.yml
+        up -d alertmanager
+      when: backup_am_secret.stat.exists and (backup_am_compose.changed or backup_am_cfg.changed)
+    - name: Restart prometheus (bind-mounted file was replaced, reload would read the stale inode)
+      ansible.builtin.command: docker restart prometheus
+      when: backup_am_prom.changed

@@ -7,6 +7,11 @@ groups:
         for: 15m
         labels: {severity: warning}
         annotations: {summary: "borg '{{ '{{' }} $labels.target {{ '}}' }}' has had no successful run for over 2 days"}
+      - alert: BorgBackupMissing
+        expr: absent(homelab_backup_last_success_timestamp_seconds{kind="borg"})
+        for: 24h
+        labels: {severity: warning}
+        annotations: {summary: "No borg backup has ever completed (or metrics lost)"}
       - alert: VzdumpBackupStale
         expr: time() - homelab_backup_last_success_timestamp_seconds{kind="vzdump"} > 9 * 86400
         for: 15m

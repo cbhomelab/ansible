@@ -1,0 +1,12 @@
+# Managed by Ansible (roles/backup). Webhook URL is read from a file, not stored here.
+route:
+  receiver: discord
+  group_by: [alertname]
+  group_wait: 30s
+  group_interval: 10m
+  repeat_interval: 12h
+receivers:
+  - name: discord
+    discord_configs:
+      - webhook_url_file: /etc/alertmanager/discord_webhook
+        send_resolved: true

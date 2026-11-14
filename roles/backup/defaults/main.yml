@@ -46,3 +46,10 @@ backup_metrics_textfile_dir: /var/lib/node_exporter/textfile
 backup_vzdump_dir: "{{ backup_borg_repo_base | dirname }}/dump"
 backup_neptune_config_dir: "{{ backup_borg_repo_base | dirname }}/neptune-config"
 backup_prometheus_rules_dir: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata/prometheus/config
+
+# Alertmanager -> Discord. The webhook URL is a SECRET: it lives only in
+# {{ backup_appdata }}/alertmanager/config/discord_webhook (chmod 600), never in git.
+backup_alertmanager_enabled: false
+backup_alertmanager_image: prom/alertmanager:v0.28.1
+backup_appdata: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata
+backup_appdata_uid: 1006   # UID in /opt/docker-compose/global.env
