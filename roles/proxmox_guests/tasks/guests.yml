@@ -61,7 +61,7 @@
         nameserver: "{{ item.nameserver | default(omit) }}"
         onboot: "{{ item.onboot | default(true) }}"
         unprivileged: "{{ item.unprivileged | default(true) }}"
-        features: "{{ ['nesting=1'] if item.nesting | default(false) else omit }}"
+        features: "{{ item.features | default(['nesting=1'] if item.nesting | default(false) else omit) }}"
         tags: "{{ item.tags | default(['ansible']) }}"
         pubkey: "{{ proxmox_guests_ssh_pubkeys | join('\n') if proxmox_guests_ssh_pubkeys else omit }}"
         state: present

@@ -1,0 +1,6 @@
+---
+# Adopted (pre-existing) LXCs, declared to match their live config exactly.
+# Values here must mirror reality; the role never destroys, and protection is the only intended change.
+proxmox_guests_lxc:
+  - {vmid: 104, hostname: glance, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 1, memory: 512, swap: 512, disk: "local-lvm:2", features: ["nesting=1", "keyctl=1"], tags: [community-script, dashboard]}
+  - {vmid: 106, hostname: iracing-team-manager, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 2048, swap: 512, disk: "local-lvm:10", features: ["nesting=1", "keyctl=1"], tags: [iracing, team-manager]}
