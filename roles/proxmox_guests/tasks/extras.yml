@@ -35,19 +35,21 @@
   no_log: true
   changed_when: true
 
-# ---- update mode ----
-- name: Update mode - current config of guests with update true
+# ---- drift report + update mode ----
+# Every declared guest (create lists + proxmox_guests_adopted) is compared to live config and
+# differences are reported. Only guests with `update: true` are changed.
+- name: Drift - current config of declared guests
   ansible.builtin.uri:
     url: "{{ pg_base }}/{{ item.type }}/{{ item.vmid }}/config"
     headers: {Authorization: "{{ pg_auth }}"}
     validate_certs: false
-  loop: "{{ (proxmox_guests_lxc | map('combine', {'type': 'lxc'}) | list) + (proxmox_guests_vms | map('combine', {'type': 'qemu'}) | list) | selectattr('update', 'defined') | selectattr('update') | list }}"
+  loop: "{{ (proxmox_guests_lxc | map('combine', {'type': 'lxc'}) | list) + (proxmox_guests_vms | map('combine', {'type': 'qemu'}) | list) + proxmox_guests_adopted }}"
   loop_control: {label: "{{ item.vmid }}"}
   register: pg_upd
   no_log: true
   check_mode: false
 
-- name: Update mode - compute differences
+- name: Drift - compute differences
   ansible.builtin.set_fact:
     pg_diffs: >-
       {%- set out = [] -%}
@@ -55,21 +57,23 @@
       {%- set want = {} -%}
       {%- for k in proxmox_guests_update_keys[r.item.type] -%}
       {%- if r.item[k] is defined -%}
-      {%- set v = (r.item[k] | join(',')) if k == 'features' else ((r.item[k] | join(';')) if k == 'tags' else r.item[k]) -%}
-      {%- if (r.json.data[k] | default('') | string) != (v | string) -%}{%- set _ = want.update({k: v}) -%}{%- endif -%}
+      {%- set raw = r.item[k] -%}
+      {%- set v = (raw | join(',')) if k == 'features' else ((raw | join(';')) if k == 'tags' else ((1 if raw else 0) if raw is boolean else raw)) -%}
+      {%- set cur = r.json.data[k] | default('') | string -%}
+      {%- if (cur.split(',') | sort | join(',') if k == 'features' else cur) != (v.split(',') | sort | join(',') if k == 'features' else v | string) -%}{%- set _ = want.update({k: v}) -%}{%- endif -%}
       {%- endif -%}
       {%- endfor -%}
-      {%- if want -%}{%- set _ = out.append({'vmid': r.item.vmid, 'type': r.item.type, 'set': want, 'was': r.json.data}) -%}{%- endif -%}
+      {%- if want -%}{%- set _ = out.append({'vmid': r.item.vmid, 'type': r.item.type, 'set': want, 'update': r.item.get('update', false) | bool}) -%}{%- endif -%}
       {%- endfor -%}
       {{ out }}
 
-- name: Update mode - report
+- name: Drift - report
   ansible.builtin.debug:
-    msg: "{{ item.type }}/{{ item.vmid }}: {{ item.set }}"
+    msg: "{{ item.type }}/{{ item.vmid }} {{ 'WILL UPDATE' if item.update else 'DRIFT (update not enabled)' }}: {{ item.set }}"
   loop: "{{ pg_diffs }}"
   loop_control: {label: "{{ item.vmid }}"}
 
-- name: Update mode - apply differences
+- name: Update mode - apply differences (update true only)
   ansible.builtin.uri:
     url: "{{ pg_base }}/{{ item.type }}/{{ item.vmid }}/config"
     method: PUT
@@ -77,7 +81,7 @@
     body_format: form-urlencoded
     body: "{{ item.set }}"
     validate_certs: false
-  loop: "{{ pg_diffs }}"
+  loop: "{{ pg_diffs | selectattr('update') | list }}"
   loop_control: {label: "{{ item.vmid }}"}
   when: not ansible_check_mode
   no_log: true

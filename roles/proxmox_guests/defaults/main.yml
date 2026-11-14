@@ -42,3 +42,7 @@ proxmox_guests_protect_only: []
 proxmox_guests_update_keys:
   lxc: [cores, memory, swap, onboot, tags, features, nameserver]
   qemu: [cores, memory, onboot, tags, agent]
+
+# Pre-existing guests declared for drift reporting (and update mode); never created/cloned.
+# [{vmid: 100, type: qemu, name: router, cores: 2, memory: 4096, onboot: true, agent: 1}]
+proxmox_guests_adopted: []
