@@ -1,0 +1,9 @@
+---
+# Generates Prometheus file_sd targets for node_exporter from the Ansible inventory,
+# so new guests are scraped without hand-editing prometheus.yml.
+prometheus_targets_appdata: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata
+prometheus_targets_groups: [lxc_guests, debian_vms, omv]
+prometheus_targets_extra_hosts: [lxc107-unifi]
+prometheus_targets_exclude: [lxc103-hermesagent]
+prometheus_targets_port: 9100
+prometheus_targets_compose: /opt/docker-compose/90-metrics/90-metrics.yml

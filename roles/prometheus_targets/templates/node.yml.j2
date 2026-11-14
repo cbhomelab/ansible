@@ -1,0 +1,5 @@
+# Managed by Ansible (roles/prometheus_targets). Do not edit: regenerated from inventory.
+{% for h in prometheus_targets_hosts %}
+- targets: ["{{ hostvars[h].ansible_host }}:{{ prometheus_targets_port }}"]
+  labels: {host: {{ h }}}
+{% endfor %}

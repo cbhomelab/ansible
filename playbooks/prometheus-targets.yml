@@ -1,0 +1,6 @@
+---
+# Generate Prometheus node_exporter targets (file_sd) from inventory. Runs on saturn.
+- name: Prometheus targets from inventory
+  hosts: saturn
+  become: true
+  roles: [prometheus_targets]
