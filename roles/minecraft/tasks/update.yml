@@ -1,0 +1,68 @@
+---
+# In-place update of the jars. Minecraft version moves only when you change
+# minecraft_paper_version / velocity pins; Paper's build floats by default.
+# Flow: report -> backup (proxy/server aware) -> swap jars -> restart -> health
+# check -> rollback to the saved jars on failure.
+- name: Current jar hashes
+  ansible.builtin.shell: cd {{ minecraft_deploy_dir }}; sha256sum server/paper.jar proxy/velocity.jar | cut -c1-12,65-
+  register: mc_before
+  changed_when: false
+
+- name: Target builds
+  ansible.builtin.shell: |
+    for p in "paper {{ minecraft_paper_version }} {{ minecraft_paper_build }}" "velocity {{ minecraft_velocity_version }} {{ minecraft_velocity_build }}"; do
+      set -- $p
+      curl -fsS https://fill.papermc.io/v3/projects/$1/versions/$2/builds/$3 | jq -r '"\($p // "") " + .downloads["server:default"].name + " build \(.id) sha \(.downloads["server:default"].checksums.sha256[0:12])"' --arg p "$1"
+    done
+  register: mc_target
+  changed_when: false
+
+- ansible.builtin.debug: {msg: ["current: {{ mc_before.stdout_lines }}", "target:  {{ mc_target.stdout_lines }}"]}
+
+- name: Update
+  when: not (minecraft_update_check_only | bool)
+  block:
+    - ansible.builtin.include_tasks: backup.yml
+
+    - name: Park Paper and stop it if running (proxy stays up unless velocity changes)
+      ansible.builtin.shell: |
+        cd {{ minecraft_deploy_dir }}
+        touch server/start.block
+        tmux -S /run/minecraft-server/tmux send-keys -t 0 stop Enter 2>/dev/null || true
+        for i in $(seq 1 60); do pgrep -f "[p]aper.jar" >/dev/null || break; sleep 2; done
+        cp -p server/paper.jar server/paper.jar.prev; cp -p proxy/velocity.jar proxy/velocity.jar.prev
+      args: {executable: /bin/bash}
+      become_user: "{{ minecraft_user }}"
+      changed_when: true
+
+    - ansible.builtin.import_tasks: jars.yml
+
+    - name: Restart proxy only if its jar changed
+      ansible.builtin.systemd: {name: minecraft-proxy.service, state: restarted}
+      when: mc_jars.stdout is search('changed') and (mc_jars.stdout is search('velocity'))
+
+    - name: Health - jars intact and proxy answering
+      ansible.builtin.shell: |
+        set -e; cd {{ minecraft_deploy_dir }}
+        unzip -tq server/paper.jar >/dev/null; unzip -tq proxy/velocity.jar >/dev/null
+        systemctl is-active minecraft-proxy >/dev/null
+        ss -tlnH | awk '{print $4}' | grep -q ':{{ minecraft_proxy_port | default(25565) }}$'
+      args: {executable: /bin/bash}
+      changed_when: false
+
+    - name: Release the block only if Paper was running before (as backup.yml found it)
+      ansible.builtin.file: {path: "{{ minecraft_deploy_dir }}/server/start.block", state: absent}
+      when: mc_paper_up.rc == 0 and not mc_block.stat.exists
+
+    - ansible.builtin.debug: {msg: "updated; rollback jars kept as *.jar.prev; state archive {{ mc_archive }}"}
+
+  rescue:
+    - name: Rollback jars
+      ansible.builtin.shell: |
+        cd {{ minecraft_deploy_dir }}
+        [ -f server/paper.jar.prev ] && cp -p server/paper.jar.prev server/paper.jar
+        [ -f proxy/velocity.jar.prev ] && cp -p proxy/velocity.jar.prev proxy/velocity.jar
+      args: {executable: /bin/bash}
+      become_user: "{{ minecraft_user }}"
+    - ansible.builtin.systemd: {name: minecraft-proxy.service, state: restarted}
+    - ansible.builtin.fail: {msg: "minecraft update failed; jars rolled back, state archive {{ mc_archive | default('n/a') }}"}

@@ -68,26 +68,7 @@
   ansible.builtin.stat: {path: "{{ minecraft_deploy_dir }}/server/plugins/vane-core.jar"}
   register: plugins_present
 
-- name: Pinned Paper and Velocity jars (PaperMC v3 API; v2 is sunset)
-  ansible.builtin.shell: |
-    set -euo pipefail
-    cd {{ minecraft_deploy_dir }}
-    fetch() {  # project version build dest
-      meta=$(curl -fsS "https://fill.papermc.io/v3/projects/$1/versions/$2/builds/$3")
-      url=$(echo "$meta" | jq -r '.downloads["server:default"].url')
-      sha=$(echo "$meta" | jq -r '.downloads["server:default"].checksums.sha256')
-      if [ -f "$4" ] && [ "$(sha256sum "$4" | cut -d' ' -f1)" = "$sha" ]; then return 0; fi
-      curl -fsS -o "$4.tmp" "$url"
-      [ "$(sha256sum "$4.tmp" | cut -d' ' -f1)" = "$sha" ] || { echo "checksum mismatch $4"; rm -f "$4.tmp"; exit 1; }
-      mv "$4.tmp" "$4"; echo changed
-    }
-    fetch paper {{ minecraft_paper_version }} {{ minecraft_paper_build }} server/paper.jar
-    fetch velocity {{ minecraft_velocity_version }} {{ minecraft_velocity_build }} proxy/velocity.jar
-  args: {executable: /bin/bash}
-  become_user: "{{ minecraft_user }}"
-  vars: {ansible_become_flags: "-H -S"}
-  register: mc_jars
-  changed_when: "'changed' in mc_jars.stdout"
+- ansible.builtin.import_tasks: jars.yml
 
 - name: Plugin downloads (upstream scripts minus the sunset-API jar calls)
   ansible.builtin.shell: |

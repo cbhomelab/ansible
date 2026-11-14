@@ -9,7 +9,7 @@ minecraft_repo: https://github.com/oddlama/minecraft-server
 minecraft_repo_version: 36c5f4b          # pinned to the commit lxc105 runs
 minecraft_java_packages: [java-25-amazon-corretto-jdk, openjdk-21-jre-headless]
 minecraft_paper_version: "26.2"          # pinned to live (build 123)
-minecraft_paper_build: 123
+minecraft_paper_build: latest      # latest build WITHIN minecraft_paper_version; set a number to freeze (was 123)
 minecraft_velocity_version: "3.4.0-SNAPSHOT"
 minecraft_velocity_build: 559
 minecraft_start: true                      # start services after converge
@@ -73,3 +73,4 @@ minecraft_seed_only_files:
   - proxy/plugins/vane-velocity/config.toml
   - server/config/paper-global.yml
   - server/server.properties
+minecraft_update_check_only: false
