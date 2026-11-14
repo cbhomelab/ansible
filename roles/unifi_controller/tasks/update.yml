@@ -1,0 +1,81 @@
+---
+# Move UniFi to the version pinned in defaults (unifi_version/unifi_deb_url/
+# unifi_deb_sha256). To update: edit those three pins (and mongod pins if the
+# new release needs a newer MongoDB), then run --tags update.
+# Flow: compare -> cold backup of /var/lib/unifi -> install deb -> health ->
+# on failure restore data and reinstall the previous deb.
+- name: Installed version
+  ansible.builtin.shell: dpkg-query -W -f='${Version}' unifi
+  register: unifi_installed
+  changed_when: false
+
+- ansible.builtin.debug: {msg: "installed {{ unifi_installed.stdout }} -> target {{ unifi_version }}"}
+
+- name: Update
+  when: unifi_installed.stdout != unifi_version and not (unifi_update_check_only | bool)
+  block:
+    - name: Download target deb (checksum pinned)
+      ansible.builtin.get_url:
+        url: "{{ unifi_deb_url }}"
+        dest: "/var/cache/unifi_{{ unifi_version }}_all.deb"
+        checksum: "sha256:{{ unifi_deb_sha256 }}"
+        mode: "0644"
+
+    - name: Stop unifi for a consistent cold backup
+      ansible.builtin.systemd: {name: unifi, state: stopped}
+
+    - name: Cold backup of /var/lib/unifi
+      ansible.builtin.shell: |
+        set -e; mkdir -p {{ unifi_backup_root }}
+        tar -czf {{ unifi_backup_root }}/unifi-{{ unifi_installed.stdout }}-{{ ansible_date_time.epoch }}.tar.gz -C /var/lib unifi
+        ls -1t {{ unifi_backup_root }}/unifi-*.tar.gz | head -1
+      register: unifi_cold
+      changed_when: true
+
+    - name: Fetch cold backup to controller
+      ansible.builtin.fetch: {src: "{{ unifi_cold.stdout }}", dest: "{{ unifi_backup_fetch_dir }}/", flat: true}
+      when: unifi_backup_fetch_dir | length > 0
+
+    - name: Unhold, install target, re-hold
+      ansible.builtin.shell: |
+        set -e
+        apt-mark unhold unifi
+        apt-get install -y --allow-downgrades /var/cache/unifi_{{ unifi_version }}_all.deb
+        apt-mark hold unifi
+      args: {executable: /bin/bash}
+      changed_when: true
+
+    - ansible.builtin.systemd: {name: unifi, state: started, enabled: true}
+
+    - name: Health - controller up on new version
+      ansible.builtin.uri:
+        url: https://127.0.0.1:8443/status
+        validate_certs: false
+        return_content: true
+      register: unifi_status
+      retries: 60
+      delay: 10
+      until: unifi_status.status | default(0) == 200 and (unifi_status.json.meta.up | default(false))
+      failed_when: unifi_status.json.meta.server_version | default('') is not search(unifi_version.split('-')[0])
+
+    - ansible.builtin.debug: {msg: "unifi {{ unifi_status.json.meta.server_version }} healthy; pre-update data at {{ unifi_cold.stdout }}"}
+
+  rescue:
+    - ansible.builtin.debug:
+        msg: >-
+          UniFi update failed. Rolling back data from {{ unifi_cold.stdout | default('(no backup taken)') }}.
+          Reinstall of the previous deb needs unifi_rollback_deb_url/sha256 (set to the old pin).
+    - name: Restore data and previous package
+      ansible.builtin.shell: |
+        set -e
+        systemctl stop unifi || true
+        rm -rf /var/lib/unifi; tar -xzf {{ unifi_cold.stdout }} -C /var/lib
+        {% if unifi_rollback_deb_url | length > 0 %}
+        curl -fsSL -o /var/cache/unifi_rollback.deb {{ unifi_rollback_deb_url }}
+        echo "{{ unifi_rollback_deb_sha256 }}  /var/cache/unifi_rollback.deb" | sha256sum -c -
+        apt-mark unhold unifi; apt-get install -y --allow-downgrades /var/cache/unifi_rollback.deb; apt-mark hold unifi
+        {% endif %}
+        systemctl start unifi
+      args: {executable: /bin/bash}
+      when: unifi_cold is defined and unifi_cold.stdout is defined
+    - ansible.builtin.fail: {msg: "unifi update failed and was rolled back; see message above"}

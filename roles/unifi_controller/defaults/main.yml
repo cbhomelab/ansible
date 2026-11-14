@@ -16,3 +16,7 @@ unifi_start: true
 unifi_backup_dir: /var/lib/unifi/backup/autobackup
 unifi_backup_fetch_dir: ""
 unifi_restore_file: ""        # .unf ON THE CONTROLLER, for restore.yml
+unifi_backup_root: /var/backups/unifi
+unifi_update_check_only: false
+unifi_rollback_deb_url: ""      # set to the previous pin's URL/sha for automatic package rollback
+unifi_rollback_deb_sha256: ""

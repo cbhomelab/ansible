@@ -10,3 +10,5 @@
       tags: [never, backup]
     - ansible.builtin.include_role: {name: unifi_controller, tasks_from: restore.yml, apply: {tags: [restore]}}
       tags: [never, restore]
+    - ansible.builtin.include_role: {name: unifi_controller, tasks_from: update.yml, apply: {tags: [update]}}
+      tags: [never, update]
