@@ -1,0 +1,258 @@
+---
+# OPNsense Unbound DNS: split-horizon records for internal-only
+# cbhomelab.net names, so clients resolve them from the router itself
+# instead of depending on a Pi-hole domain-override forward.
+#
+# Source of truth = the live Nginx Proxy Manager proxy/redirection host
+# list (every enabled hostname under network_appliances_unbound_domain)
+# plus network_appliances_unbound_extra_hosts. Each name gets an explicit
+# A host override -> network_appliances_unbound_target_ip (NPM).
+#
+# HARD RULES (learned the hard way, do not "simplify"):
+#   - NEVER create a wildcard ('*') host override. It makes Unbound fail to
+#     start, and Unbound's local-data does not expand '*' anyway. The
+#     assert below enforces this.
+#   - Records managed by this role carry network_appliances_unbound_marker
+#     in their description. Only those are ever modified or (opt-in)
+#     deleted — hand-made overrides (cameras, *.cbho.me, etc.) are never
+#     touched.
+#   - Plan-only unless network_appliances_unbound_apply is true.
+
+- name: Log in to NPM (to read the live proxy host list)
+  ansible.builtin.uri:
+    url: "http://{{ network_appliances_npm.host }}/api/tokens"
+    method: POST
+    body_format: json
+    body:
+      identity: "{{ network_appliances_npm.identity }}"
+      secret: "{{ network_appliances_npm.secret }}"
+    status_code: [200]
+  register: network_appliances_npm_token
+  no_log: true
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Read NPM proxy hosts and redirection hosts
+  ansible.builtin.uri:
+    url: "http://{{ network_appliances_npm.host }}/api/nginx/{{ item }}"
+    headers:
+      Authorization: "Bearer {{ network_appliances_npm_token.json.token }}"
+    status_code: [200]
+  register: network_appliances_npm_hosts
+  loop: [proxy-hosts, redirection-hosts]
+  no_log: true
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Build desired hostname list
+  ansible.builtin.set_fact:
+    network_appliances_unbound_desired: >-
+      {{
+        (
+          (network_appliances_npm_hosts.results
+            | map(attribute='json') | flatten
+            | selectattr('enabled') | list)
+          | map(attribute='domain_names') | flatten
+          | map('lower') | list
+          + network_appliances_unbound_extra_hosts | map('lower') | list
+        )
+        | select('match', '^[a-z0-9-]+\.' ~ (network_appliances_unbound_domain | regex_escape) ~ '$')
+        | reject('in', network_appliances_unbound_exclude_hosts)
+        | unique | sort | list
+      }}
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Refuse wildcard / malformed names (wildcards break Unbound startup)
+  ansible.builtin.assert:
+    that:
+      - "'*' not in item"
+      - item.split('.')[0] | length > 0
+    fail_msg: "Refusing {{ item }} — wildcard host overrides stop Unbound from starting."
+  loop: "{{ network_appliances_unbound_desired }}"
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Fetch existing Unbound host overrides
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/searchHostOverride"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {rowCount: 5000, current: 1}
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_unbound_existing
+  no_log: true
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Classify (create / set / unchanged / stale / unmanaged-conflict)
+  ansible.builtin.set_fact:
+    network_appliances_unbound_plan: >-
+      {%- set rows = network_appliances_unbound_existing.json.rows -%}
+      {%- set dom = network_appliances_unbound_domain -%}
+      {%- set mk = network_appliances_unbound_marker -%}
+      {%- set out = {'create': [], 'set': [], 'unchanged': [], 'stale': [], 'conflict': []} -%}
+      {%- for fqdn in network_appliances_unbound_desired -%}
+      {%- set host = fqdn.split('.')[0] -%}
+      {%- set m = rows | selectattr('hostname', 'equalto', host) | selectattr('domain', 'equalto', dom) | selectattr('rr', 'match', '^A( |$)') | list -%}
+      {%- if m | length == 0 -%}{%- set _ = out.create.append({'fqdn': fqdn, 'host': host}) -%}
+      {%- elif m[0].server == network_appliances_unbound_target_ip and m[0].enabled == '1' -%}{%- set _ = out.unchanged.append(fqdn) -%}
+      {%- elif mk in m[0].description -%}{%- set _ = out.set.append({'fqdn': fqdn, 'uuid': m[0].uuid, 'host': host}) -%}
+      {%- else -%}{%- set _ = out.conflict.append({'fqdn': fqdn, 'has': m[0].server}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- for r in rows if r.domain == dom and mk in r.description and (r.hostname ~ '.' ~ dom) not in network_appliances_unbound_desired -%}
+      {%- set _ = out.stale.append({'fqdn': r.hostname ~ '.' ~ dom, 'uuid': r.uuid}) -%}
+      {%- endfor -%}
+      {{ out }}
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Plan
+  ansible.builtin.debug:
+    msg: >-
+      Unbound {{ network_appliances_unbound_domain }} -> {{ network_appliances_unbound_target_ip }}:
+      create={{ network_appliances_unbound_plan.create | length }}
+      set={{ network_appliances_unbound_plan.set | length }}
+      unchanged={{ network_appliances_unbound_plan.unchanged | length }}
+      stale(managed, no longer in NPM)={{ network_appliances_unbound_plan.stale | map(attribute='fqdn') | list }}
+      conflict(hand-made override differs, left alone)={{ network_appliances_unbound_plan.conflict }}
+      apply={{ network_appliances_unbound_apply }} prune={{ network_appliances_unbound_prune }}
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Create missing host overrides
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/addHostOverride"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host:
+        enabled: "1"
+        hostname: "{{ item.host }}"
+        domain: "{{ network_appliances_unbound_domain }}"
+        rr: A
+        server: "{{ network_appliances_unbound_target_ip }}"
+        description: "{{ network_appliances_unbound_marker }}"
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_unbound_created
+  failed_when: network_appliances_unbound_created.json.result | default('') != 'saved'
+  loop: "{{ network_appliances_unbound_plan.create }}"
+  loop_control: {label: "{{ item.fqdn }}"}
+  when: inventory_hostname == 'vm100-opnsense' and network_appliances_unbound_apply
+
+- name: Correct managed overrides that drifted
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/setHostOverride/{{ item.uuid }}"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host:
+        enabled: "1"
+        hostname: "{{ item.host }}"
+        domain: "{{ network_appliances_unbound_domain }}"
+        rr: A
+        server: "{{ network_appliances_unbound_target_ip }}"
+        description: "{{ network_appliances_unbound_marker }}"
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_unbound_updated
+  failed_when: network_appliances_unbound_updated.json.result | default('') != 'saved'
+  loop: "{{ network_appliances_unbound_plan.set }}"
+  loop_control: {label: "{{ item.fqdn }}"}
+  when: inventory_hostname == 'vm100-opnsense' and network_appliances_unbound_apply
+
+- name: Delete managed overrides no longer in NPM (opt-in)
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/delHostOverride/{{ item.uuid }}"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {}
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_unbound_deleted
+  loop: "{{ network_appliances_unbound_plan.stale }}"
+  loop_control: {label: "{{ item.fqdn }}"}
+  when: inventory_hostname == 'vm100-opnsense' and network_appliances_unbound_apply and network_appliances_unbound_prune
+
+# A domain-override forward for the zone would shadow/duplicate the local
+# records and keeps Pi-hole in the resolution path. Opt-in removal.
+- name: Find domain-override forwards for the zone
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/searchDomainOverride"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {rowCount: 1000, current: 1}
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_unbound_forwards
+  no_log: true
+  when: inventory_hostname == 'vm100-opnsense'
+
+- name: Report/remove forwards for {{ network_appliances_unbound_domain }}
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/delDomainOverride/{{ item.uuid }}"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {}
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_unbound_fwd_deleted
+  loop: "{{ network_appliances_unbound_forwards.json.rows | selectattr('domain', 'equalto', network_appliances_unbound_domain) | list }}"
+  loop_control: {label: "{{ item.domain }} -> {{ item.server }}"}
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - network_appliances_unbound_apply
+    - network_appliances_unbound_remove_forward
+
+- name: Apply (reconfigure Unbound) if anything changed
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/service/reconfigure"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {}
+    validate_certs: false
+    status_code: [200]
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - network_appliances_unbound_apply
+    - >-
+      (network_appliances_unbound_plan.create | length
+       + network_appliances_unbound_plan.set | length) > 0
+      or (network_appliances_unbound_fwd_deleted.results | default([]) | length) > 0
+      or (network_appliances_unbound_prune and network_appliances_unbound_plan.stale | length > 0)
+
+- name: Verify each desired name resolves to the target via the router
+  ansible.builtin.command: "dig +short +time=3 +tries=2 @{{ network_appliances_unbound_resolver }} {{ item }}"
+  register: network_appliances_unbound_check
+  changed_when: false
+  failed_when: false
+  loop: "{{ network_appliances_unbound_desired }}"
+  loop_control: {label: "{{ item }}"}
+  when: inventory_hostname == 'vm100-opnsense' and network_appliances_unbound_apply
+
+- name: Fail if any name does not resolve to the target
+  ansible.builtin.fail:
+    msg: >-
+      Not resolving to {{ network_appliances_unbound_target_ip }}:
+      {{ network_appliances_unbound_check.results | rejectattr('stdout_lines', 'contains', network_appliances_unbound_target_ip) | map(attribute='item') | list }}
+  when:
+    - inventory_hostname == 'vm100-opnsense'
+    - network_appliances_unbound_apply
+    - network_appliances_unbound_check.results | rejectattr('stdout_lines', 'contains', network_appliances_unbound_target_ip) | list | length > 0

@@ -36,3 +36,30 @@ network_appliances_unifi:
   password: ""
   # Session-cookie auth (not a static API key) — see README.md. UniFi
   # config management is still out of scope for this pass.
+
+# ---- Unbound DNS (split-horizon cbhomelab.net -> NPM) ------------------
+# Source of truth is the live NPM proxy-host list. See tasks/unbound_dns.yml.
+# Plan-only unless network_appliances_unbound_apply is true.
+network_appliances_unbound_enabled: true
+network_appliances_unbound_apply: false
+network_appliances_unbound_domain: cbhomelab.net
+# NPM (LXC 102). Same IP as the lxc102-intranet inventory host.
+network_appliances_unbound_target_ip: "{{ hostvars['lxc102-intranet'].ansible_host }}"
+# Records this role owns carry this in their description; nothing else is
+# ever modified/deleted.
+network_appliances_unbound_marker: "ansible:network_appliances unbound_dns (NPM proxy host)"
+# Names not in NPM that should still resolve (short or fqdn under the domain).
+network_appliances_unbound_extra_hosts: ["intranet.cbhomelab.net"]
+network_appliances_unbound_exclude_hosts: []
+# Delete managed records whose NPM host no longer exists.
+network_appliances_unbound_prune: false
+# Remove any Unbound domain-override forward for the zone (e.g. the old
+# cbhomelab.net -> Pi-hole forward) so Pi-hole is out of the path.
+network_appliances_unbound_remove_forward: true
+# Resolver used for the post-apply verification (run from the control node).
+network_appliances_unbound_resolver: 10.10.0.1
+
+network_appliances_npm:
+  host: "{{ hostvars['lxc102-intranet'].ansible_host }}:81"
+  identity: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='username') | first }}"
+  secret: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='password') | first }}"
