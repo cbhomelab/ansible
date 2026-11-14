@@ -39,3 +39,10 @@ backup_pve_config_dest: /mnt/pve/saturn-backups/neptune-config
 backup_pve_config_keep: 8
 backup_pve_config_schedule: "Sun *-*-* 04:00:00"
 backup_pve_config_paths: [/etc/pve, /etc/vzdump.conf, /etc/network/interfaces, /etc/hosts, /etc/fstab, /etc/ssh/sshd_config, /etc/apt/sources.list.d, /root/.ssh/authorized_keys]
+
+# Monitoring: metrics via node_exporter textfile collector + Prometheus rules (saturn).
+backup_metrics_enabled: false
+backup_metrics_textfile_dir: /var/lib/node_exporter/textfile
+backup_vzdump_dir: "{{ backup_borg_repo_base | dirname }}/dump"
+backup_neptune_config_dir: "{{ backup_borg_repo_base | dirname }}/neptune-config"
+backup_prometheus_rules_dir: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata/prometheus/config

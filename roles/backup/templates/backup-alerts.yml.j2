@@ -1,0 +1,29 @@
+# Managed by Ansible (roles/backup)
+groups:
+  - name: homelab-backups
+    rules:
+      - alert: BorgBackupStale
+        expr: time() - homelab_backup_last_success_timestamp_seconds{kind="borg"} > 2 * 86400
+        for: 15m
+        labels: {severity: warning}
+        annotations: {summary: "borg '{{ '{{' }} $labels.target {{ '}}' }}' has had no successful run for over 2 days"}
+      - alert: VzdumpBackupStale
+        expr: time() - homelab_backup_last_success_timestamp_seconds{kind="vzdump"} > 9 * 86400
+        for: 15m
+        labels: {severity: warning}
+        annotations: {summary: "Proxmox guest {{ '{{' }} $labels.target {{ '}}' }} has no backup newer than 9 days (weekly job)"}
+      - alert: PveConfigBackupStale
+        expr: time() - homelab_backup_last_success_timestamp_seconds{kind="pve-config"} > 9 * 86400
+        for: 15m
+        labels: {severity: warning}
+        annotations: {summary: "Neptune config backup is older than 9 days"}
+      - alert: BackupMetricsMissing
+        expr: absent(homelab_backup_last_success_timestamp_seconds{kind="vzdump"})
+        for: 1h
+        labels: {severity: warning}
+        annotations: {summary: "No backup metrics are being reported from saturn"}
+      - alert: SaturnRootDiskLow
+        expr: node_filesystem_avail_bytes{host="saturn",mountpoint="/"} / node_filesystem_size_bytes{host="saturn",mountpoint="/"} < 0.10
+        for: 30m
+        labels: {severity: warning}
+        annotations: {summary: "saturn root filesystem has under 10% free"}

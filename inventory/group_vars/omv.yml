@@ -46,3 +46,7 @@ system_baseline_timezone_enabled: false
 backup_enabled: true
 
 compose_stacks_enabled: true
+
+monitoring_agents_node_exporter_textfile_dir: /var/lib/node_exporter/textfile
+
+backup_metrics_enabled: true

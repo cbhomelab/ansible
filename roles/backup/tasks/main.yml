@@ -50,3 +50,46 @@
         mode: "0644"
     - name: Enable timer
       ansible.builtin.systemd: {name: homelab-pve-config.timer, enabled: true, state: started, daemon_reload: true}
+
+- name: backup — monitoring (metrics + Prometheus rules, saturn)
+  when: backup_metrics_enabled | default(false)
+  block:
+    - name: Metrics script
+      ansible.builtin.template: {src: backup-metrics.sh.j2, dest: /usr/local/sbin/homelab-backup-metrics, mode: "0755"}
+    - name: Metrics timer + service
+      ansible.builtin.copy:
+        dest: "/etc/systemd/system/{{ item.n }}"
+        content: "{{ item.c }}"
+        mode: "0644"
+      loop:
+        - {n: homelab-backup-metrics.service, c: "[Unit]\nDescription=Backup freshness metrics\n[Service]\nType=oneshot\nExecStart=/usr/local/sbin/homelab-backup-metrics\n"}
+        - {n: homelab-backup-metrics.timer, c: "[Unit]\nDescription=Backup freshness metrics\n[Timer]\nOnBootSec=2min\nOnUnitActiveSec=10min\n[Install]\nWantedBy=timers.target\n"}
+    - name: Enable metrics timer
+      ansible.builtin.systemd: {name: homelab-backup-metrics.timer, enabled: true, state: started, daemon_reload: true}
+    - name: Prometheus alert rules
+      ansible.builtin.template: {src: backup-alerts.yml.j2, dest: "{{ backup_prometheus_rules_dir }}/backup-alerts.yml", mode: "0644"}
+      register: backup_rules
+    - name: Prometheus loads rule files
+      ansible.builtin.lineinfile:
+        path: "{{ backup_prometheus_rules_dir }}/prometheus.yml"
+        insertafter: '^  evaluation_interval:.*'
+        line: "rule_files: [\"/etc/prometheus/backup-alerts.yml\"]"
+        regexp: '^rule_files:'
+      register: backup_promcfg
+    - name: Mount the rules file into the prometheus container (compose edit)
+      ansible.builtin.lineinfile:
+        path: /opt/docker-compose/90-metrics/90-metrics.yml
+        insertafter: '^\s+- \$\{APPDATA_DIR\}/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro'
+        line: "      - ${APPDATA_DIR}/prometheus/config/backup-alerts.yml:/etc/prometheus/backup-alerts.yml:ro"
+        backup: true
+      register: backup_compose
+    - name: Recreate prometheus only if its mounts changed
+      ansible.builtin.command: >-
+        docker compose --project-name 90-metrics --env-file /opt/docker-compose/global.env
+        --env-file /opt/docker-compose/90-metrics/90-metrics.env
+        -f /opt/docker-compose/90-metrics/90-metrics.yml -f /opt/docker-compose/90-metrics/compose.override.yml
+        up -d prometheus
+      when: backup_compose.changed
+    - name: Reload prometheus config if only rules/config changed
+      ansible.builtin.uri: {url: "http://10.20.0.2:9090/-/reload", method: POST}
+      when: (backup_rules.changed or backup_promcfg.changed) and not backup_compose.changed

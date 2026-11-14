@@ -57,3 +57,5 @@ monitoring_agents_promtail_job_label: applogs
 #   extra_labels: optional dict of additional static labels
 # Empty list => role does nothing (no point running an idle agent).
 monitoring_agents_promtail_jobs: []
+# Optional textfile collector dir (empty = disabled). Other roles drop *.prom files here.
+monitoring_agents_node_exporter_textfile_dir: ""

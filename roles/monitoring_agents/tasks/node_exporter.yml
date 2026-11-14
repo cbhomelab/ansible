@@ -53,6 +53,13 @@
   notify: Restart node_exporter
   tags: [monitoring_agents, node_exporter]
 
+- name: node_exporter textfile directory
+  ansible.builtin.file:
+    path: "{{ monitoring_agents_node_exporter_textfile_dir }}"
+    state: directory
+    mode: "0755"
+  when: monitoring_agents_node_exporter_textfile_dir | default("") | length > 0
+
 - name: node_exporter systemd unit
   ansible.builtin.template:
     src: node_exporter.service.j2

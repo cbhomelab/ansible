@@ -9,6 +9,7 @@ borg create --stats --compression zstd,3 --one-file-system \
 {% for e in a.excludes %}  --exclude '{{ e }}' \
 {% endfor %}  "$R::{{ a.name }}-{now:%Y%m%d-%H%M}" {{ a.paths | join(' ') }}
 r=$?; [ $r -gt 1 ] && rc=$r
+[ $r -le 1 ] && { grep -v '^{{ a.name }} ' {{ backup_metrics_textfile_dir }}/.borg_last_ok 2>/dev/null > {{ backup_metrics_textfile_dir }}/.borg_tmp; echo "{{ a.name }} $(date +%s)" >> {{ backup_metrics_textfile_dir }}/.borg_tmp; mv {{ backup_metrics_textfile_dir }}/.borg_tmp {{ backup_metrics_textfile_dir }}/.borg_last_ok; /usr/local/sbin/homelab-backup-metrics; }
 borg prune --keep-daily {{ backup_borg_keep.daily }} --keep-weekly {{ backup_borg_keep.weekly }} --keep-monthly {{ backup_borg_keep.monthly }} --glob-archives '{{ a.name }}-*' "$R" || rc=1
 {% endfor %}
 exit $rc

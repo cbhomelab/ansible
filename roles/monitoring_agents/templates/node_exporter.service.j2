@@ -8,7 +8,7 @@ Wants=network-online.target
 [Service]
 User={{ monitoring_agents_node_exporter_user }}
 Group={{ monitoring_agents_node_exporter_user }}
-ExecStart={{ monitoring_agents_node_exporter_bin }} --web.listen-address={{ monitoring_agents_node_exporter_listen }}:{{ monitoring_agents_node_exporter_port }}
+ExecStart={{ monitoring_agents_node_exporter_bin }} --web.listen-address={{ monitoring_agents_node_exporter_listen }}:{{ monitoring_agents_node_exporter_port }} {{ "--collector.textfile.directory=" ~ monitoring_agents_node_exporter_textfile_dir if monitoring_agents_node_exporter_textfile_dir | default("") else "" }}
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
