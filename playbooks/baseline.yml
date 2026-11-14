@@ -4,7 +4,7 @@
 # OPNsense appliance. lxc107-unifi lives in `appliances` but is a normal
 # Debian LXC, so it is listed explicitly.
 - name: Apply system baseline
-  hosts: lxc_guests:omv:lxc107-unifi
+  hosts: lxc_guests:debian_vms:omv:lxc107-unifi
   become: true
   roles:
     - system_baseline

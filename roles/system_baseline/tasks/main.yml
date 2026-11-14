@@ -49,6 +49,17 @@
     - ansible_virtualization_type | default("") in ["kvm", "qemu"]
   tags: [packages]
 
+- name: QEMU guest agent running (udev only auto-starts it after a reboot)
+  ansible.builtin.systemd:
+    name: qemu-guest-agent
+    state: started
+  when:
+    - system_baseline_enabled and system_baseline_packages_enabled
+    - ansible_os_family == "Debian"
+    - ansible_virtualization_role | default("") == "guest"
+    - ansible_virtualization_type | default("") in ["kvm", "qemu"]
+  tags: [packages]
+
 - name: Timezone
   community.general.timezone:
     name: "{{ system_baseline_timezone }}"
