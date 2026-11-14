@@ -15,9 +15,7 @@ What it does today:
 
 
 Manages the ~29-project docker-compose media/automation stack on
-`saturn` (OMV). Distinct from `roles/docker`, which is a legacy
-generic "install docker + clone one compose repo" role for an arbitrary
-host — `compose_stacks` is specifically about operating the many
+`saturn` (OMV). This role is specifically about operating the many
 already-running OMV-managed compose projects on saturn (start/stop,
 pull+recreate on update, add/remove a project), not installing Docker
 itself.
