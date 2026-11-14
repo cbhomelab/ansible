@@ -69,3 +69,7 @@ minecraft_config_files:
   - server/server.properties
   - server/spigot.yml
   - server/wepif.yml
+minecraft_seed_only_files:
+  - proxy/plugins/vane-velocity/config.toml
+  - server/config/paper-global.yml
+  - server/server.properties

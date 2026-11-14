@@ -1,13 +1,38 @@
 ---
-# Consistent state backup: stop server, tar state paths, start again.
+# Two-part server: the proxy (Velocity) is always up; Paper is parked behind
+# server/start.block until a player joins, when vane-velocity deletes the block.
+# Backup preserves that: only stop Paper if it is really running, and leave
+# start.block exactly as found.
 - name: Backup dir
   ansible.builtin.file: {path: "{{ minecraft_backup_dir }}", state: directory, mode: "0700"}
+
+- name: Is Paper actually running (unit is active even when parked)?
+  ansible.builtin.command: pgrep -f "[p]aper.jar"
+  register: mc_paper_up
+  changed_when: false
+  failed_when: false
+
+- name: Was Paper parked behind start.block?
+  ansible.builtin.stat: {path: "{{ minecraft_deploy_dir }}/server/start.block"}
+  register: mc_block
+
 - name: Archive name
   ansible.builtin.set_fact:
     mc_archive: "{{ minecraft_backup_dir }}/minecraft-state-{{ ansible_date_time.iso8601_basic_short }}.tar.zst"
-- name: Stop server (world must be quiescent)
-  ansible.builtin.systemd: {name: minecraft-server.service, state: stopped}
-- name: Tar state
+
+- name: Block Paper from respawning during backup (only if it was running)
+  ansible.builtin.file: {path: "{{ minecraft_deploy_dir }}/server/start.block", state: touch, owner: "{{ minecraft_user }}", group: "{{ minecraft_user }}", mode: "0644"}
+  when: mc_paper_up.rc == 0 and not mc_block.stat.exists
+
+- name: Stop Paper (world must be quiescent); proxy stays up
+  ansible.builtin.shell: |
+    {{ 'tmux -S /run/minecraft-server/tmux send-keys -t 0 stop Enter 2>/dev/null || true' }}
+    for i in $(seq 1 60); do pgrep -f "[p]aper.jar" >/dev/null || exit 0; sleep 2; done; exit 1
+  become_user: "{{ minecraft_user }}"
+  when: mc_paper_up.rc == 0
+  changed_when: true
+
+- name: Tar state (proxy + server paths)
   ansible.builtin.shell: |
     set -e; cd {{ minecraft_deploy_dir }}
     tar --zstd -cf {{ mc_archive }} $(for p in {{ minecraft_state_paths | join(' ') }}; do [ -e "$p" ] && echo "$p"; done)
@@ -15,11 +40,16 @@
   changed_when: true
   register: mc_tar
   ignore_errors: true
-- name: Start server again
-  ansible.builtin.systemd: {name: minecraft-server.service, state: started}
+
+- name: Restore previous start.block state (running before -> unblocked again)
+  ansible.builtin.file: {path: "{{ minecraft_deploy_dir }}/server/start.block", state: absent}
+  when: mc_paper_up.rc == 0 and not mc_block.stat.exists
+  # the server loop notices the missing block and starts Paper again
+
 - ansible.builtin.fail: {msg: "tar failed: {{ mc_tar.stderr }}"}
   when: mc_tar is failed
+
 - name: Fetch to controller
   ansible.builtin.fetch: {src: "{{ mc_archive }}", dest: "{{ minecraft_backup_fetch_dir }}/", flat: true}
   when: minecraft_backup_fetch_dir | length > 0
-- ansible.builtin.debug: {msg: "state archive: {{ mc_archive }}"}
+- ansible.builtin.debug: {msg: "state archive: {{ mc_archive }} (paper was {{ 'running' if mc_paper_up.rc == 0 else 'parked' }})"}

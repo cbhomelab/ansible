@@ -4,7 +4,7 @@
     fail_msg: "pass -e minecraft_restore_archive=/path/on/controller/minecraft-state-*.tar.zst"
 - name: Ship archive
   ansible.builtin.copy: {src: "{{ minecraft_restore_archive }}", dest: /tmp/mc-restore.tar.zst, mode: "0600"}
-- name: Stop server
+- name: Stop Paper unit (proxy stays up)
   ansible.builtin.systemd: {name: minecraft-server.service, state: stopped}
 - name: Extract state over the build
   ansible.builtin.shell: |
@@ -13,5 +13,8 @@
     chown -R {{ minecraft_user }}:{{ minecraft_user }} server proxy
     rm -f /tmp/mc-restore.tar.zst
   changed_when: true
-- name: Start server
+- name: Park Paper behind start.block (the proxy removes it on first join)
+  ansible.builtin.file: {path: "{{ minecraft_deploy_dir }}/server/start.block", state: touch, owner: "{{ minecraft_user }}", group: "{{ minecraft_user }}"}
+
+- name: Start Paper unit (loop stays parked until a player joins)
   ansible.builtin.systemd: {name: minecraft-server.service, state: started}

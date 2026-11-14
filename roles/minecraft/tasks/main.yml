@@ -120,8 +120,11 @@
     owner: "{{ minecraft_user }}"
     group: "{{ minecraft_user }}"
     mode: "0644"
+    # Files the apps rewrite themselves at startup are seeded once, not enforced
+    # (otherwise every run rewrites them and restarts the services).
+    force: "{{ item not in minecraft_seed_only_files }}"
   loop: "{{ minecraft_config_files }}"
-  no_log: true          # templates contain secrets after rendering
+  no_log: "{{ minecraft_no_log | default(true) }}"
   notify: Restart minecraft
 
 - name: EULA
@@ -179,6 +182,9 @@
     state: "{{ 'started' if minecraft_start else omit }}"
   loop: [minecraft-proxy.service, minecraft-server.service]
 
+# NOTE: Paper idling with no java process is INTENDED. server/start.block is
+# owned by the framework; vane-velocity (proxy) deletes it on first join.
+# This role never creates/removes it on a built host.
 - name: Wait for proxy port
   ansible.builtin.wait_for: {port: 25565, timeout: 180}
   when: minecraft_start
