@@ -60,6 +60,16 @@
     - ansible_virtualization_type | default("") in ["kvm", "qemu"]
   tags: [packages]
 
+- name: Tailscale (opt-in per host; LXCs with the TUN device)
+  ansible.builtin.include_tasks:
+    file: tailscale.yml
+    apply: {tags: [tailscale]}
+  when:
+    - system_baseline_enabled
+    - system_baseline_tailscale_enabled | bool
+    - ansible_os_family == "Debian"
+  tags: [tailscale]
+
 - name: Timezone
   community.general.timezone:
     name: "{{ system_baseline_timezone }}"

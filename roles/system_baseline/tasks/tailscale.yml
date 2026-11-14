@@ -1,0 +1,48 @@
+---
+# Tailscale for LXCs that have the TUN device (tun: true in proxmox_guests).
+# Install + enable always; join the tailnet only if not already up AND an auth key is configured.
+- name: Tailscale apt key present?
+  ansible.builtin.stat: {path: /usr/share/keyrings/tailscale-archive-keyring.gpg}
+  register: ts_keystat
+
+- name: Tailscale apt key
+  ansible.builtin.get_url:
+    url: "https://pkgs.tailscale.com/stable/debian/{{ ansible_distribution_release }}.noarmor.gpg"
+    dest: /usr/share/keyrings/tailscale-archive-keyring.gpg
+    mode: "0644"
+  when: not ts_keystat.stat.exists
+  register: ts_key
+
+- name: Tailscale apt repo (line only; keeps any existing comment/header)
+  ansible.builtin.lineinfile:
+    path: /etc/apt/sources.list.d/tailscale.list
+    regexp: '^deb .*pkgs\.tailscale\.com'
+    line: "deb [signed-by=/usr/share/keyrings/tailscale-archive-keyring.gpg] https://pkgs.tailscale.com/stable/debian {{ ansible_distribution_release }} main"
+    create: true
+    mode: "0644"
+  register: ts_repo
+
+- name: Refresh apt cache after adding repo
+  ansible.builtin.apt: {update_cache: true}
+  when: (ts_key is changed) or (ts_repo is changed)
+
+- name: Install tailscale
+  ansible.builtin.apt: {name: tailscale, state: present}
+
+- name: Enable tailscaled
+  ansible.builtin.systemd: {name: tailscaled, state: started, enabled: true}
+
+- name: Tailscale status
+  ansible.builtin.command: tailscale status --json
+  register: ts_status
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Join the tailnet (only when not already running)
+  ansible.builtin.command:
+    argv: "{{ ['tailscale', 'up', '--authkey=' ~ system_baseline_tailscale_authkey, '--hostname=' ~ inventory_hostname.split('-')[-1]] + system_baseline_tailscale_up_args }}"
+  no_log: true
+  when:
+    - (ts_status.stdout | from_json).BackendState | default('') != 'Running'
+    - system_baseline_tailscale_authkey | length > 0

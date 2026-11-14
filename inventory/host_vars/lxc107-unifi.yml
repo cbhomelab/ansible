@@ -45,3 +45,4 @@ monitoring_agents_promtail_jobs:
 
 # system_baseline: normal Debian LXC despite being in `appliances`.
 system_baseline_enabled: true
+system_baseline_tailscale_enabled: true

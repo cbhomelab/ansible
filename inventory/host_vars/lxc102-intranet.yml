@@ -9,3 +9,4 @@ monitoring_agents_promtail_jobs:
     paths: ["/data/logs/*_access.log"]
   - app: npm-error
     paths: ["/data/logs/*_error.log"]
+system_baseline_tailscale_enabled: true

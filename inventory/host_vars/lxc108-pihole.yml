@@ -8,3 +8,4 @@ monitoring_agents_promtail_jobs:
     paths: [/var/log/pihole/pihole.log]
   - app: pihole-ftl
     paths: [/var/log/pihole/FTL.log]
+system_baseline_tailscale_enabled: true
