@@ -44,6 +44,21 @@ async def main():
                             "behind": a["version"] != a["version_latest"]} for a in addons["addons"]],
                 "backups": {"count": len(bk), "newest": newest, "newest_age_hours": age},
             }))
+        elif sys.argv[1] == "update-addon":
+            slug = sys.argv[2]
+            info = await sup(f"/addons/{slug}/info")
+            if info["version"] == info["version_latest"]:
+                print(json.dumps({"slug": slug, "changed": False, "version": info["version"], "ok": True})); return
+            was_running = info["state"] == "started"
+            await call("supervisor/api", endpoint=f"/addons/{slug}/update", method="post", timeout=900)
+            for _ in range(60):
+                info = await sup(f"/addons/{slug}/info")
+                if info["version"] == info["version_latest"] and (info["state"] == "started" or not was_running):
+                    break
+                await asyncio.sleep(5)
+            ok = info["version"] == info["version_latest"] and (info["state"] == "started" or not was_running)
+            print(json.dumps({"slug": slug, "changed": True, "version": info["version"], "state": info["state"], "ok": ok}))
+            sys.exit(0 if ok else 3)
         elif sys.argv[1] == "backup":
             before = {b["backup_id"] for b in await backups()}
             await call("backup/generate", name=sys.argv[2], agent_ids=["hassio.local"],

@@ -11,3 +11,7 @@ homeassistant_repo_dir: "{{ lookup('env', 'HOME') }}/ansible"
 homeassistant_alertmanager_url: http://10.20.0.2:9093
 homeassistant_alert_cron_hour: "8"
 homeassistant_alert_cron_minute: "15"
+# Gated add-on updates (--tags update). Opt-in list; edit per run with -e.
+# Deliberately NOT included: core_mosquitto (MQTT is being migrated off HA; only
+# update for compatibility), a0d7b954_tailscale, a0d7b954_zwavejs2mqtt, core_mariadb.
+homeassistant_update_addons: [core_ssh, core_samba, a0d7b954_vscode, core_configurator]

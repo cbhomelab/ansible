@@ -2,6 +2,7 @@
 # Home Assistant (HAOS VM 101) via its API only - no SSH, nothing runs on the VM.
 #   (default)       read-only drift/health/backup-freshness report
 #   --tags alerting install the daily report cron + Alertmanager push
+#   --tags update   backup, then update homeassistant_update_addons one by one
 #   --tags backup   create a full HA backup now (run before any update)
 # Never use a Supervisor/OS update from here without a fresh backup.
 - name: Home Assistant
@@ -15,3 +16,5 @@
       tags: [never, backup]
     - ansible.builtin.include_role: {name: homeassistant, tasks_from: alerting.yml, apply: {tags: [alerting]}}
       tags: [never, alerting]
+    - ansible.builtin.include_role: {name: homeassistant, tasks_from: update.yml, apply: {tags: [update]}}
+      tags: [never, update]

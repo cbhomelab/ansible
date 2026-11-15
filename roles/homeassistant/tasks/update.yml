@@ -1,0 +1,14 @@
+---
+# Backup first, then update add-ons one at a time; stop at the first failure.
+- ansible.builtin.include_tasks: backup.yml
+- name: Update add-on
+  ansible.builtin.shell: |
+    set -a; . {{ homeassistant_env_file }}; set +a
+    {{ homeassistant_venv }}/bin/python {{ role_path }}/files/ha_ws.py update-addon {{ item }}
+  loop: "{{ homeassistant_update_addons }}"
+  register: homeassistant_update_raw
+  changed_when: (item_json | default({})).changed | default(false)
+  vars:
+    item_json: "{{ {} }}"
+- ansible.builtin.debug:
+    msg: "{{ homeassistant_update_raw.results | map(attribute='stdout') | list }}"
