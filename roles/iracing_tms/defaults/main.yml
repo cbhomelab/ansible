@@ -1,0 +1,18 @@
+---
+# iRacing Team Manager on lxc106: native Python venv + system PostgreSQL + systemd (no Docker).
+# Source: private repo cbhomelab/iracing-team-manager, shipped from the controller with `git archive`
+# so the guest needs no deploy key. Move versions by changing iracing_tms_ref (commit/tag/branch).
+iracing_tms_repo: git@github.com:cbhomelab/iracing-team-manager.git
+iracing_tms_ref: main
+iracing_tms_user: tms
+iracing_tms_dir: /opt/iracing-team-manager
+iracing_tms_venv: /opt/iracing-team-manager/.venv
+iracing_tms_env_file: /etc/iracing-tms/env       # seeded once, never overwritten (holds generated secrets + any API keys)
+iracing_tms_port: 8000
+iracing_tms_bind: 0.0.0.0
+iracing_tms_db: iracing_tms
+iracing_tms_db_user: iracing_user
+iracing_tms_backup_dir: /var/backups/iracing
+iracing_tms_backup_keep: 14
+iracing_tms_backup_hour: 3
+iracing_tms_backup_minute: 30

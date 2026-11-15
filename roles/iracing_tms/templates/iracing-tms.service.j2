@@ -1,0 +1,22 @@
+[Unit]
+Description=iRacing Team Manager
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User={{ iracing_tms_user }}
+Group={{ iracing_tms_user }}
+WorkingDirectory={{ iracing_tms_dir }}
+EnvironmentFile={{ iracing_tms_env_file }}
+ExecStartPre={{ iracing_tms_venv }}/bin/alembic upgrade head
+ExecStart={{ iracing_tms_venv }}/bin/uvicorn app.main:app --host ${APP_BIND} --port ${APP_PORT} --log-level info
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths={{ iracing_tms_dir }}
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

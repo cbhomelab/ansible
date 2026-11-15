@@ -1,0 +1,3 @@
+---
+- name: Restart iracing-tms
+  ansible.builtin.systemd: {name: iracing-tms, state: restarted, daemon_reload: true}

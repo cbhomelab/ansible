@@ -1,0 +1,94 @@
+---
+- name: Packages
+  ansible.builtin.apt:
+    name: [postgresql, python3-venv, python3-pip, rsync, curl, ca-certificates]
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: PostgreSQL running
+  ansible.builtin.systemd: {name: postgresql, enabled: true, state: started}
+
+- name: Service user
+  ansible.builtin.user: {name: "{{ iracing_tms_user }}", system: true, shell: /usr/sbin/nologin, home: "{{ iracing_tms_dir }}", create_home: false}
+
+- name: Env dir
+  ansible.builtin.file: {path: "{{ iracing_tms_env_file | dirname }}", state: directory, mode: "0750", group: "{{ iracing_tms_user }}"}
+
+- name: Existing env file?
+  ansible.builtin.stat: {path: "{{ iracing_tms_env_file }}"}
+  register: tms_env_stat
+
+- name: DB password (generated only when seeding a new env file)
+  ansible.builtin.set_fact:
+    _tms_pgpw: "{{ lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters','digits']) }}"
+  when: not tms_env_stat.stat.exists
+
+- name: Seed env file (once)
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ iracing_tms_env_file }}"
+    owner: root
+    group: "{{ iracing_tms_user }}"
+    mode: "0640"
+    force: false
+  when: not tms_env_stat.stat.exists
+  no_log: true
+
+- name: Read DB password from env file
+  ansible.builtin.shell: "sed -n 's/^POSTGRES_PASSWORD=//p' {{ iracing_tms_env_file }}"
+  register: tms_pg
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: DB role + database (idempotent; password always synced to the env file)
+  ansible.builtin.shell: |
+    set -e
+    runuser -u postgres -- psql -v ON_ERROR_STOP=1 -tAc "SELECT 1 FROM pg_roles WHERE rolname='{{ iracing_tms_db_user }}'" | grep -q 1 \
+      || runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "CREATE ROLE {{ iracing_tms_db_user }} LOGIN"
+    runuser -u postgres -- psql -v ON_ERROR_STOP=1 -c "ALTER ROLE {{ iracing_tms_db_user }} PASSWORD '{{ tms_pg.stdout }}'"
+    runuser -u postgres -- psql -tAc "SELECT 1 FROM pg_database WHERE datname='{{ iracing_tms_db }}'" | grep -q 1 \
+      || runuser -u postgres -- createdb -E UTF8 -T template0 -O {{ iracing_tms_db_user }} {{ iracing_tms_db }}
+  changed_when: false
+  no_log: true
+
+- name: Ship source from controller (git archive of the pinned ref)
+  ansible.builtin.include_tasks: deploy.yml
+
+- name: systemd unit
+  ansible.builtin.template: {src: iracing-tms.service.j2, dest: /etc/systemd/system/iracing-tms.service, mode: "0644"}
+  notify: Restart iracing-tms
+
+- name: Enabled and running
+  ansible.builtin.systemd: {name: iracing-tms, enabled: true, state: started, daemon_reload: true}
+
+- name: Backup script (pg_dump custom format)
+  ansible.builtin.copy:
+    dest: /usr/local/sbin/iracing-tms-backup
+    mode: "0750"
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      d={{ iracing_tms_backup_dir }}; mkdir -p "$d"; chmod 700 "$d"
+      f="$d/iracing-tms-$(date +%Y%m%dT%H%M%S).dump"
+      runuser -u postgres -- pg_dump -Fc --no-owner --no-privileges {{ iracing_tms_db }} > "$f"
+      tar czf "${f%.dump}-uploads.tgz" -C {{ iracing_tms_dir }}/data uploads 2>/dev/null || true
+      ls -1t "$d"/iracing-tms-*.dump | tail -n +$(( {{ iracing_tms_backup_keep }} + 1 )) | xargs -r rm -f
+      echo "$f"
+
+- name: Nightly backup
+  ansible.builtin.cron:
+    name: iracing-tms-backup
+    hour: "{{ iracing_tms_backup_hour }}"
+    minute: "{{ iracing_tms_backup_minute }}"
+    job: /usr/local/sbin/iracing-tms-backup >/dev/null 2>&1
+
+- name: Health check
+  ansible.builtin.uri: {url: "http://127.0.0.1:{{ iracing_tms_port }}/health", return_content: true}
+  register: tms_health
+  check_mode: false
+  retries: 15
+  delay: 3
+  until: tms_health.status == 200
+  changed_when: false

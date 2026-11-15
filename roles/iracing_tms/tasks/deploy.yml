@@ -1,0 +1,49 @@
+---
+- name: Resolve pinned ref to a commit (controller)
+  delegate_to: localhost
+  become: false
+  ansible.builtin.shell: git ls-remote {{ iracing_tms_repo }} {{ iracing_tms_ref }} | head -1 | cut -f1
+  register: tms_sha
+  changed_when: false
+  check_mode: false
+
+- name: Deployed commit marker
+  ansible.builtin.slurp: {src: "{{ iracing_tms_dir }}/.deployed-commit"}
+  register: tms_marker
+  failed_when: false
+
+- name: Deploy when the commit changed or the venv is missing
+  when: (tms_marker.content | default('') | b64decode | trim) != (tms_sha.stdout | trim)
+  block:
+    - name: Export source on controller
+      delegate_to: localhost
+      become: false
+      ansible.builtin.shell: |
+        set -e; t=$(mktemp -d); git clone -q {{ iracing_tms_repo }} $t/r; git -C $t/r archive --format=tar.gz {{ tms_sha.stdout | trim }} -o /tmp/tms-src.tgz; rm -rf $t
+      changed_when: true
+    - ansible.builtin.file: {path: "{{ iracing_tms_dir }}", state: directory, owner: "{{ iracing_tms_user }}", group: "{{ iracing_tms_user }}", mode: "0755"}
+    - name: Unpack (keeps venv, data/, logs/)
+      ansible.builtin.unarchive:
+        src: /tmp/tms-src.tgz
+        dest: "{{ iracing_tms_dir }}"
+        owner: "{{ iracing_tms_user }}"
+        group: "{{ iracing_tms_user }}"
+      notify: Restart iracing-tms
+    - name: Runtime dirs
+      ansible.builtin.file: {path: "{{ iracing_tms_dir }}/{{ item }}", state: directory, owner: "{{ iracing_tms_user }}", group: "{{ iracing_tms_user }}", mode: "0750"}
+      loop: [data/uploads, logs]
+    - name: venv + dependencies
+      become: true
+      become_user: "{{ iracing_tms_user }}"
+      ansible.builtin.shell: |
+        set -e; cd {{ iracing_tms_dir }}
+        [ -x {{ iracing_tms_venv }}/bin/python ] || python3 -m venv {{ iracing_tms_venv }}
+        {{ iracing_tms_venv }}/bin/pip install -q --upgrade pip
+        {{ iracing_tms_venv }}/bin/pip install -q .
+      changed_when: true
+    - name: Ownership of the tree (also fixes leftovers from a previous Docker/root install)
+      ansible.builtin.file: {path: "{{ iracing_tms_dir }}", state: directory, owner: "{{ iracing_tms_user }}", group: "{{ iracing_tms_user }}", recurse: true}
+    - name: .env -> managed env file (the app reads ./.env; never a copy, so secrets live in one place)
+      ansible.builtin.file: {src: "{{ iracing_tms_env_file }}", dest: "{{ iracing_tms_dir }}/.env", state: link, force: true}
+    - name: Record deployed commit
+      ansible.builtin.copy: {dest: "{{ iracing_tms_dir }}/.deployed-commit", content: "{{ tms_sha.stdout | trim }}\n", owner: "{{ iracing_tms_user }}", mode: "0644"}

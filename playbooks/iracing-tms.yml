@@ -1,0 +1,6 @@
+---
+# iRacing Team Manager on lxc106 (native). First-time migration from the old Docker install: see docs in the Obsidian note.
+- name: iRacing Team Manager
+  hosts: lxc106-iracing-team-manager
+  become: true
+  roles: [iracing_tms]
