@@ -1,0 +1,16 @@
+#!/bin/bash
+# Managed by Ansible (roles/backup). Monthly full verify (--verify-data) of every borg repo.
+# Results: {{ backup_metrics_textfile_dir }}/.borg_check_ok (last pass epoch) and .borg_check_failed (repos currently failing).
+set -u
+export BORG_UNKNOWN_UNENCRYPTED_REPO_ACCESS_IS_OK=yes BORG_RELOCATED_REPO_ACCESS_IS_OK=yes
+D={{ backup_metrics_textfile_dir }}; rc=0
+{% for a in backup_borg_archives %}
+n={{ a.name }}
+if borg check --verify-data "{{ backup_borg_repo_base }}/$n"; then
+  { grep -v "^$n " $D/.borg_check_ok 2>/dev/null; echo "$n $(date +%s)"; } > $D/.borg_tmp && mv $D/.borg_tmp $D/.borg_check_ok
+  grep -v "^$n " $D/.borg_check_failed 2>/dev/null > $D/.borg_tmp; mv $D/.borg_tmp $D/.borg_check_failed
+else
+  rc=1; { grep -v "^$n " $D/.borg_check_failed 2>/dev/null; echo "$n $(date +%s)"; } > $D/.borg_tmp && mv $D/.borg_tmp $D/.borg_check_failed
+fi
+{% endfor %}
+exit $rc

@@ -5,6 +5,8 @@
 backup_enabled: false
 backup_borg_repo_base: /srv/dev-disk-by-uuid-61a64705-b6f5-4dfa-bc5a-8b5b9f04c475/backups/borg
 backup_borg_schedule: "*-*-* 02:00:00"
+# Monthly full verify of every repo (--verify-data). Alerts via Prometheus rules.
+backup_borg_check_schedule: "*-*-01 05:00:00"
 backup_borg_keep: {daily: 7, weekly: 4, monthly: 2}
 # Unencrypted by decision (repos live on our own disk).
 backup_borg_archives:

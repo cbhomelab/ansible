@@ -1,6 +1,6 @@
 # backup
 
-**Status: scaffolded, not implemented.**
+**Status: implemented** (borg on saturn, vzdump + neptune config, Prometheus/Alertmanager alerts, monthly `borg check --verify-data`). The open-questions list below is historical.
 
 **No backup strategy is assumed to exist yet.** This role is a deliberate
 placeholder with open questions rather than a guessed implementation —

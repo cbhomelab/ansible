@@ -1,0 +1,7 @@
+[Unit]
+Description=Homelab borg full verify (Ansible managed)
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+ExecStart=/usr/local/sbin/homelab-borg-check

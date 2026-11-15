@@ -19,6 +19,14 @@
       notify: Reload systemd
     - name: Enable timer
       ansible.builtin.systemd: {name: homelab-borg.timer, enabled: true, state: started, daemon_reload: true}
+    - name: Verify script
+      ansible.builtin.template: {src: borg-check.sh.j2, dest: /usr/local/sbin/homelab-borg-check, mode: "0750"}
+    - name: Verify systemd service + timer
+      ansible.builtin.template: {src: "{{ item }}.j2", dest: "/etc/systemd/system/{{ item }}", mode: "0644"}
+      loop: [homelab-borg-check.service, homelab-borg-check.timer]
+      notify: Reload systemd
+    - name: Enable verify timer
+      ansible.builtin.systemd: {name: homelab-borg-check.timer, enabled: true, state: started, daemon_reload: true}
 
 - name: backup — Proxmox host config (neptune)
   when: backup_pve_config_enabled | default(false)

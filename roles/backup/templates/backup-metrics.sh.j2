@@ -12,5 +12,9 @@ f=$(ls -t {{ backup_neptune_config_dir }}/neptune-config-*.tar.zst 2>/dev/null |
 [ -n "$f" ] && echo "homelab_backup_last_success_timestamp_seconds{kind=\"pve-config\",target=\"neptune\"} $(stat -c %Y "$f")"
 [ -f {{ backup_metrics_textfile_dir }}/.borg_last_ok ] && while read n t; do
   echo "homelab_backup_last_success_timestamp_seconds{kind=\"borg\",target=\"$n\"} $t"; done < {{ backup_metrics_textfile_dir }}/.borg_last_ok
+[ -f {{ backup_metrics_textfile_dir }}/.borg_check_ok ] && while read n t; do
+  echo "homelab_borg_check_last_pass_timestamp_seconds{target=\"$n\"} $t"; done < {{ backup_metrics_textfile_dir }}/.borg_check_ok
+[ -f {{ backup_metrics_textfile_dir }}/.borg_check_failed ] && while read n t; do
+  echo "homelab_borg_check_failed{target=\"$n\"} 1"; done < {{ backup_metrics_textfile_dir }}/.borg_check_failed
 } > "$T"
 chmod 644 "$T"; mv "$T" "$OUT"
