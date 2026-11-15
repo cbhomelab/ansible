@@ -1,0 +1,44 @@
+---
+- name: Services enabled and running
+  ansible.builtin.systemd: {name: "{{ item }}", enabled: true, state: started}
+  loop: [npm, openresty]
+
+- name: Backup tooling
+  ansible.builtin.apt: {name: [sqlite3, zstd], state: present, update_cache: true, cache_valid_time: 3600}
+
+- name: Backup script (consistent sqlite .backup + certs + keys)
+  ansible.builtin.copy:
+    dest: /usr/local/sbin/npm-backup
+    mode: "0750"
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      d={{ npm_backup_dir }}; t=$(mktemp -d); ts=$(date +%Y%m%dT%H%M%S)
+      mkdir -p "$d"; chmod 700 "$d"
+      sqlite3 /data/database.sqlite ".backup '$t/database.sqlite'"
+      cp -a /data/keys.json /data/custom_ssl /data/letsencrypt "$t"/ 2>/dev/null || true
+      cp -a /etc/letsencrypt "$t/etc-letsencrypt"
+      tar -C "$t" -cf - . | zstd -q -o "$d/npm-$ts.tar.zst"
+      rm -rf "$t"
+      ls -1t "$d"/npm-*.tar.zst | tail -n +$(( {{ npm_backup_keep }} + 1 )) | xargs -r rm -f
+      echo "$d/npm-$ts.tar.zst"
+
+- name: Nightly backup
+  ansible.builtin.cron:
+    name: npm-backup
+    user: root
+    hour: "{{ npm_backup_hour }}"
+    minute: "{{ npm_backup_minute }}"
+    job: /usr/local/sbin/npm-backup >/dev/null 2>&1
+
+- name: Health check (API status + major version)
+  ansible.builtin.uri: {url: "http://127.0.0.1:{{ npm_port }}/api/", return_content: true}
+  register: npm_health
+  check_mode: false
+  retries: 5
+  delay: 3
+  until: npm_health.status == 200
+  failed_when: npm_health.status != 200 or npm_health.json.version.major != npm_expected_major
+
+- ansible.builtin.debug:
+    msg: "NPM {{ npm_health.json.version.major }}.{{ npm_health.json.version.minor }}.{{ npm_health.json.version.revision }} healthy"

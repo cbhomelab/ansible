@@ -1,0 +1,11 @@
+---
+# Nginx Proxy Manager on lxc102 (native community-scripts install: /app + node, state in /data + /etc/letsencrypt).
+# This role does NOT define proxy hosts: those live in NPM's own sqlite DB and are the source of truth
+# (network_appliances reads them to derive Unbound records). It covers service state, backups and health.
+npm_dir: /app
+npm_port: 81
+npm_backup_dir: /var/backups/npm
+npm_backup_keep: 14
+npm_backup_hour: 3
+npm_backup_minute: 40
+npm_expected_major: 2

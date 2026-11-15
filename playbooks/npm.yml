@@ -1,0 +1,6 @@
+---
+# Converge Nginx Proxy Manager service/backup/health on lxc102. Use --check first.
+- name: Nginx Proxy Manager
+  hosts: lxc102-intranet
+  become: true
+  roles: [npm]
