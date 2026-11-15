@@ -71,14 +71,17 @@
     - name: Restore data and previous package
       ansible.builtin.shell: |
         set -e
+        export DEBIAN_FRONTEND=noninteractive
+        echo 'unifi unifi/has_backup boolean true' | debconf-set-selections
         systemctl stop unifi || true
         rm -rf /var/lib/unifi; tar -xzf {{ unifi_cold.stdout }} -C /var/lib
         {% if unifi_rollback_deb_url | length > 0 %}
         curl -fsSL -o /var/cache/unifi_rollback.deb {{ unifi_rollback_deb_url }}
         echo "{{ unifi_rollback_deb_sha256 }}  /var/cache/unifi_rollback.deb" | sha256sum -c -
-        apt-mark unhold unifi; apt-get install -y --allow-downgrades /var/cache/unifi_rollback.deb; apt-mark hold unifi
+        apt-mark unhold unifi; apt-get install -y -o Dpkg::Options::=--force-confold --allow-downgrades /var/cache/unifi_rollback.deb; apt-mark hold unifi
         {% endif %}
         systemctl start unifi
       args: {executable: /bin/bash}
       when: unifi_cold is defined and unifi_cold.stdout is defined
+      timeout: 900
     - ansible.builtin.fail: {msg: "unifi update failed and was rolled back; see message above"}
