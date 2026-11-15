@@ -58,6 +58,8 @@
       cd {{ forgejo_home }}
       runuser -u {{ forgejo_user }} -- env FORGEJO_WORK_DIR={{ forgejo_home }} {{ forgejo_bin }} dump -c /etc/forgejo/app.ini -f /tmp/forgejo-dump.zip -t /tmp --quiet
       mv /tmp/forgejo-dump.zip "$f"; chmod 600 "$f"
+      # verify before rotating: valid zip that contains the SQL dump and app config
+      if ! python3 -c 'import sys,zipfile;z=zipfile.ZipFile(sys.argv[1]);n=z.namelist();sys.exit(0 if z.testzip() is None and "forgejo-db.sql" in n and "app.ini" in n else 1)' "$f"; then rm -f "$f"; echo "forgejo backup verify FAILED" >&2; exit 1; fi
       ls -1t "$d"/forgejo-*.zip | tail -n +$(( {{ forgejo_backup_keep }} + 1 )) | xargs -r rm -f
       echo "$f"
 
@@ -66,7 +68,7 @@
     name: forgejo-backup
     hour: "{{ forgejo_backup_hour }}"
     minute: "{{ forgejo_backup_minute }}"
-    job: /usr/local/sbin/forgejo-backup >/dev/null 2>&1
+    job: /usr/local/sbin/forgejo-backup >/dev/null 2>&1 || logger -p user.err -t forgejo-backup "backup FAILED"
 
 - name: Health check
   ansible.builtin.uri: {url: "http://127.0.0.1:{{ forgejo_http_port }}/api/healthz", return_content: true}

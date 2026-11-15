@@ -73,6 +73,8 @@
       d={{ iracing_tms_backup_dir }}; mkdir -p "$d"; chmod 700 "$d"
       f="$d/iracing-tms-$(date +%Y%m%dT%H%M%S).dump"
       runuser -u postgres -- pg_dump -Fc --no-owner --no-privileges {{ iracing_tms_db }} > "$f"
+      # verify before rotating: archive TOC must be readable and non-trivial
+      if ! pg_restore -l "$f" 2>/dev/null | grep -c "TABLE DATA" >/dev/null; then rm -f "$f"; echo "iracing backup verify FAILED" >&2; exit 1; fi
       tar czf "${f%.dump}-uploads.tgz" -C {{ iracing_tms_dir }}/data uploads 2>/dev/null || true
       ls -1t "$d"/iracing-tms-*.dump | tail -n +$(( {{ iracing_tms_backup_keep }} + 1 )) | xargs -r rm -f
       echo "$f"
@@ -82,7 +84,7 @@
     name: iracing-tms-backup
     hour: "{{ iracing_tms_backup_hour }}"
     minute: "{{ iracing_tms_backup_minute }}"
-    job: /usr/local/sbin/iracing-tms-backup >/dev/null 2>&1
+    job: /usr/local/sbin/iracing-tms-backup >/dev/null 2>&1 || logger -p user.err -t iracing-tms-backup "backup FAILED"
 
 - name: Health check
   ansible.builtin.uri: {url: "http://127.0.0.1:{{ iracing_tms_port }}/health", return_content: true}
