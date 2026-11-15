@@ -1,0 +1,6 @@
+---
+# Forgejo git server on lxc110. Create the guest first (playbooks/proxmox-guests.yml).
+- name: Forgejo
+  hosts: lxc110-forgejo
+  become: true
+  roles: [forgejo]

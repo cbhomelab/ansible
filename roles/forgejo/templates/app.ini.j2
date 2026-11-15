@@ -1,0 +1,37 @@
+APP_NAME = CBHomelab Git
+RUN_USER = {{ forgejo_user }}
+WORK_PATH = {{ forgejo_home }}
+RUN_MODE = prod
+
+[server]
+DOMAIN = {{ forgejo_domain }}
+HTTP_ADDR = 0.0.0.0
+HTTP_PORT = {{ forgejo_http_port }}
+ROOT_URL = https://{{ forgejo_domain }}/
+START_SSH_SERVER = true
+SSH_DOMAIN = {{ forgejo_domain }}
+SSH_PORT = {{ forgejo_ssh_port }}
+SSH_LISTEN_PORT = {{ forgejo_ssh_port }}
+LFS_START_SERVER = true
+
+[database]
+DB_TYPE = sqlite3
+PATH = {{ forgejo_home }}/data/forgejo.db
+SQLITE_JOURNAL_MODE = WAL
+
+[repository]
+ROOT = {{ forgejo_home }}/repos
+
+[security]
+INSTALL_LOCK = true
+
+[service]
+DISABLE_REGISTRATION = {{ forgejo_disable_registration | lower }}
+REQUIRE_SIGNIN_VIEW = true
+
+[log]
+MODE = console
+LEVEL = Info
+
+[actions]
+ENABLED = false

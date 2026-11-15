@@ -1,0 +1,15 @@
+---
+# Forgejo (self-hosted git) on lxc110. Native binary, SQLite, behind NPM later.
+forgejo_version: "17.0.1"
+forgejo_sha256: "51a8cdf4a1252e79f4b3855d7a7891af6c6635105420768c460e2f0690385d6f"   # forgejo-<ver>-linux-amd64 (matches the published .sha256)
+forgejo_user: git
+forgejo_home: /var/lib/forgejo
+forgejo_bin: /usr/local/bin/forgejo
+forgejo_domain: forgejo.cbhomelab.net          # used for ROOT_URL; add the NPM host + Unbound record separately
+forgejo_http_port: 3000
+forgejo_ssh_port: 2222                          # built-in SSH server; the host sshd stays on 22
+forgejo_disable_registration: true
+forgejo_backup_dir: /var/backups/forgejo
+forgejo_backup_keep: 7
+forgejo_backup_hour: 3
+forgejo_backup_minute: 20

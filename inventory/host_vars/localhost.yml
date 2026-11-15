@@ -9,6 +9,7 @@ proxmox_guests_lxc:
   - {vmid: 105, hostname: minecraft, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 12288, swap: 512, disk: "local:64", nameserver: 10.20.0.8, features: ["nesting=1"]}
   - {vmid: 107, hostname: unifi, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 2048, swap: 2048, disk: "local-lvm:16", features: ["nesting=1"], tun: true}
   - {vmid: 108, hostname: pihole, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 1024, swap: 512, disk: "local-lvm:12", features: ["nesting=1"], tun: true}
+  - {vmid: 110, hostname: forgejo, ostemplate: "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst", cores: 2, memory: 1024, swap: 512, disk: "local-lvm:16", ip: 10.20.0.50/24, gw: 10.20.0.1, nameserver: 10.20.0.8, features: ["nesting=1"], tags: [ansible, git]}
 
 # Pre-existing VMs: not cloneable/creatable by the role (PCI/USB passthrough), so declared for drift reporting only.
 proxmox_guests_adopted:
@@ -19,3 +20,7 @@ proxmox_guests_adopted:
 proxmox_guests_protect_only:
   - {vmid: 100, type: qemu}
   - {vmid: 101, type: qemu}
+
+# Injected into new guests at create time (hermes_proxmox public key; lets Ansible reach root).
+proxmox_guests_ssh_pubkeys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHQtpJWpshP+DhNGHcjkafWcgCUorc9T72wJ1AAD6UnN hermes@proxmox-boundary"

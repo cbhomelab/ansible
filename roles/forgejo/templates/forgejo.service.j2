@@ -1,0 +1,21 @@
+[Unit]
+Description=Forgejo (git server)
+After=network.target
+
+[Service]
+Type=simple
+User={{ forgejo_user }}
+Group={{ forgejo_user }}
+WorkingDirectory={{ forgejo_home }}
+ExecStart={{ forgejo_bin }} web --config /etc/forgejo/app.ini
+Restart=always
+RestartSec=3
+Environment=USER={{ forgejo_user }} HOME={{ forgejo_home }} FORGEJO_WORK_DIR={{ forgejo_home }}
+AmbientCapabilities=
+NoNewPrivileges=true
+ProtectSystem=full
+ReadWritePaths=/etc/forgejo {{ forgejo_home }}
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

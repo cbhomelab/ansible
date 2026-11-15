@@ -1,0 +1,78 @@
+---
+- name: Packages
+  ansible.builtin.apt: {name: [git, git-lfs, sqlite3, curl, ca-certificates], state: present, update_cache: true, cache_valid_time: 3600}
+
+- name: Service user
+  ansible.builtin.user: {name: "{{ forgejo_user }}", system: true, shell: /bin/bash, home: "{{ forgejo_home }}", create_home: true}
+
+- name: Directories
+  ansible.builtin.file: {path: "{{ item.p }}", state: directory, owner: "{{ item.o }}", group: "{{ forgejo_user }}", mode: "{{ item.m }}"}
+  loop:
+    - {p: "{{ forgejo_home }}/data", o: "{{ forgejo_user }}", m: "0750"}
+    - {p: "{{ forgejo_home }}/repos", o: "{{ forgejo_user }}", m: "0750"}
+    - {p: "{{ forgejo_home }}/custom", o: "{{ forgejo_user }}", m: "0750"}
+    - {p: /etc/forgejo, o: root, m: "0770"}
+
+- name: Current binary version
+  ansible.builtin.shell: "{{ forgejo_bin }} --version 2>/dev/null | grep -o 'version [0-9.]*' | cut -d' ' -f2"
+  register: fj_cur
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Install pinned binary (checksum verified)
+  when: fj_cur.stdout | trim != forgejo_version
+  ansible.builtin.get_url:
+    url: "https://codeberg.org/forgejo/forgejo/releases/download/v{{ forgejo_version }}/forgejo-{{ forgejo_version }}-linux-amd64"
+    dest: "{{ forgejo_bin }}"
+    checksum: "sha256:{{ forgejo_sha256 }}"
+    mode: "0755"
+  notify: Restart forgejo
+
+- name: app.ini (written once; Forgejo writes secrets into it, so never overwritten)
+  ansible.builtin.template:
+    src: app.ini.j2
+    dest: /etc/forgejo/app.ini
+    owner: root
+    group: "{{ forgejo_user }}"
+    mode: "0660"
+    force: false
+  notify: Restart forgejo
+
+- name: systemd unit
+  ansible.builtin.template: {src: forgejo.service.j2, dest: /etc/systemd/system/forgejo.service, mode: "0644"}
+  notify: Restart forgejo
+
+- name: Enabled and running
+  ansible.builtin.systemd: {name: forgejo, enabled: true, state: started, daemon_reload: true}
+
+- name: Backup script (forgejo dump, consistent)
+  ansible.builtin.copy:
+    dest: /usr/local/sbin/forgejo-backup
+    mode: "0750"
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+      d={{ forgejo_backup_dir }}; mkdir -p "$d"; chmod 700 "$d"
+      f="$d/forgejo-$(date +%Y%m%dT%H%M%S).zip"
+      cd {{ forgejo_home }}
+      runuser -u {{ forgejo_user }} -- env FORGEJO_WORK_DIR={{ forgejo_home }} {{ forgejo_bin }} dump -c /etc/forgejo/app.ini -f /tmp/forgejo-dump.zip -t /tmp --quiet
+      mv /tmp/forgejo-dump.zip "$f"; chmod 600 "$f"
+      ls -1t "$d"/forgejo-*.zip | tail -n +$(( {{ forgejo_backup_keep }} + 1 )) | xargs -r rm -f
+      echo "$f"
+
+- name: Nightly backup
+  ansible.builtin.cron:
+    name: forgejo-backup
+    hour: "{{ forgejo_backup_hour }}"
+    minute: "{{ forgejo_backup_minute }}"
+    job: /usr/local/sbin/forgejo-backup >/dev/null 2>&1
+
+- name: Health check
+  ansible.builtin.uri: {url: "http://127.0.0.1:{{ forgejo_http_port }}/api/healthz", return_content: true}
+  register: fj_health
+  check_mode: false
+  retries: 10
+  delay: 3
+  until: fj_health.status == 200
+  changed_when: false
