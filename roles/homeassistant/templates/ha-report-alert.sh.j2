@@ -7,8 +7,13 @@ cd {{ homeassistant_repo_dir }} && git pull --ff-only -q 2>&1 | tail -2
 out=$(ansible-playbook playbooks/homeassistant.yml 2>&1); rc=$?
 am={{ homeassistant_alertmanager_url }}/api/v2/alerts
 if [ $rc -ne 0 ]; then
-  msg=$(printf '%s' "$out" | grep -E 'fatal|fail_msg|FAILED|msg' | head -3 | tr -d '"\\' | cut -c1-300)
-  end=$(date -u -d '+26 hours' +%Y-%m-%dT%H:%M:%SZ)
-  curl -s -m10 -X POST -H 'Content-Type: application/json' "$am" -d "[{\"labels\":{\"alertname\":\"HomeAssistantReportFailed\",\"severity\":\"warning\",\"host\":\"vm101-homeassistant\"},\"annotations\":{\"summary\":\"Home Assistant report failed (unhealthy supervisor, stale backup, or API unreachable): ${msg}\"},\"endsAt\":\"$end\"}]" >/dev/null
+  printf '%s' "$out" | python3 -c '
+import sys,json,re,datetime
+o=sys.stdin.read()
+m=" | ".join(re.findall(r"(?:fail_msg|msg)\W+([^\n]{5,200})",o)[:2]) or o[-200:]
+end=(datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(hours=26)).strftime("%Y-%m-%dT%H:%M:%SZ")
+print(json.dumps([{"labels":{"alertname":"HomeAssistantReportFailed","severity":"warning","host":"vm101-homeassistant"},
+ "annotations":{"summary":"Home Assistant daily report failed (unhealthy supervisor, stale backup, or API unreachable): "+m},"endsAt":end}]))' \
+  | curl -s -m10 -X POST -H 'Content-Type: application/json' "$am" -d @- >/dev/null
 fi
 exit $rc
