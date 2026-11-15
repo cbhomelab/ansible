@@ -1,0 +1,51 @@
+---
+- name: Install dir
+  ansible.builtin.file: {path: "{{ glance_dir }}", state: directory, mode: "0755"}
+
+- name: Current binary version
+  ansible.builtin.command: "{{ glance_dir }}/glance --version"
+  register: glance_cur
+  check_mode: false
+  changed_when: false
+  failed_when: false
+
+- name: Fetch + install pinned release
+  when: glance_cur.stdout | default('') | trim != glance_version
+  block:
+    - name: Download tarball (checksum pinned)
+      ansible.builtin.get_url:
+        url: "https://github.com/glanceapp/glance/releases/download/{{ glance_version }}/glance-linux-amd64.tar.gz"
+        dest: /tmp/glance.tgz
+        checksum: "sha256:{{ glance_tarball_sha256 }}"
+        mode: "0644"
+    - name: Unpack binary
+      ansible.builtin.unarchive:
+        src: /tmp/glance.tgz
+        dest: "{{ glance_dir }}"
+        remote_src: true
+        include: [glance]
+        mode: "0755"
+      notify: Restart glance
+
+- name: systemd unit
+  ansible.builtin.template: {src: glance.service.j2, dest: /etc/systemd/system/glance.service, mode: "0644"}
+  notify: Restart glance
+
+- name: glance.yml (seed-only unless glance_manage_config)
+  ansible.builtin.template:
+    src: glance.yml.j2
+    dest: "{{ glance_dir }}/glance.yml"
+    mode: "0644"
+    force: "{{ glance_manage_config | bool }}"
+  notify: Restart glance
+
+- name: Service enabled and running
+  ansible.builtin.systemd: {name: glance, enabled: true, state: started, daemon_reload: true}
+
+- name: Health check
+  ansible.builtin.uri: {url: "http://127.0.0.1:{{ glance_port }}/", status_code: 200}
+  retries: 5
+  delay: 3
+  register: glance_health
+  until: glance_health.status == 200
+  changed_when: false

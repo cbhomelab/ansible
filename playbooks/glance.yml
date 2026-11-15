@@ -1,0 +1,11 @@
+---
+# Converge Glance on lxc104. Use --check first.
+#   --tags update   pinned-version move with backup, health check and rollback
+- name: Glance
+  hosts: lxc104-glance
+  become: true
+  tasks:
+    - ansible.builtin.import_role: {name: glance}
+      tags: [build]
+    - ansible.builtin.include_role: {name: glance, tasks_from: update.yml, apply: {tags: [update]}}
+      tags: [never, update]

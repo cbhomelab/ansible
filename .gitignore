@@ -4,4 +4,4 @@
 # 2026-11-12 during the access_control fleet rollout (t_6fe4b6c0).
 hosts.yaml
 *.retry
-.vault-pass
+.vault-passstate/

@@ -1,0 +1,11 @@
+---
+# Glance dashboard on lxc104 (adopted from the community-scripts install).
+glance_version: "v0.8.4"            # pinned to what is live; move via --tags update -e glance_version=...
+glance_tarball_sha256: "a69b6424cda4887e84247b1e01dbfb36ae613ac2cb37f19e307889db2cecc39b"   # glance-linux-amd64.tar.gz for the pinned version
+glance_dir: /opt/glance
+glance_backup_dir: /var/backups/glance
+# Seed-only: glance.yml is written once if absent and then left alone, because the
+# page layout is edited live in the dashboard owner's hands. Set glance_manage_config=true
+# to force it back to the template.
+glance_manage_config: false
+glance_port: 8080

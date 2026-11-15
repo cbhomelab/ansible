@@ -1,0 +1,18 @@
+---
+# Move glance to glance_version (+ glance_tarball_sha256): backup -> swap -> health -> rollback.
+# ansible-playbook playbooks/glance.yml --tags update -e glance_version=vX.Y.Z -e glance_tarball_sha256=<sha of the tarball>
+- name: Backup binary + config
+  ansible.builtin.shell: |
+    set -e; mkdir -p {{ glance_backup_dir }}
+    tar czf {{ glance_backup_dir }}/glance-$(date +%Y%m%dT%H%M%S).tgz -C {{ glance_dir }} glance glance.yml
+    cp -a {{ glance_dir }}/glance {{ glance_dir }}/glance.prev
+  changed_when: true
+
+- name: Update with rollback
+  block:
+    - ansible.builtin.import_tasks: main.yml
+  rescue:
+    - name: Roll back binary
+      ansible.builtin.shell: cp -a {{ glance_dir }}/glance.prev {{ glance_dir }}/glance && systemctl restart glance
+      changed_when: true
+    - ansible.builtin.fail: {msg: "glance update to {{ glance_version }} failed; rolled back to the previous binary"}
