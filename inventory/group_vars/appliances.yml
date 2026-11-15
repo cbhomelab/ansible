@@ -11,10 +11,12 @@ webui_identity_automation_accounts:
     api_base_url: "https://10.20.0.1"
     api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='notes') }}"
   - service: unifi
-    username: automation
+    # Bitwarden item 'homelab-unifi-api' never existed; the read-only automation
+    # login is the hermes admin stored as 'homelab-unifi-admin'.
+    username: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='username')[0] }}"
     role: readonly
-    api_base_url: "https://10.20.0.107"
-    api_password: "{{ lookup('community.general.bitwarden', 'homelab-unifi-api', field='password') }}"
+    api_base_url: "https://10.20.0.19"
+    api_password: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='password')[0] }}"
 
 # network_appliances: DHCP reservations (implemented, not yet executed
 # for real — see roles/network_appliances/README.md "Credentials").

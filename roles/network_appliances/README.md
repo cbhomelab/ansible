@@ -156,7 +156,7 @@ Unbound, so clients resolve internal names from the router without Pi-hole.
 ## UniFi (still scaffolded, not implemented)
 
 - `ansible.builtin.uri` against the controller's REST API
-  (`https://10.20.0.107/...`) — session-cookie auth is typical for the
+  (`https://10.20.0.19/...`) — session-cookie auth is typical for the
   UniFi controller API (not a static API key like OPNsense), so task
   design needs a login step before any config call, registering/reusing
   the session cookie across subsequent `uri` tasks.

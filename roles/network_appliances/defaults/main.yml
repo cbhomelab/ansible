@@ -31,7 +31,7 @@ network_appliances_dhcp_subnet_cidr: "10.20.0.0/24"
 # inventory vars instead.
 
 network_appliances_unifi:
-  api_base_url: "https://10.20.0.107"
+  api_base_url: "https://10.20.0.19"
   username: ""
   password: ""
   # Session-cookie auth (not a static API key) — see README.md. UniFi

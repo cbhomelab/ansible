@@ -55,7 +55,7 @@ webui_identity_accounts: []
 #
 #   - service: unifi
 #     username: christian
-#     api_base_url: "10.20.0.107"
+#     api_base_url: "10.20.0.19"
 #     extra:
 #       admin_user: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='username') }}"
 #       admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-unifi-admin', field='password') }}"
