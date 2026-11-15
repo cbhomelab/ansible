@@ -44,7 +44,7 @@
     - name: Health - jars intact and proxy answering
       ansible.builtin.shell: |
         set -e; cd {{ minecraft_deploy_dir }}
-        unzip -tq server/paper.jar >/dev/null; unzip -tq proxy/velocity.jar >/dev/null
+        python3 -c "import zipfile,sys;[sys.exit(1) for f in ('server/paper.jar','proxy/velocity.jar') if zipfile.ZipFile(f).testzip() is not None]"
         systemctl is-active minecraft-proxy >/dev/null
         ss -tlnH | awk '{print $4}' | grep -q ':{{ minecraft_proxy_port | default(25565) }}$'
       args: {executable: /bin/bash}
