@@ -29,5 +29,5 @@
       - homeassistant_report.supervisor.healthy
       - homeassistant_report.supervisor.supported
       - homeassistant_report.backups.newest_age_hours is not none
-      - homeassistant_report.backups.newest_age_hours | float < homeassistant_backup_max_age_hours
+      - homeassistant_report.backups.newest_age_hours | float < homeassistant_backup_max_age_hours | float
     fail_msg: "HA unhealthy or newest backup older than {{ homeassistant_backup_max_age_hours }} h"

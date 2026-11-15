@@ -10,7 +10,8 @@ if [ $rc -ne 0 ]; then
   printf '%s' "$out" | python3 -c '
 import sys,json,re,datetime
 o=sys.stdin.read()
-m=" | ".join(re.findall(r"(?:fail_msg|msg)\W+([^\n]{5,200})",o)[:2]) or o[-200:]
+f=re.findall(r"HA unhealthy[^\"\n]*",o) or re.findall(r"fatal: [^\n]{0,200}",o)
+m=f[0] if f else o.strip()[-200:]
 end=(datetime.datetime.now(datetime.timezone.utc)+datetime.timedelta(hours=26)).strftime("%Y-%m-%dT%H:%M:%SZ")
 print(json.dumps([{"labels":{"alertname":"HomeAssistantReportFailed","severity":"warning","host":"vm101-homeassistant"},
  "annotations":{"summary":"Home Assistant daily report failed (unhealthy supervisor, stale backup, or API unreachable): "+m},"endsAt":end}]))' \
