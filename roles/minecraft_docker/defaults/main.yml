@@ -1,0 +1,15 @@
+---
+# Minecraft (oddlama/minecraft-server framework: Velocity + Paper behind vane-velocity) as a compose stack on saturn.
+# Replaces roles/minecraft (LXC 105). World/plugin/proxy data lives in a bind mount on the NVMe,
+# imported once from the LXC 105 state (see tasks/main.yml header); the role never overwrites it.
+minecraft_docker_dir: /opt/minecraft
+minecraft_docker_data: /srv/dev-disk-by-uuid-d66051ef-e45a-4ade-8c47-b4cd6feddbe7/minecraft   # NVMe
+minecraft_docker_backup_dir: /srv/dev-disk-by-uuid-d66051ef-e45a-4ade-8c47-b4cd6feddbe7/minecraft-backups
+minecraft_docker_backup_keep: 7
+minecraft_docker_uid: 1006
+minecraft_docker_gid: 100
+minecraft_docker_java: 25
+minecraft_docker_mem_limit: 16g
+minecraft_docker_proxy_port: 25565
+minecraft_docker_mux_port: 25566      # vane-velocity auth multiplexer
+minecraft_docker_bluemap_port: 8100

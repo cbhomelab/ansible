@@ -1,0 +1,34 @@
+---
+# First-time data import from LXC 105 (done once, by hand, never by this role):
+#   stop minecraft-proxy/server on 105, then
+#   ssh lxc105 'sudo tar -C /var/lib -cf - minecraft' | ssh saturn 'sudo mkdir -p <data> && sudo tar -C <data> --strip-components=1 -xpf - && sudo chown -R 1006:100 <data>'
+- name: Data dir must already be populated (import above)
+  ansible.builtin.stat: {path: "{{ minecraft_docker_data }}/deploy/proxy/velocity.toml"}
+  register: mcd_data
+  failed_when: not mcd_data.stat.exists
+
+- name: Packages (zstd for backups)
+  ansible.builtin.apt: {name: zstd, state: present}
+
+- name: Compose dir
+  ansible.builtin.file: {path: "{{ minecraft_docker_dir }}", state: directory, mode: "0755"}
+
+- name: Dockerfile + compose.yml
+  ansible.builtin.template: {src: "{{ item.src }}", dest: "{{ minecraft_docker_dir }}/{{ item.dest }}", mode: "0644"}
+  loop: [{src: Dockerfile.j2, dest: Dockerfile}, {src: compose.yml.j2, dest: compose.yml}]
+  register: mcd_files
+
+- name: Backup script
+  ansible.builtin.template: {src: backup.sh.j2, dest: /usr/local/sbin/minecraft-backup, mode: "0750"}
+
+- name: Weekly state backup (Sunday 04:15)
+  ansible.builtin.cron: {name: minecraft-backup, weekday: "0", hour: "4", minute: "15", job: "/usr/local/sbin/minecraft-backup >/dev/null 2>&1"}
+
+- name: Build and start
+  ansible.builtin.command: docker compose up -d --build
+  args: {chdir: "{{ minecraft_docker_dir }}"}
+  register: mcd_up
+  changed_when: "'Started' in mcd_up.stdout or 'Created' in mcd_up.stderr or 'Recreated' in mcd_up.stderr or mcd_files.changed"
+
+- name: Proxy listening
+  ansible.builtin.wait_for: {host: 127.0.0.1, port: "{{ minecraft_docker_proxy_port }}", timeout: 60}

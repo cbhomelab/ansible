@@ -1,0 +1,33 @@
+# Managed by Ansible (roles/minecraft_docker). Paper shares the proxy's network namespace so the
+# framework's 127.0.0.1:25501 backend address works unchanged.
+name: minecraft
+services:
+  proxy:
+    build: .
+    image: minecraft-runtime:{{ minecraft_docker_java }}
+    container_name: minecraft-proxy
+    restart: unless-stopped
+    user: "{{ minecraft_docker_uid }}:{{ minecraft_docker_gid }}"
+    working_dir: /var/lib/minecraft/deploy/proxy
+    command: ["./start.sh"]
+    environment: {HOME: /var/lib/minecraft, TZ: America/Los_Angeles}
+    volumes: ["{{ minecraft_docker_data }}:/var/lib/minecraft"]
+    ports:
+      - "{{ minecraft_docker_proxy_port }}:25565"
+      - "{{ minecraft_docker_mux_port }}:25566"
+      - "{{ minecraft_docker_bluemap_port }}:8100"
+    mem_limit: {{ minecraft_docker_mem_limit }}
+  server:
+    image: minecraft-runtime:{{ minecraft_docker_java }}
+    container_name: minecraft-server
+    restart: unless-stopped
+    user: "{{ minecraft_docker_uid }}:{{ minecraft_docker_gid }}"
+    working_dir: /var/lib/minecraft/deploy/server
+    command: ["../contrib/server_loop.py", "--block", "start.block", "./start.sh", ":POST:", "./backup.sh"]
+    network_mode: "service:proxy"
+    depends_on: [proxy]
+    tty: true
+    stdin_open: true
+    stop_grace_period: 90s
+    environment: {HOME: /var/lib/minecraft, TZ: America/Los_Angeles}
+    volumes: ["{{ minecraft_docker_data }}:/var/lib/minecraft"]

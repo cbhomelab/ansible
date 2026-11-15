@@ -1,0 +1,5 @@
+---
+- name: Minecraft stack on saturn
+  hosts: saturn
+  become: true
+  roles: [minecraft_docker]

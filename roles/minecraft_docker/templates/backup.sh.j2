@@ -1,0 +1,18 @@
+#!/bin/bash
+# Managed by Ansible. State archive of proxy+server (excludes caches/rdiff history). Parks Paper only if it is running
+# (start.block is left exactly as found), same semantics as the old LXC backup.
+set -euo pipefail
+D={{ minecraft_docker_data }}/deploy; B={{ minecraft_docker_backup_dir }}
+mkdir -p "$B"; chmod 700 "$B"
+was_blocked=0; [ -e "$D/server/start.block" ] && was_blocked=1
+running=0; docker exec minecraft-server pgrep -f '[p]aper.jar' >/dev/null 2>&1 && running=1
+if [ $running = 1 ]; then
+  [ $was_blocked = 1 ] || { touch "$D/server/start.block"; chown {{ minecraft_docker_uid }}:{{ minecraft_docker_gid }} "$D/server/start.block"; }
+  docker exec minecraft-server pkill -TERM -f '[p]aper.jar' || true
+  for i in $(seq 1 60); do docker exec minecraft-server pgrep -f '[p]aper.jar' >/dev/null 2>&1 || break; sleep 2; done
+fi
+f="$B/minecraft-state-$(date +%Y%m%dT%H%M%S).tar.zst"
+tar --zstd -C {{ minecraft_docker_data }} --exclude='deploy/server/backups' --exclude='deploy/server/cache' -cf "$f" deploy
+[ $running = 1 ] && [ $was_blocked = 0 ] && rm -f "$D/server/start.block"
+ls -1t "$B"/minecraft-state-*.tar.zst | tail -n +$(( {{ minecraft_docker_backup_keep }} + 1 )) | xargs -r rm -f
+echo "$f"
