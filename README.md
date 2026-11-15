@@ -59,21 +59,59 @@ ansible-playbook playbooks/site.yml -i inventory/hosts.yml
 ansible-playbook playbooks/access.yml -i inventory/hosts.yml
 ```
 
-## Status
+## Status (updated Nov 15 2026)
 
-`access_control` has real tasks (users/ssh_keys/sudoers) wired up.
-`webui_identity` has real per-service tasks for Proxmox, OMV, UniFi, NPM,
-Home Assistant (manual-step note), Grafana, and OPNsense, plus a
-documented no-op for Pi-hole (single shared admin password) - see
-`roles/webui_identity/README.md`. Both roles are written and reviewable
-now, but **executing `playbooks/webui.yml` for real must wait** until (1)
-`access_control` has rolled out the `christian`/`hermes` OS users
-fleet-wide, since the Proxmox `@pam` trick needs that system user to
-exist, and (2) real secrets are populated in Bitwarden in place of the
-placeholder item names in `group_vars/all.yml`.
+The original access/permissions work is in place, and the repo has since grown
+into per-service roles that rebuild each guest from scratch. Every guest below
+has a role, a playbook, a backup path and a health check.
 
-`system_baseline`, `compose_stacks`, `monitoring_agents`, `backup`, and
-`network_appliances` are scaffolded skeletons only (debug no-op
-stubs) — see each role's README.md before implementing.
-`inventory/hosts.yml` reflects the current homelab topology; update it
-as hosts change.
+### Access and identity
+- `access_control`: users, SSH keys and sudoers across the fleet.
+- `webui_identity`: per-service "christian" account on each web UI. Dry-run
+  clean. The OPNsense entry is disabled because OPNsense 24.1.5 has no
+  `core/user` API; revisit after an upgrade.
+- `shell_config`, `audit_log_shipping`.
+
+### Fleet roles
+`system_baseline`, `compose_stacks` (saturn), `monitoring_agents`,
+`prometheus_targets`, `backup` (borg on saturn), `network_appliances` (Kea
+reservations, DNS/NPM sync), `proxmox_guests` (drift report plus update mode).
+Neptune is excluded from automatic baseline patching on purpose. lxc103
+(Hermes) is excluded from fleet runs.
+
+### Per-service roles
+
+| Guest | Role / playbook | Notes |
+|---|---|---|
+| lxc102 NPM | `npm` | nightly sqlite + cert backup |
+| lxc104 Glance | `glance` | pinned v0.8.4, update path with rollback |
+| lxc106 iRacing Team Manager | `iracing_tms` | native venv + Postgres 15, nightly `pg_dump`, env in `/etc/iracing-tms/env` |
+| lxc107 UniFi | `unifi_controller` | pinned 8.0.24, update with rollback |
+| lxc108 Pi-hole | `pihole` | v6, declarative, update via `--tags update` |
+| lxc110 Forgejo | `forgejo` | 10.20.0.50, pinned binary, SQLite, nightly dump |
+| saturn Minecraft | `minecraft_docker` / `minecraft-docker.yml` | live, see below |
+| lxc105 Minecraft | `minecraft` | superseded, kept for rollback |
+
+### Minecraft (moved to saturn, Nov 15)
+- Compose stack in `/opt/minecraft` on saturn: `minecraft-proxy` (Velocity with
+  vane-velocity) and `minecraft-server` (Paper, parked behind `start.block`
+  until a player joins). Java 25. World data is a bind mount on the NVMe.
+- OPNsense alias `minecraft_server` and NPM host `mc-map` point at saturn.
+- LXC 105 is stopped with onboot off and is not destroyed. Restarting it is the
+  rollback. Planned to be destroyed after about a week if nothing breaks.
+- The role never writes into the data directory. The first import from LXC 105
+  was a manual tar copy, documented at the top of `tasks/main.yml`.
+- Not yet verified in production: a real player join, the BlueMap page, and the
+  post-stop backup hook. The weekly backup (Sunday 04:15) has not run yet.
+- Bedrock/Switch support (Geyser + Floodgate + BedrockConnect) is being tested
+  separately and is not part of the role yet. Geyser needs Velocity 3.6.x or
+  newer; production runs 3.4.0.
+
+### Conventions and pitfalls
+- Secrets come from Bitwarden at run time; nothing plaintext is committed.
+- Read-only `uri` GET/login tasks need `check_mode: false`, or later tasks crash
+  in check mode.
+- Legacy roles `common`, `docker`, `provision-vm` and compose project
+  `40-crafty` were removed.
+- Roadmap and gotchas live in `references/ansible-iac-roadmap.md` in the
+  homelab-infrastructure skill. Check `roles/<x>/README.md` and `git log` first.
