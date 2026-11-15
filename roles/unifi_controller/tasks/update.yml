@@ -36,14 +36,17 @@
       ansible.builtin.fetch: {src: "{{ unifi_cold.stdout }}", dest: "{{ unifi_backup_fetch_dir }}/", flat: true}
       when: unifi_backup_fetch_dir | length > 0
 
-    - name: Unhold, install target, re-hold
+    - name: Unhold, install target, re-hold (debconf pre-seeded - the preinst asks 'do you have a backup?' and hangs forever otherwise; we just took one)
       ansible.builtin.shell: |
         set -e
+        export DEBIAN_FRONTEND=noninteractive
+        echo 'unifi unifi/has_backup boolean true' | debconf-set-selections
         apt-mark unhold unifi
-        apt-get install -y --allow-downgrades /var/cache/unifi_{{ unifi_version }}_all.deb
+        apt-get install -y -o Dpkg::Options::=--force-confold --allow-downgrades /var/cache/unifi_{{ unifi_version }}_all.deb
         apt-mark hold unifi
       args: {executable: /bin/bash}
       changed_when: true
+      timeout: 900
 
     - ansible.builtin.systemd: {name: unifi, state: started, enabled: true}
 
