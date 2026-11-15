@@ -1,0 +1,7 @@
+---
+# Runs from the control node (HAOS has no shell). Everything goes through HA's
+# websocket API; the role never touches HAOS itself.
+homeassistant_env_file: "{{ lookup('env', 'HOME') }}/.config/homeassistant/env"  # HA_HOST/HA_PORT/HA_TOKEN
+homeassistant_venv: "{{ lookup('env', 'HOME') }}/.cache/ansible-homeassistant-venv"
+# Report fails if the newest HA backup is older than this.
+homeassistant_backup_max_age_hours: 96

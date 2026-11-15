@@ -1,0 +1,33 @@
+---
+# Read-only drift report: versions, add-ons, disk and backup freshness. Fails
+# (so a cron/alert run notices) if the newest HA backup is too old or the
+# Supervisor is unhealthy.
+- ansible.builtin.import_tasks: client.yml
+
+- name: HA report
+  ansible.builtin.shell: |
+    set -a; . {{ homeassistant_env_file }}; set +a
+    {{ homeassistant_venv }}/bin/python {{ role_path }}/files/ha_ws.py report
+  register: homeassistant_report_raw
+  changed_when: false
+  check_mode: false
+
+- ansible.builtin.set_fact:
+    homeassistant_report: "{{ homeassistant_report_raw.stdout | from_json }}"
+
+- name: Summary
+  ansible.builtin.debug:
+    msg:
+      - "Core {{ homeassistant_report.core.version }} (latest {{ homeassistant_report.core.latest }}); OS {{ homeassistant_report.os.version }} (latest {{ homeassistant_report.os.latest }})"
+      - "Supervisor healthy={{ homeassistant_report.supervisor.healthy }} supported={{ homeassistant_report.supervisor.supported }}; disk free {{ homeassistant_report.disk_free_gb }} GB"
+      - "Add-ons behind: {{ homeassistant_report.addons | selectattr('behind') | map(attribute='slug') | join(', ') }} ({{ homeassistant_report.addons | selectattr('behind') | list | length }} of {{ homeassistant_report.addons | length }})"
+      - "Backups: {{ homeassistant_report.backups.count }}, newest {{ homeassistant_report.backups.newest }} ({{ homeassistant_report.backups.newest_age_hours }} h ago)"
+
+- name: Assert health and backup freshness
+  ansible.builtin.assert:
+    that:
+      - homeassistant_report.supervisor.healthy
+      - homeassistant_report.supervisor.supported
+      - homeassistant_report.backups.newest_age_hours is not none
+      - homeassistant_report.backups.newest_age_hours | float < homeassistant_backup_max_age_hours
+    fail_msg: "HA unhealthy or newest backup older than {{ homeassistant_backup_max_age_hours }} h"

@@ -1,0 +1,12 @@
+---
+# Full backup (all add-ons + database) to HA's local storage. Used before any update.
+- ansible.builtin.import_tasks: client.yml
+- name: Create HA backup
+  ansible.builtin.shell: |
+    set -a; . {{ homeassistant_env_file }}; set +a
+    {{ homeassistant_venv }}/bin/python {{ role_path }}/files/ha_ws.py backup "{{ homeassistant_backup_name }}"
+  vars:
+    homeassistant_backup_name: "Ansible {{ lookup('pipe', 'date +%Y-%m-%d_%H%M') }}"
+  register: homeassistant_backup_raw
+  changed_when: true
+- ansible.builtin.debug: {msg: "{{ homeassistant_backup_raw.stdout }}"}

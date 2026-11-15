@@ -1,0 +1,6 @@
+---
+- name: Python venv with websockets (control node)
+  ansible.builtin.pip:
+    name: websockets
+    virtualenv: "{{ homeassistant_venv }}"
+    virtualenv_command: python3 -m venv
