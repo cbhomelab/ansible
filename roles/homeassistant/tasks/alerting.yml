@@ -1,0 +1,9 @@
+---
+- name: Report+alert script
+  ansible.builtin.template: {src: ha-report-alert.sh.j2, dest: "{{ lookup('env', 'HOME') }}/.local/bin/ha-report-alert.sh", mode: "0750"}
+- name: Daily cron
+  ansible.builtin.cron:
+    name: ha-report-alert
+    hour: "{{ homeassistant_alert_cron_hour }}"
+    minute: "{{ homeassistant_alert_cron_minute }}"
+    job: "{{ lookup('env', 'HOME') }}/.local/bin/ha-report-alert.sh >> {{ lookup('env', 'HOME') }}/.cache/ha-report-alert.log 2>&1"

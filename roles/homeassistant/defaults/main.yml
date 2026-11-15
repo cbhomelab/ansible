@@ -5,3 +5,9 @@ homeassistant_env_file: "{{ lookup('env', 'HOME') }}/.config/homeassistant/env" 
 homeassistant_venv: "{{ lookup('env', 'HOME') }}/.cache/ansible-homeassistant-venv"
 # Report fails if the newest HA backup is older than this.
 homeassistant_backup_max_age_hours: 96
+# Daily report + alert (runs on the control node via cron).
+homeassistant_alerting_enabled: true
+homeassistant_repo_dir: "{{ lookup('env', 'HOME') }}/ansible"
+homeassistant_alertmanager_url: http://10.20.0.2:9093
+homeassistant_alert_cron_hour: "8"
+homeassistant_alert_cron_minute: "15"

@@ -127,6 +127,8 @@
               image: {{ backup_alertmanager_image }}
               user: "${UID}:${GID}"
               restart: unless-stopped
+              ports:
+                - "{{ backup_alertmanager_bind }}:9093:9093"   # LAN-only; lets other hosts push alerts
               command:
                 - --config.file=/etc/alertmanager/alertmanager.yml
                 - --storage.path=/alertmanager
