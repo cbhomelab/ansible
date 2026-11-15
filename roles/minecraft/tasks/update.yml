@@ -35,6 +35,16 @@
       become_user: "{{ minecraft_user }}"
       changed_when: true
 
+    - name: Ensure Paper's patch cache is owned by the server user (a root-owned versions/ jar makes Paperclip fail with AccessDenied on first boot of a new build)
+      ansible.builtin.file:
+        path: "{{ minecraft_deploy_dir }}/server/{{ item }}"
+        state: directory
+        owner: "{{ minecraft_user }}"
+        group: "{{ minecraft_user }}"
+        recurse: true
+      loop: [versions, cache, libraries]
+      failed_when: false
+
     - ansible.builtin.import_tasks: jars.yml
 
     - name: Restart proxy only if its jar changed
