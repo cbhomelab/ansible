@@ -13,3 +13,9 @@ minecraft_docker_mem_limit: 16g
 minecraft_docker_proxy_port: 25565
 minecraft_docker_mux_port: 25566      # vane-velocity auth multiplexer
 minecraft_docker_bluemap_port: 8100
+# Velocity is pinned: the framework's update.sh would otherwise fetch an older build that rejects 26.x clients.
+minecraft_docker_velocity_build: 49
+minecraft_docker_velocity_jar: velocity-4.3.2-{{ minecraft_docker_velocity_build }}.jar
+minecraft_docker_velocity_url: https://fill-data.papermc.io/v1/objects/74fa2a58d9c25aaff0354ae5c20be0a63b30391f8a3d0895ed517f354e3720ee/velocity-4.3.2-SNAPSHOT-49.jar
+minecraft_docker_velocity_sha256: 74fa2a58d9c25aaff0354ae5c20be0a63b30391f8a3d0895ed517f354e3720ee
+minecraft_docker_dns: [10.20.0.1]     # explicit resolver; Paper hit UnknownHostException for Mojang hosts after a restart

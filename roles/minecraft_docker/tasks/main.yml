@@ -7,6 +7,31 @@
   register: mcd_data
   failed_when: not mcd_data.stat.exists
 
+- name: Velocity jar (pinned build)
+  ansible.builtin.get_url:
+    url: "{{ minecraft_docker_velocity_url }}"
+    dest: "{{ minecraft_docker_data }}/deploy/proxy/{{ minecraft_docker_velocity_jar }}"
+    checksum: "sha256:{{ minecraft_docker_velocity_sha256 }}"
+    owner: "{{ minecraft_docker_uid }}"
+    group: "{{ minecraft_docker_gid }}"
+    mode: "0644"
+  register: mcd_vjar
+
+- name: velocity.jar -> pinned build
+  ansible.builtin.file:
+    src: "{{ minecraft_docker_velocity_jar }}"
+    dest: "{{ minecraft_docker_data }}/deploy/proxy/velocity.jar"
+    state: link
+    owner: "{{ minecraft_docker_uid }}"
+    group: "{{ minecraft_docker_gid }}"
+  register: mcd_vlink
+
+- name: Stop framework update.sh from re-downloading Velocity
+  ansible.builtin.replace:
+    path: "{{ minecraft_docker_data }}/deploy/proxy/update.sh"
+    regexp: '^download_velocity velocity.jar$'
+    replace: '# download_velocity velocity.jar  # pinned by ansible (minecraft_docker_velocity_*)'
+
 - name: Packages (zstd for backups)
   ansible.builtin.apt: {name: zstd, state: present}
 
@@ -28,7 +53,7 @@
   ansible.builtin.command: docker compose up -d --build
   args: {chdir: "{{ minecraft_docker_dir }}"}
   register: mcd_up
-  changed_when: "'Started' in mcd_up.stdout or 'Created' in mcd_up.stderr or 'Recreated' in mcd_up.stderr or mcd_files.changed"
+  changed_when: "'Started' in mcd_up.stdout or 'Created' in mcd_up.stderr or 'Recreated' in mcd_up.stderr or mcd_files.changed or mcd_vjar.changed or mcd_vlink.changed"
 
 - name: Proxy listening
   ansible.builtin.wait_for: {host: 127.0.0.1, port: "{{ minecraft_docker_proxy_port }}", timeout: 60}

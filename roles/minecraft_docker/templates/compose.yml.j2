@@ -17,6 +17,7 @@ services:
       - "{{ minecraft_docker_mux_port }}:25566"
       - "{{ minecraft_docker_bluemap_port }}:8100"
     mem_limit: {{ minecraft_docker_mem_limit }}
+    dns: {{ minecraft_docker_dns | to_json }}
   server:
     image: minecraft-runtime:{{ minecraft_docker_java }}
     container_name: minecraft-server
