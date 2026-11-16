@@ -3,7 +3,7 @@
 # Windows Update are opt-in:
 #   ansible-playbook playbooks/windows.yml --tags updates
 
-- name: Ensure declared winget packages are installed
+- name: Ensure core + selected package sets + extras are installed
   ansible.windows.win_powershell:
     script: |
       [CmdletBinding()] param()
@@ -14,7 +14,10 @@
         winget install --id $id --exact --silent --accept-package-agreements --accept-source-agreements
         $Ansible.Changed = $true
       }
-  loop: "{{ windows_baseline_winget_packages }}"
+  loop: >-
+    {{ (windows_baseline_winget_core
+        + (windows_baseline_package_sets | map('extract', windows_baseline_package_sets_available) | flatten)
+        + windows_baseline_winget_packages) | unique }}
   tags: [packages]
 
 - name: Upgrade winget packages (excluding pinned IDs)

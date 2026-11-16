@@ -7,6 +7,10 @@
   ansible.builtin.import_tasks: hardening.yml
   tags: [hardening]
 
+- name: Local accounts
+  ansible.builtin.import_tasks: users.yml
+  tags: [users]
+
 - name: Power and time settings
   ansible.builtin.import_tasks: system.yml
   tags: [system]

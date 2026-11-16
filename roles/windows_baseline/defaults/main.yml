@@ -30,8 +30,68 @@ windows_baseline_power_monitor_timeout_ac: 0
 windows_baseline_power_standby_timeout_ac: 0
 
 # --- Packages (winget) ----------------------------------------------------
-# Packages that must be installed. Empty by default: the box already has a
-# hand-built set; add IDs here to make them declarative.
+# Layered: every Windows host gets `core`; each host then opts into named
+# sets via `windows_baseline_package_sets` (set in host_vars/group_vars).
+# `windows_baseline_winget_packages` is a per-host free-form extra list.
+windows_baseline_winget_core:
+  - Mozilla.Firefox
+  - 7zip.7zip
+  - CodeSector.TeraCopy
+  - VideoLAN.VLC
+  - Bitwarden.Bitwarden
+  - voidtools.Everything
+  - WinDirStat.WinDirStat
+  - Microsoft.PowerToys
+  - Microsoft.PowerShell
+  - Microsoft.WindowsTerminal
+  - Microsoft.VisualStudioCode
+  - Tailscale.Tailscale
+  - Microsoft.VCRedist.2015+.x64
+  - Microsoft.VCRedist.2015+.x86
+
+windows_baseline_package_sets_available:
+  gaming:
+    - Valve.Steam
+    - EpicGames.EpicGamesLauncher
+    - GOG.Galaxy
+    - Playnite.Playnite
+    - Discord.Discord
+    - MoonlightGameStreamingProject.Moonlight
+    - ClassicOldSong.Apollo
+    - ViGEm.ViGEmBus
+    - beeradmoore.dlss-swapper
+    - EarTrumpet.EarTrumpet
+    - Logitech.OptionsPlus
+    - Mojang.MinecraftLauncher
+    - PrismLauncher.PrismLauncher
+  dev:
+    - Git.Git
+    - twpayne.chezmoi
+    - Starship.Starship
+    - Docker.DockerDesktop
+    - OpenJS.NodeJS
+    - Python.Python.3.13
+    - GitHub.cli
+    - GitHub.GitHubDesktop
+    - Microsoft.WSL
+    - PuTTY.PuTTY
+    - Gyan.FFmpeg
+  media_tools:
+    - Plex.Plex
+    - Plex.Plexamp
+    - MusicBrainz.Picard
+    - AppWork.JDownloader
+  creative:
+    - Adobe.CreativeCloud
+    - SoftFever.OrcaSlicer
+    - ShareX.ShareX
+    - Obsidian.Obsidian
+  homelab:
+    - Syncthing.Syncthing
+    - Ngrok.Ngrok
+    - BornToBeRoot.NETworkManager
+
+windows_baseline_package_sets: []
 windows_baseline_winget_packages: []
 # Package IDs never auto-upgraded by `--tags updates` (drivers / things
 # that can break a working setup).
@@ -48,3 +108,17 @@ windows_baseline_update_categories:
   - DefinitionUpdates
 # Auto-restart if an update requires it. false = report only.
 windows_baseline_update_reboot: false
+
+# --- Local accounts -------------------------------------------------------
+# Catalog of people lives in group_vars/windows.yml (windows_baseline_user_catalog).
+# Each host lists which of them exist on it (windows_baseline_users) and which
+# are local admins (windows_baseline_admins). Accounts not listed for a host
+# are never created, and accounts outside the catalog are never touched.
+# Passwords are always managed: Bitwarden item `bw_item` (field: password) is
+# enforced on every run. If the item is missing the account's password is left
+# alone and a warning is shown.
+windows_baseline_user_catalog: {}
+windows_baseline_users: []
+# Local admins on every PC. Merged with per-host windows_baseline_admins.
+windows_baseline_global_admins: [christian]
+windows_baseline_admins: []

@@ -6,3 +6,10 @@ ansible_user: christian
 # so it never consults the hermes host's ~/.ssh/config "windows-christian"
 # alias (that's only matched when ssh is invoked with that literal name).
 ansible_ssh_private_key_file: ~/.ssh/christian_windows
+
+# --- People catalog (see roles/windows_baseline/defaults/main.yml) ---------
+# bw_item: Bitwarden item whose password is enforced on every PC that has the user.
+windows_baseline_user_catalog:
+  christian:
+    fullname: Christian Bishop
+    bw_item: homelab-windows-christian

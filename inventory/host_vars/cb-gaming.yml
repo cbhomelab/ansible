@@ -1,0 +1,3 @@
+---
+# CB-GAMING: christian's gaming/main PC.
+windows_baseline_package_sets: [gaming, dev, media_tools, creative, homelab]

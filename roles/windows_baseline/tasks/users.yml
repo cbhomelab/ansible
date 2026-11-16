@@ -1,0 +1,66 @@
+---
+- name: Build effective user list (global admins + host users)
+  ansible.builtin.set_fact:
+    windows_baseline_effective_users: "{{ (windows_baseline_global_admins + windows_baseline_users) | unique }}"
+    windows_baseline_effective_admins: "{{ (windows_baseline_global_admins + windows_baseline_admins) | unique }}"
+
+- name: Fail on users missing from the catalog
+  ansible.builtin.assert:
+    that: item in windows_baseline_user_catalog
+    fail_msg: "{{ item }} is listed for this host but not defined in windows_baseline_user_catalog"
+  loop: "{{ windows_baseline_effective_users }}"
+
+- name: Resolve passwords from Bitwarden (empty = leave password alone)
+  ansible.builtin.set_fact:
+    windows_baseline_pw: >-
+      {{ windows_baseline_pw | default({}) | combine({item: (query('community.general.bitwarden', windows_baseline_user_catalog[item].bw_item, field='password', errors='ignore') | first | default('', true) | string | trim | replace('None',''))}) }}
+  loop: "{{ windows_baseline_effective_users }}"
+  no_log: true
+
+- name: Warn about users with no Bitwarden password
+  ansible.builtin.debug:
+    msg: "{{ item }}: Bitwarden item '{{ windows_baseline_user_catalog[item].bw_item }}' not found - password not managed"
+  when: windows_baseline_pw[item] == ''
+  loop: "{{ windows_baseline_effective_users }}"
+
+- name: Create/update accounts with a managed password
+  ansible.windows.win_user:
+    name: "{{ item }}"
+    fullname: "{{ windows_baseline_user_catalog[item].fullname | default(item) }}"
+    password: "{{ windows_baseline_pw[item] }}"
+    update_password: always
+    password_never_expires: true
+    user_cannot_change_password: false
+    state: present
+  loop: "{{ windows_baseline_effective_users | select('in', windows_baseline_pw | dict2items | rejectattr('value', 'equalto', '') | map(attribute='key') | list) | list }}"
+  no_log: true
+
+- name: Create accounts that have no Bitwarden password yet (disabled until one exists)
+  ansible.windows.win_user:
+    name: "{{ item }}"
+    fullname: "{{ windows_baseline_user_catalog[item].fullname | default(item) }}"
+    state: present
+    account_disabled: true
+  when: windows_baseline_pw[item] == '' and item != 'christian'
+  loop: "{{ windows_baseline_effective_users }}"
+
+- name: Admin group membership (admins in, everyone else out)
+  ansible.windows.win_group_membership:
+    name: Administrators
+    members: "{{ windows_baseline_effective_admins }}"
+    state: present
+  when: windows_baseline_effective_admins | length > 0
+
+- name: Standard users group membership
+  ansible.windows.win_group_membership:
+    name: Users
+    members: "{{ windows_baseline_effective_users | difference(windows_baseline_effective_admins) }}"
+    state: present
+  when: (windows_baseline_effective_users | difference(windows_baseline_effective_admins)) | length > 0
+
+- name: Remove non-admin catalog users from Administrators
+  ansible.windows.win_group_membership:
+    name: Administrators
+    members: "{{ windows_baseline_user_catalog.keys() | difference(windows_baseline_effective_admins) | list }}"
+    state: absent
+  when: (windows_baseline_user_catalog.keys() | difference(windows_baseline_effective_admins) | list) | length > 0
