@@ -18,8 +18,17 @@ BW_SESSION_FILE = os.path.expanduser("~/.config/bitwarden/session")
 LOCK = threading.Lock()
 
 
+def bw_env():
+    env = dict(os.environ)
+    try:
+        env["BW_SESSION"] = open(BW_SESSION_FILE).read().strip()
+    except OSError:
+        pass
+    return env
+
+
 def windows_hosts():
-    out = subprocess.run(["ansible-inventory", "--list"], cwd=REPO, capture_output=True, text=True, timeout=60).stdout
+    out = subprocess.run(["ansible-inventory", "--list"], cwd=REPO, env=bw_env(), capture_output=True, text=True, timeout=120).stdout
     inv = json.loads(out)
     return {h: inv["_meta"]["hostvars"][h].get("ansible_host") for h in inv.get("windows", {}).get("hosts", [])}
 
@@ -27,11 +36,7 @@ def windows_hosts():
 def run_playbook(host):
     log = os.path.join(BASE, "logs", f"{time.strftime('%Y%m%d-%H%M%S')}-{host}.log")
     with LOCK, open(log, "w") as f:
-        env = dict(os.environ)
-        try:
-            env["BW_SESSION"] = open(BW_SESSION_FILE).read().strip()
-        except OSError:
-            pass
+        env = bw_env()
         subprocess.run(["git", "pull", "-q", "--rebase"], cwd=REPO, stdout=f, stderr=f)
         # sshd may take a moment to be reachable right after bootstrap
         for attempt in range(1, 6):
