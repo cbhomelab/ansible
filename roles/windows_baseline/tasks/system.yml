@@ -1,0 +1,35 @@
+---
+- name: Timezone
+  community.windows.win_timezone:
+    timezone: "{{ windows_baseline_timezone }}"
+
+- name: Activate power scheme and set AC timeouts
+  ansible.windows.win_powershell:
+    script: |
+      [CmdletBinding()] param()
+      $Ansible.Changed = $false
+      $want = "{{ windows_baseline_power_scheme_name }}"
+      $active = (powercfg /getactivescheme) -join ' '
+      if ($active -notmatch [regex]::Escape($want)) {
+        $guid = ((powercfg /list) -join "`n" | Select-String "GUID:\s*([0-9a-f-]+)\s*\($([regex]::Escape($want))\)").Matches.Groups[1].Value
+        if (-not $guid) {
+          if ($Ansible.CheckMode) { $Ansible.Changed = $true; return }
+          $guid = ((powercfg /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61) -join ' ') -replace '.*GUID:\s*([0-9a-f-]+).*','$1'
+        }
+        if (-not $Ansible.CheckMode) { powercfg /setactive $guid }
+        $Ansible.Changed = $true
+      }
+      # /change only writes when the value differs; compare via /query first
+      $q = (powercfg /query SCHEME_CURRENT SUB_VIDEO VIDEOIDLE) -join "`n"
+      $cur = [Convert]::ToInt32(([regex]::Match($q,'Current AC Power Setting Index:\s*0x([0-9a-f]+)')).Groups[1].Value,16)
+      if ($cur -ne ({{ windows_baseline_power_monitor_timeout_ac }} * 60)) {
+        if (-not $Ansible.CheckMode) { powercfg /change monitor-timeout-ac {{ windows_baseline_power_monitor_timeout_ac }} }
+        $Ansible.Changed = $true
+      }
+      $q = (powercfg /query SCHEME_CURRENT SUB_SLEEP STANDBYIDLE) -join "`n"
+      $cur = [Convert]::ToInt32(([regex]::Match($q,'Current AC Power Setting Index:\s*0x([0-9a-f]+)')).Groups[1].Value,16)
+      if ($cur -ne ({{ windows_baseline_power_standby_timeout_ac }} * 60)) {
+        if (-not $Ansible.CheckMode) { powercfg /change standby-timeout-ac {{ windows_baseline_power_standby_timeout_ac }} }
+        $Ansible.Changed = $true
+      }
+  check_mode: false

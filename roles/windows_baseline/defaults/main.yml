@@ -1,0 +1,50 @@
+---
+# windows_baseline: CB-GAMING (Windows 11 Pro, OpenSSH + PowerShell, no Python).
+# Uses ansible.windows / community.windows modules (PowerShell-native, work
+# over SSH with ansible_shell_type=powershell). See README.md.
+
+windows_baseline_timezone: "Pacific Standard Time"
+
+# --- OpenSSH server -------------------------------------------------------
+# Key-only auth. Safe to enable because the controller already logs in by
+# key; role validates with `sshd -t` BEFORE restarting sshd.
+windows_baseline_ssh_password_auth: false
+# Public keys that must be present in administrators_authorized_keys
+# (christian is in Administrators, so Windows reads THIS file, not
+# ~/.ssh/authorized_keys). Append-only: existing keys are never removed.
+windows_baseline_ssh_admin_keys:
+  - "{{ lookup('ansible.builtin.file', '~/.ssh/christian_windows.pub') | trim }}"
+
+# --- Hardening -----------------------------------------------------------
+windows_baseline_disable_smb1: true
+windows_baseline_rdp_require_nla: true
+windows_baseline_disable_builtin_admin: true
+windows_baseline_defender_realtime: true
+windows_baseline_firewall_profiles_enabled: true
+
+# --- Power ---------------------------------------------------------------
+# Ultimate Performance scheme. Never sleep on AC (Sunshine/Moonlight host).
+# Matched by NAME (the live scheme is a duplicate with its own GUID).
+windows_baseline_power_scheme_name: "Ultimate Performance"
+windows_baseline_power_monitor_timeout_ac: 0
+windows_baseline_power_standby_timeout_ac: 0
+
+# --- Packages (winget) ----------------------------------------------------
+# Packages that must be installed. Empty by default: the box already has a
+# hand-built set; add IDs here to make them declarative.
+windows_baseline_winget_packages: []
+# Package IDs never auto-upgraded by `--tags updates` (drivers / things
+# that can break a working setup).
+windows_baseline_winget_exclude:
+  - ViGEm.ViGEmBus
+  - Microsoft.WSL
+  - Tailscale.Tailscale
+
+# --- Windows Update (tag: updates, never runs by default) -----------------
+windows_baseline_update_categories:
+  - SecurityUpdates
+  - CriticalUpdates
+  - UpdateRollups
+  - DefinitionUpdates
+# Auto-restart if an update requires it. false = report only.
+windows_baseline_update_reboot: false

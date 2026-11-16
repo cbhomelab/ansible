@@ -1,0 +1,52 @@
+---
+# A plain run only installs explicitly declared packages. Upgrades and
+# Windows Update are opt-in:
+#   ansible-playbook playbooks/windows.yml --tags updates
+
+- name: Ensure declared winget packages are installed
+  ansible.windows.win_powershell:
+    script: |
+      [CmdletBinding()] param()
+      $Ansible.Changed = $false
+      $id = "{{ item }}"
+      $out = winget list --id $id --exact --accept-source-agreements 2>&1 | Out-String
+      if ($out -notmatch [regex]::Escape($id)) {
+        winget install --id $id --exact --silent --accept-package-agreements --accept-source-agreements
+        $Ansible.Changed = $true
+      }
+  loop: "{{ windows_baseline_winget_packages }}"
+  tags: [packages]
+
+- name: Upgrade winget packages (excluding pinned IDs)
+  ansible.windows.win_powershell:
+    script: |
+      [CmdletBinding()] param()
+      $Ansible.Changed = $false
+      $exclude = @({{ windows_baseline_winget_exclude | map('regex_replace', '^(.*)$', "'\\1'") | join(',') }})
+      $lines = winget upgrade --accept-source-agreements 2>&1 | Out-String -Stream
+      $ids = foreach ($l in $lines) { if ($l -match '^\S.*?\s{2,}(\S+\.\S+)\s{2,}\S+') { $Matches[1] } }
+      foreach ($i in ($ids | Where-Object { $_ -notin $exclude })) {
+        winget upgrade --id $i --exact --silent --accept-package-agreements --accept-source-agreements --disable-interactivity | Out-Null
+        $Ansible.Changed = $true
+        $Ansible.Result += "$i (exit $LASTEXITCODE)"
+      }
+  register: windows_baseline_winget_upgrade
+  tags: [never, updates]
+
+- name: Report winget upgrades
+  ansible.builtin.debug:
+    var: windows_baseline_winget_upgrade.result
+  tags: [never, updates]
+
+- name: Install Windows updates
+  ansible.windows.win_updates:
+    category_names: "{{ windows_baseline_update_categories }}"
+    reboot: "{{ windows_baseline_update_reboot }}"
+    state: installed
+  register: windows_baseline_wu
+  tags: [never, updates]
+
+- name: Report Windows Update result
+  ansible.builtin.debug:
+    msg: "installed={{ windows_baseline_wu.installed_update_count | default(0) }} restart_required={{ windows_baseline_wu.reboot_required | default(false) }}"
+  tags: [never, updates]

@@ -1,0 +1,44 @@
+---
+- name: Disable SMBv1 server
+  ansible.windows.win_regedit:
+    path: HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters
+    name: SMB1
+    data: 0
+    type: dword
+  when: windows_baseline_disable_smb1
+
+- name: Require NLA for RDP
+  ansible.windows.win_regedit:
+    path: HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp
+    name: UserAuthentication
+    data: 1
+    type: dword
+  when: windows_baseline_rdp_require_nla
+
+- name: Keep built-in Administrator disabled
+  ansible.windows.win_user:
+    name: Administrator
+    account_disabled: true
+  when: windows_baseline_disable_builtin_admin
+
+- name: Windows Firewall enabled on all profiles
+  community.windows.win_firewall:
+    profiles: [Domain, Private, Public]
+    state: enabled
+  when: windows_baseline_firewall_profiles_enabled
+
+- name: Defender real-time protection on
+  ansible.windows.win_powershell:
+    script: |
+      [CmdletBinding()] param()
+      $Ansible.Changed = $false
+      if ((Get-MpPreference).DisableRealtimeMonitoring) {
+        if (-not $Ansible.CheckMode) { Set-MpPreference -DisableRealtimeMonitoring $false }
+        $Ansible.Changed = $true
+      }
+  check_mode: false
+  when: windows_baseline_defender_realtime
+
+# UAC is deliberately NOT managed: HKLM\...\Policies\System\EnableLUA is a
+# REG_SZ on this box (ignored by Windows), so the effective state is unclear.
+# Writing a proper DWORD could silently disable UAC. Audit by hand first.

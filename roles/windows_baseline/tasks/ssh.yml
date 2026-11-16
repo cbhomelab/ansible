@@ -1,0 +1,67 @@
+---
+- name: Ensure sshd is running and automatic
+  ansible.windows.win_service:
+    name: sshd
+    start_mode: auto
+    state: started
+
+- name: Ensure admin authorized_keys entries are present (append-only)
+  ansible.windows.win_lineinfile:
+    path: C:\ProgramData\ssh\administrators_authorized_keys
+    line: "{{ item }}"
+    state: present
+    create: true
+  loop: "{{ windows_baseline_ssh_admin_keys }}"
+  loop_control:
+    label: "{{ item.split(' ')[-1] }}"
+
+- name: Lock down administrators_authorized_keys ACL (SYSTEM + Administrators only)
+  ansible.windows.win_acl_inheritance:
+    path: C:\ProgramData\ssh\administrators_authorized_keys
+    state: absent
+    reorganize: true
+
+- name: Grant SYSTEM and Administrators full control on the keys file
+  ansible.windows.win_acl:
+    path: C:\ProgramData\ssh\administrators_authorized_keys
+    user: "{{ item }}"
+    rights: FullControl
+    type: allow
+    state: present
+  loop: ["SYSTEM", "BUILTIN\\Administrators"]
+
+- name: Set PubkeyAuthentication yes
+  ansible.windows.win_lineinfile:
+    path: C:\ProgramData\ssh\sshd_config
+    regexp: '^\s*#?\s*PubkeyAuthentication\s'
+    line: PubkeyAuthentication yes
+    insertbefore: '^Match '
+  register: windows_baseline_sshd_pubkey
+
+- name: Set PasswordAuthentication
+  ansible.windows.win_lineinfile:
+    path: C:\ProgramData\ssh\sshd_config
+    regexp: '^\s*#?\s*PasswordAuthentication\s'
+    line: "PasswordAuthentication {{ 'yes' if windows_baseline_ssh_password_auth else 'no' }}"
+    insertbefore: '^Match '
+  register: windows_baseline_sshd_pw
+
+- name: Set KbdInteractiveAuthentication (password-equivalent on Windows)
+  ansible.windows.win_lineinfile:
+    path: C:\ProgramData\ssh\sshd_config
+    regexp: '^\s*#?\s*KbdInteractiveAuthentication\s'
+    line: "KbdInteractiveAuthentication {{ 'yes' if windows_baseline_ssh_password_auth else 'no' }}"
+    insertbefore: '^Match '
+  register: windows_baseline_sshd_kbd
+
+- name: Validate sshd_config before any service restart (aborts play on error)
+  ansible.windows.win_command: C:\Windows\System32\OpenSSH\sshd.exe -t
+  changed_when: false
+  check_mode: false
+  when: windows_baseline_sshd_pubkey is changed or windows_baseline_sshd_pw is changed or windows_baseline_sshd_kbd is changed
+
+- name: Restart sshd (config validated)
+  ansible.windows.win_service:
+    name: sshd
+    state: restarted
+  when: windows_baseline_sshd_pubkey is changed or windows_baseline_sshd_pw is changed or windows_baseline_sshd_kbd is changed

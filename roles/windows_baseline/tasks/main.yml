@@ -1,0 +1,16 @@
+---
+- name: OpenSSH server config + keys
+  ansible.builtin.import_tasks: ssh.yml
+  tags: [ssh]
+
+- name: Security hardening
+  ansible.builtin.import_tasks: hardening.yml
+  tags: [hardening]
+
+- name: Power and time settings
+  ansible.builtin.import_tasks: system.yml
+  tags: [system]
+
+- name: Package + Windows Update management
+  ansible.builtin.import_tasks: updates.yml
+  tags: [updates, packages]

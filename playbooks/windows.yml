@@ -1,0 +1,10 @@
+---
+# CB-GAMING baseline. Windows has no Python, so only ansible.windows /
+# community.windows (PowerShell) modules are used here.
+# Default run = idempotent config only. Updates are opt-in:
+#   ansible-playbook playbooks/windows.yml --tags updates
+- name: Apply Windows baseline
+  hosts: windows
+  gather_facts: false
+  roles:
+    - windows_baseline

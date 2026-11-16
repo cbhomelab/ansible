@@ -16,6 +16,9 @@
 - name: Import system baseline playbook (scaffolded, no-op)
   ansible.builtin.import_playbook: baseline.yml
 
+- name: Import Windows baseline playbook (CB-GAMING)
+  ansible.builtin.import_playbook: windows.yml
+
 - name: Import compose stacks playbook (scaffolded, no-op)
   ansible.builtin.import_playbook: compose.yml
 
