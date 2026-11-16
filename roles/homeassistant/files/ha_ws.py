@@ -73,4 +73,44 @@ async def main():
                                       "ok": ok}))
                     sys.exit(0 if ok else 2)
             sys.exit("backup did not appear within 10 minutes")
+async def update_platform(kind):
+    """Core/OS update: the API drops while HA restarts or the VM reboots, so fire the
+    update, then poll with fresh connections until the target version is up and healthy."""
+    ep, info_ep = ("/core", "/core/info") if kind == "core" else ("/os", "/os/info")
+    async def conn():
+        w = await websockets.connect(f"ws://{os.environ['HA_HOST']}:{os.environ['HA_PORT']}/api/websocket", max_size=2**24)
+        await w.recv(); await w.send(json.dumps({"type": "auth", "access_token": os.environ["HA_TOKEN"]}))
+        if json.loads(await w.recv())["type"] != "auth_ok": raise RuntimeError("auth")
+        return w
+    async def q(w, endpoint, method="get", **kw):
+        await w.send(json.dumps({"id": 1, "type": "supervisor/api", "endpoint": endpoint, "method": method, **kw}))
+        r = json.loads(await w.recv())
+        if not r["success"]: raise RuntimeError(str(r["error"]))
+        return r["result"]
+    w = await conn(); info = await q(w, info_ep)
+    if info["version"] == info["version_latest"]:
+        print(json.dumps({"kind": kind, "changed": False, "version": info["version"], "ok": True})); return 0
+    target = info["version_latest"]
+    try:
+        await asyncio.wait_for(q(w, f"{ep}/update", "post", timeout=1800), timeout=60)
+    except Exception:
+        pass  # connection drops during restart/reboot; verified below
+    ok = False
+    for _ in range(240):                       # up to 20 min
+        await asyncio.sleep(5)
+        try:
+            w = await conn()
+            cur = await q(w, info_ep)
+            sup = await q(w, "/supervisor/info")
+            if cur["version"] == target and sup["healthy"] and sup["supported"]:
+                if kind == "core":
+                    await q(w, "/core/stats")  # core responding
+                ok = True; break
+        except Exception:
+            continue
+    print(json.dumps({"kind": kind, "changed": True, "target": target, "ok": ok}))
+    return 0 if ok else 3
+
+if len(sys.argv) > 1 and sys.argv[1] in ("update-core", "update-os"):
+    sys.exit(asyncio.run(update_platform(sys.argv[1].split("-")[1])))
 asyncio.run(main())

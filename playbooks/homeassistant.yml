@@ -3,6 +3,8 @@
 #   (default)       read-only drift/health/backup-freshness report
 #   --tags alerting install the daily report cron + Alertmanager push
 #   --tags update   backup, then update homeassistant_update_addons one by one
+#   --tags core     backup, then update HA Core (snapshot VM101 first!)
+#   --tags os       backup, then update HAOS (reboots the VM; snapshot first!)
 #   --tags backup   create a full HA backup now (run before any update)
 # Never use a Supervisor/OS update from here without a fresh backup.
 - name: Home Assistant
@@ -18,3 +20,9 @@
       tags: [never, alerting]
     - ansible.builtin.include_role: {name: homeassistant, tasks_from: update.yml, apply: {tags: [update]}}
       tags: [never, update]
+    - ansible.builtin.include_role: {name: homeassistant, tasks_from: update_platform.yml, apply: {tags: [core]}}
+      vars: {homeassistant_platform: core}
+      tags: [never, core]
+    - ansible.builtin.include_role: {name: homeassistant, tasks_from: update_platform.yml, apply: {tags: [os]}}
+      vars: {homeassistant_platform: os}
+      tags: [never, os]

@@ -1,0 +1,11 @@
+---
+# Core / HAOS update. Caller must have a Proxmox snapshot of VM101 first (see README).
+# homeassistant_platform: core | os
+- ansible.builtin.include_tasks: backup.yml
+- name: "Update {{ homeassistant_platform }}"
+  ansible.builtin.shell: |
+    set -a; . {{ homeassistant_env_file }}; set +a
+    {{ homeassistant_venv }}/bin/python {{ role_path }}/files/ha_ws.py update-{{ homeassistant_platform }}
+  register: homeassistant_platform_raw
+  changed_when: (homeassistant_platform_raw.stdout | from_json).changed
+- ansible.builtin.debug: {msg: "{{ homeassistant_platform_raw.stdout }}"}
