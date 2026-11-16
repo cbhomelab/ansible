@@ -58,9 +58,9 @@
     state: present
   when: (windows_baseline_effective_users | difference(windows_baseline_effective_admins)) | length > 0
 
-- name: Remove non-admin catalog users from Administrators
+- name: Remove non-admin managed users from Administrators
   ansible.windows.win_group_membership:
     name: Administrators
-    members: "{{ windows_baseline_user_catalog.keys() | difference(windows_baseline_effective_admins) | list }}"
+    members: "{{ windows_baseline_effective_users | difference(windows_baseline_effective_admins) }}"
     state: absent
-  when: (windows_baseline_user_catalog.keys() | difference(windows_baseline_effective_admins) | list) | length > 0
+  when: (windows_baseline_effective_users | difference(windows_baseline_effective_admins)) | length > 0
