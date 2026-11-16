@@ -1,0 +1,23 @@
+---
+# iRacing Team Manager as a compose stack on saturn (replaces roles/iracing_tms on neptune LXCs 106/111).
+# One stack per instance: Postgres on a private network + the app on a macvlan IP (mgmt_bridge, outside the DHCP pool).
+# Instance vars (set per play): itd_name, itd_ip, itd_ref, itd_dev_mode.
+itd_repo: git@github.com:cbhomelab/iracing-team-manager.git
+itd_ref: main
+itd_dev_mode: false
+itd_nvme: /srv/dev-disk-by-uuid-d66051ef-e45a-4ade-8c47-b4cd6feddbe7
+itd_dir: "/opt/{{ itd_name }}"                 # compose.yml (+ prod source on the root disk)
+itd_data: "{{ itd_nvme }}/{{ itd_name }}"      # pgdata, uploads, logs, env, dev source (NVMe)
+itd_env_file: "{{ itd_data }}/env"             # seeded once by hand, never overwritten (secrets); DATABASE_URL host must be 'db'
+itd_uid: 1006
+itd_gid: 100
+# Prod runs as the image's appuser (it owns /app/webui/static etc.); runtime dirs are chowned to match.
+itd_app_uid: 999
+itd_app_gid: 999
+itd_dns: ["10.10.0.1"]
+itd_network: mgmt_bridge                       # existing external macvlan on br0 (10.20.0.0/24)
+itd_pg_image: postgres:16-alpine
+itd_backup_dir: "{{ itd_nvme }}/{{ itd_name }}-backups"
+itd_backup_keep: 14
+itd_backup_hour: 3
+itd_backup_minute: 30

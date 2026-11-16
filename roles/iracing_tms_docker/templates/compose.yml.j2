@@ -1,0 +1,63 @@
+# Managed by Ansible (roles/iracing_tms_docker). Do not edit by hand.
+name: {{ itd_name }}
+networks:
+  {{ itd_network }}:
+    name: {{ itd_network }}
+    external: true
+  internal:
+    internal: true
+services:
+  db:
+    image: {{ itd_pg_image }}
+    container_name: {{ itd_name }}-db
+    restart: unless-stopped
+    env_file: {{ itd_env_file }}
+    volumes: ["{{ itd_data }}/pgdata:/var/lib/postgresql/data"]
+    networks: [internal]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  app:
+    build:
+      context: {{ itd_dev_mode | ternary(itd_data ~ '/src', itd_dir ~ '/src') }}
+      dockerfile: Dockerfile
+      target: {{ itd_dev_mode | ternary('development', 'production') }}
+    image: {{ itd_name }}:local
+    container_name: {{ itd_name }}
+    restart: unless-stopped
+    user: "{{ itd_dev_mode | ternary(itd_dev_uid | default(1008) ~ ':' ~ itd_gid, itd_app_uid ~ ':' ~ itd_app_gid) }}"
+    depends_on:
+      db: {condition: service_healthy}
+    env_file: {{ itd_env_file }}
+    environment:
+      TZ: America/Los_Angeles
+      HOME: /tmp
+{% if itd_dev_mode %}
+      APP_ENV: development
+      DEBUG: "true"
+      LOG_LEVEL: debug
+{% endif %}
+    dns: {{ itd_dns | to_json }}
+    networks:
+      {{ itd_network }}:
+        ipv4_address: {{ itd_ip }}
+      internal: {}
+    volumes:
+{% if itd_dev_mode %}
+      - "{{ itd_data }}/src:/app"
+{% else %}
+      - "{{ itd_data }}/uploads:/app/data/uploads"
+{% endif %}
+      - "{{ itd_data }}/logs:/app/logs"
+    command:
+      - sh
+      - -c
+      - alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000{{ itd_dev_mode | ternary(' --reload --log-level debug', '') }}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

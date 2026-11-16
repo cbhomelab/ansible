@@ -1,0 +1,81 @@
+---
+# One-time, by hand (never by this role): create {{ itd_data }}/env (0600) from the old LXC's /etc/iracing-tms/env with
+# DATABASE_URL pointing at host 'db'. Dev only: clone the repo to {{ itd_data }}/src (git checkout, owned by the dev user).
+- name: Env file must exist
+  ansible.builtin.stat: {path: "{{ itd_env_file }}"}
+  register: itd_env
+  failed_when: not itd_env.stat.exists
+
+- name: Data dirs
+  ansible.builtin.file: {path: "{{ item.p }}", state: directory, owner: "{{ item.o | default(itd_uid) }}", group: "{{ item.g | default(itd_gid) }}", mode: "{{ item.m | default('0755') }}"}
+  loop:
+    - {p: "{{ itd_dir }}", o: root}
+    - {p: "{{ itd_data }}"}
+    - {p: "{{ itd_data }}/pgdata", o: root}
+    - {p: "{{ itd_data }}/logs", o: "{{ itd_dev_mode | ternary(itd_uid, itd_app_uid) }}", g: "{{ itd_dev_mode | ternary(itd_gid, itd_app_gid) }}"}
+    - {p: "{{ itd_backup_dir }}", o: root}
+  loop_control: {label: "{{ item.p }}"}
+
+- name: Uploads dir (prod)
+  ansible.builtin.file: {path: "{{ itd_data }}/uploads", state: directory, owner: "{{ itd_app_uid }}", group: "{{ itd_app_gid }}", mode: "0755"}
+  when: not itd_dev_mode
+
+- name: Dev source must be a checkout already
+  ansible.builtin.stat: {path: "{{ itd_data }}/src/.git"}
+  register: itd_src
+  failed_when: not itd_src.stat.exists
+  when: itd_dev_mode
+
+- name: Prod source (pinned ref, shipped from the controller with git archive)
+  when: not itd_dev_mode
+  block:
+    - name: Resolve ref
+      delegate_to: localhost
+      become: false
+      ansible.builtin.shell: git ls-remote {{ itd_repo }} {{ itd_ref }} | head -1 | cut -f1
+      register: itd_sha
+      changed_when: false
+      check_mode: false
+    - name: Deployed marker
+      ansible.builtin.slurp: {src: "{{ itd_dir }}/src/.deployed-commit"}
+      register: itd_marker
+      failed_when: false
+    - name: Ship source when the commit changed
+      when: (itd_marker.content | default('') | b64decode | trim) != (itd_sha.stdout | trim)
+      block:
+        - delegate_to: localhost
+          become: false
+          ansible.builtin.shell: |
+            set -e; t=$(mktemp -d); git clone -q {{ itd_repo }} $t/r; git -C $t/r archive --format=tar.gz {{ itd_sha.stdout | trim }} -o /tmp/{{ itd_name }}-src.tgz; rm -rf $t
+          changed_when: true
+        - ansible.builtin.file: {path: "{{ itd_dir }}/src", state: absent}
+        - ansible.builtin.file: {path: "{{ itd_dir }}/src", state: directory, mode: "0755"}
+        - ansible.builtin.unarchive: {src: "/tmp/{{ itd_name }}-src.tgz", dest: "{{ itd_dir }}/src"}
+        - ansible.builtin.copy: {dest: "{{ itd_dir }}/src/.deployed-commit", content: "{{ itd_sha.stdout | trim }}\n", mode: "0644"}
+          register: itd_shipped
+
+- name: compose.yml
+  ansible.builtin.template: {src: compose.yml.j2, dest: "{{ itd_dir }}/compose.yml", mode: "0644"}
+  register: itd_compose
+
+- name: Backup script + nightly cron
+  ansible.builtin.template: {src: backup.sh.j2, dest: "/usr/local/sbin/{{ itd_name }}-backup", mode: "0750"}
+- ansible.builtin.cron:
+    name: "{{ itd_name }}-backup"
+    hour: "{{ itd_backup_hour }}"
+    minute: "{{ itd_backup_minute }}"
+    job: "/usr/local/sbin/{{ itd_name }}-backup >/dev/null 2>&1"
+
+- name: Build and start
+  ansible.builtin.command: docker compose up -d --build
+  args: {chdir: "{{ itd_dir }}"}
+  register: itd_up
+  changed_when: "'Started' in itd_up.stderr or 'Created' in itd_up.stderr or 'Recreated' in itd_up.stderr or itd_compose.changed or (itd_shipped.changed | default(false))"
+
+- name: Healthy (checked inside the container; the host cannot reach its own macvlan IP)
+  ansible.builtin.command: docker exec {{ itd_name }} curl -fsS http://localhost:8000/health
+  register: itd_health
+  retries: 30
+  delay: 5
+  until: itd_health.rc == 0
+  changed_when: false

@@ -1,0 +1,7 @@
+#!/bin/sh
+# Managed by Ansible. Nightly pg_dump of {{ itd_name }} (plain SQL, gzip), keeps {{ itd_backup_keep }}.
+set -e
+d={{ itd_backup_dir }}; mkdir -p "$d"
+docker exec {{ itd_name }}-db sh -c 'pg_dump -U "$POSTGRES_USER" --no-owner --no-acl "$POSTGRES_DB"' | gzip > "$d/{{ itd_name }}-$(date +%F).sql.gz.tmp"
+mv "$d/{{ itd_name }}-$(date +%F).sql.gz.tmp" "$d/{{ itd_name }}-$(date +%F).sql.gz"
+ls -1t "$d"/{{ itd_name }}-*.sql.gz | tail -n +{{ itd_backup_keep | int + 1 }} | xargs -r rm -f

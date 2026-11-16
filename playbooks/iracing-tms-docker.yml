@@ -1,0 +1,13 @@
+---
+# iRacing Team Manager on saturn (compose stacks, macvlan IPs outside the DHCP pool). Replaces playbooks/iracing-tms.yml.
+- name: iRacing Team Manager (prod)
+  hosts: saturn
+  become: true
+  vars: {itd_name: iracing-tms-prod, itd_ip: 10.20.0.162, itd_ref: main, itd_dev_mode: false}
+  roles: [iracing_tms_docker]
+
+- name: iRacing Team Manager (dev)
+  hosts: saturn
+  become: true
+  vars: {itd_name: iracing-tms-dev, itd_ip: 10.20.0.163, itd_ref: dev, itd_dev_mode: true, itd_backup_keep: 3, itd_dev_uid: 1008}
+  roles: [iracing_tms_docker]
