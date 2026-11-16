@@ -85,7 +85,7 @@ Neptune is excluded from automatic baseline patching on purpose. lxc103
 |---|---|---|
 | lxc102 NPM | `npm` | nightly sqlite + cert backup |
 | lxc104 Glance | `glance` | pinned v0.8.4, update path with rollback |
-| lxc106 iRacing Team Manager | `iracing_tms` | native venv + Postgres 15, nightly `pg_dump`, env in `/etc/iracing-tms/env` |
+| saturn iRacing Team Manager (prod .162 / dev .163) | `iracing_tms_docker` | compose stacks on saturn, own Postgres 16 each, nightly `pg_dump`; LXC 106/111 on neptune retired |
 | lxc107 UniFi | `unifi_controller` | pinned 8.0.24, update with rollback |
 | lxc108 Pi-hole | `pihole` | v6, declarative, update via `--tags update` |
 | lxc110 Forgejo | `forgejo` | 10.20.0.50, pinned binary, SQLite, nightly dump |
