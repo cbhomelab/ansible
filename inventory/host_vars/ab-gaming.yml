@@ -1,0 +1,5 @@
+---
+# AB-GAMING (not yet in inventory.hosts - add with ansible_host once provisioned).
+windows_baseline_package_sets: [gaming]
+windows_baseline_users: [ally, violet]
+windows_baseline_admins: [ally]      # christian is admin everywhere via global_admins

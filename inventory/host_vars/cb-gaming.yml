@@ -1,3 +1,5 @@
 ---
 # CB-GAMING: christian's gaming/main PC.
 windows_baseline_package_sets: [gaming, dev, media_tools, creative, homelab]
+# Accounts: christian only (global admin, nothing else needed here).
+windows_baseline_users: []
