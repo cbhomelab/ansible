@@ -16,6 +16,8 @@
 #     in their description. Only those are ever modified or (opt-in)
 #     deleted — hand-made overrides (cameras, *.cbho.me, etc.) are never
 #     touched.
+#   - Names listed in network_appliances_unbound_host_targets are explicitly
+#     owned by this role (adopted even if hand-made) and point at their own IP.
 #   - Plan-only unless network_appliances_unbound_apply is true.
 
 - name: Log in to NPM (to read the live proxy host list)
@@ -93,13 +95,15 @@
       {%- set rows = network_appliances_unbound_existing.json.rows -%}
       {%- set dom = network_appliances_unbound_domain -%}
       {%- set mk = network_appliances_unbound_marker -%}
+      {%- set tg = network_appliances_unbound_host_targets -%}
       {%- set out = {'create': [], 'set': [], 'unchanged': [], 'stale': [], 'conflict': []} -%}
       {%- for fqdn in network_appliances_unbound_desired -%}
       {%- set host = fqdn.split('.')[0] -%}
+      {%- set ip = tg.get(fqdn, network_appliances_unbound_target_ip) -%}
       {%- set m = rows | selectattr('hostname', 'equalto', host) | selectattr('domain', 'equalto', dom) | selectattr('rr', 'match', '^A( |$)') | list -%}
-      {%- if m | length == 0 -%}{%- set _ = out.create.append({'fqdn': fqdn, 'host': host}) -%}
-      {%- elif m[0].server == network_appliances_unbound_target_ip and m[0].enabled == '1' -%}{%- set _ = out.unchanged.append(fqdn) -%}
-      {%- elif mk in m[0].description -%}{%- set _ = out.set.append({'fqdn': fqdn, 'uuid': m[0].uuid, 'host': host}) -%}
+      {%- if m | length == 0 -%}{%- set _ = out.create.append({'fqdn': fqdn, 'host': host, 'ip': ip}) -%}
+      {%- elif m[0].server == ip and m[0].enabled == '1' -%}{%- set _ = out.unchanged.append(fqdn) -%}
+      {%- elif mk in m[0].description or fqdn in tg -%}{%- set _ = out.set.append({'fqdn': fqdn, 'uuid': m[0].uuid, 'host': host, 'ip': ip}) -%}
       {%- else -%}{%- set _ = out.conflict.append({'fqdn': fqdn, 'has': m[0].server}) -%}
       {%- endif -%}
       {%- endfor -%}
@@ -135,7 +139,7 @@
         hostname: "{{ item.host }}"
         domain: "{{ network_appliances_unbound_domain }}"
         rr: A
-        server: "{{ network_appliances_unbound_target_ip }}"
+        server: "{{ item.ip }}"
         description: "{{ network_appliances_unbound_marker }}"
     validate_certs: false
     status_code: [200]
@@ -159,7 +163,7 @@
         hostname: "{{ item.host }}"
         domain: "{{ network_appliances_unbound_domain }}"
         rr: A
-        server: "{{ network_appliances_unbound_target_ip }}"
+        server: "{{ item.ip }}"
         description: "{{ network_appliances_unbound_marker }}"
     validate_certs: false
     status_code: [200]
@@ -251,12 +255,21 @@
   loop_control: {label: "{{ item }}"}
   when: inventory_hostname == 'vm100-opnsense' and network_appliances_unbound_apply
 
-- name: Fail if any name does not resolve to the target
+- name: Compute names not resolving to their expected IP
+  ansible.builtin.set_fact:
+    network_appliances_unbound_bad: >-
+      {%- set tg = network_appliances_unbound_host_targets -%}
+      {%- set bad = [] -%}
+      {%- for r in network_appliances_unbound_check.results -%}
+      {%- if tg.get(r.item, network_appliances_unbound_target_ip) not in r.stdout_lines -%}{%- set _ = bad.append(r.item) -%}{%- endif -%}
+      {%- endfor -%}
+      {{ bad }}
+  when: inventory_hostname == 'vm100-opnsense' and network_appliances_unbound_apply
+
+- name: Fail if any name does not resolve to its expected IP
   ansible.builtin.fail:
-    msg: >-
-      Not resolving to {{ network_appliances_unbound_target_ip }}:
-      {{ network_appliances_unbound_check.results | rejectattr('stdout_lines', 'contains', network_appliances_unbound_target_ip) | map(attribute='item') | list }}
+    msg: "Not resolving to the expected IP: {{ network_appliances_unbound_bad }}"
   when:
     - inventory_hostname == 'vm100-opnsense'
     - network_appliances_unbound_apply
-    - network_appliances_unbound_check.results | rejectattr('stdout_lines', 'contains', network_appliances_unbound_target_ip) | list | length > 0
+    - network_appliances_unbound_bad | length > 0
