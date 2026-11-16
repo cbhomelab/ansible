@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+# Managed by ansible (roles/minecraft_docker). Posts to the Minecraft Discord channel via webhook.
+#  - "How to connect" message: created once, edited in place when anything in it changes (pin it once by hand).
+#  - Update notice: posted only when the required Java version or Geyser's Bedrock range changes.
+# First run seeds state silently (no notice).
+import json, re, sys, zipfile, hashlib, urllib.request, pathlib
+DATA = "{{ minecraft_docker_data }}"
+STATE = pathlib.Path("{{ minecraft_docker_dir }}/discord-state.json")
+HOOK = pathlib.Path("{{ minecraft_docker_dir }}/discord-webhook").read_text().strip()
+JAVA_HOST, BE_HOST, BE_PORT = "{{ minecraft_docker_discord_java_host }}", "{{ minecraft_docker_discord_bedrock_host }}", {{ minecraft_docker_geyser_port }}
+NAME = "CBHomelab Minecraft"
+
+def vkey(v): return tuple(int(x) for x in v.split("."))
+
+def paper_version():
+    with zipfile.ZipFile(f"{DATA}/deploy/server/paper.jar") as z:
+        return json.loads(z.read("version.json"))["id"]
+
+def geyser_range():
+    with zipfile.ZipFile(f"{DATA}/deploy/proxy/plugins/Geyser-Velocity.jar") as z:
+        d = z.read("org/geysermc/geyser/network/bedrock/GameProtocol.class")
+    vs = set()
+    for m in re.finditer(rb"\x00([\x04-\x0c])([0-9.]+)", d):          # length-prefixed UTF8 constants
+        s = m.group(2).decode()
+        if len(s) == m.group(1)[0] and re.fullmatch(r"(1\.\d+\.\d+|\d\d\.\d\d)", s):
+            vs.add(s if s.startswith("1.") else "1." + s)
+    if not vs: raise SystemExit("could not read Geyser's Bedrock versions")
+    s = sorted(vs, key=vkey)
+    return s[0], s[-1]
+
+def hook(method, path="", body=None):
+    req = urllib.request.Request(HOOK + path, method=method, data=json.dumps(body).encode() if body else None,
+                                 headers={"Content-Type": "application/json", "User-Agent": "cbhomelab-mc-announce/1"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        t = r.read(); return json.loads(t) if t else {}
+
+java = paper_version(); lo, hi = geyser_range()
+bedrock = lo if lo == hi else f"{lo} \u2013 {hi}"
+state = json.loads(STATE.read_text()) if STATE.exists() else {}
+out = []
+
+info = {"username": NAME, "embeds": [{
+    "title": "How to connect", "color": 0x3BA55D,
+    "description": "Join our Minecraft server from Java or Bedrock. Accept the server resource pack when asked. If you see **\"Server is starting\"**, the server was asleep \u2014 wait ~30 seconds and join again.",
+    "fields": [
+        {"name": "\u2615 Java Edition", "value": f"Version: **{java}**\nAddress: `{JAVA_HOST}`"},
+        {"name": "\U0001F4F1 Bedrock Edition (Windows, mobile, Xbox, PlayStation)", "value": f"Supported: **{bedrock}**\nServers \u2192 Add Server \u2192 Address: `{BE_HOST}`  Port: `{BE_PORT}`\nBedrock names show with a leading dot."},
+    ]}]}
+fp = hashlib.sha256(json.dumps(info, sort_keys=True).encode()).hexdigest()
+if not state.get("info_id"):
+    state["info_id"] = hook("POST", "?wait=true", info)["id"]; state["info_fp"] = fp; out.append("posted info message (pin it)")
+elif state.get("info_fp") != fp:
+    hook("PATCH", f"/messages/{state['info_id']}", {"embeds": info["embeds"]}); state["info_fp"] = fp; out.append("edited info message")
+
+cur = {"java": java, "bedrock": [lo, hi]}
+prev = state.get("versions")
+if prev is None:
+    out.append("seeded versions (no notice)")
+elif prev != cur:
+    pj, (plo, phi) = prev["java"], prev["bedrock"]
+    pb = plo if plo == phi else f"{plo} \u2013 {phi}"
+    hook("POST", "", {"username": NAME, "flags": 4096, "embeds": [{
+        "title": "Server updated \u2014 check your client version", "color": 0xFAA61A,
+        "fields": [
+            {"name": "\u2615 Java now needs", "value": f"**{java}**" + (f"  (was {pj})" if pj != java else "  (unchanged)"), "inline": True},
+            {"name": "\U0001F4F1 Bedrock supported", "value": f"**{bedrock}**" + (f"  (was {pb})" if pb != bedrock else "  (unchanged)"), "inline": True}]}]})
+    out.append("posted update notice")
+state["versions"] = cur
+STATE.write_text(json.dumps(state, indent=1))
+print("; ".join(out) or "no change")

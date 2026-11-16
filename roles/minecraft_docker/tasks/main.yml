@@ -105,5 +105,23 @@
   ansible.builtin.command: docker restart minecraft-proxy
   when: (mcd_bedrock_jars.changed | default(false)) or (mcd_geyser_lines.changed | default(false))
 
+- name: Discord announcer (webhook secret + script)
+  when: minecraft_docker_discord_enabled
+  block:
+    - name: Webhook URL from Bitwarden -> saturn (0600)
+      ansible.builtin.copy:
+        content: "{{ lookup('community.general.bitwarden', minecraft_docker_discord_bw_item, field='password') | first }}\n"
+        dest: "{{ minecraft_docker_dir }}/discord-webhook"
+        mode: "0600"
+      no_log: true
+    - name: mc-announce.py
+      ansible.builtin.template: {src: mc-announce.py.j2, dest: "{{ minecraft_docker_dir }}/mc-announce.py", mode: "0755"}
+
 - name: Proxy listening
   ansible.builtin.wait_for: {host: 127.0.0.1, port: "{{ minecraft_docker_proxy_port }}", timeout: 60}
+
+- name: Announce to Discord (info message; notice only if required versions changed)
+  ansible.builtin.command: python3 {{ minecraft_docker_dir }}/mc-announce.py
+  register: mcd_announce
+  changed_when: mcd_announce.stdout != 'no change'
+  when: minecraft_docker_discord_enabled

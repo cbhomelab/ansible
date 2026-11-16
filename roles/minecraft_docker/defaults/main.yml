@@ -31,4 +31,11 @@ minecraft_docker_bedrockconnect: true
 minecraft_docker_bedrockconnect_port: 19132
 minecraft_docker_bedrockconnect_servers:
   - {name: CBHomelab, address: 10.20.0.2, port: 19133}
+# Discord announcements (webhook kept in Bitwarden item below). Posts/edits a
+# pinnable "how to connect" message and a notice ONLY when the required Java
+# version or Geyser's Bedrock range changes (state: {{ minecraft_docker_dir }}/discord-state.json).
+minecraft_docker_discord_enabled: true
+minecraft_docker_discord_bw_item: homelab-minecraft-discord-webhook
+minecraft_docker_discord_java_host: play.cbhomelab.net
+minecraft_docker_discord_bedrock_host: minecraft.cbhomelab.net
 minecraft_docker_dns: [10.20.0.1]     # explicit resolver; Paper hit UnknownHostException for Mojang hosts after a restart
