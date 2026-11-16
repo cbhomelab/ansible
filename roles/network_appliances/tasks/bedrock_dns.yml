@@ -1,0 +1,136 @@
+---
+# BedrockConnect featured-server redirects + Minecraft port alias (OPNsense API).
+# Plan-only unless network_appliances_unbound_apply is true. Only records
+# carrying network_appliances_bedrock_marker are ever created/modified.
+- name: Fetch existing Unbound host overrides
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/searchHostOverride"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {rowCount: 5000, current: 1}
+    validate_certs: false
+    status_code: [200]
+  check_mode: false
+  register: network_appliances_bc_existing
+  no_log: true
+
+- name: Classify Bedrock overrides
+  ansible.builtin.set_fact:
+    network_appliances_bc_plan: >-
+      {%- set out = {'create': [], 'set': [], 'unchanged': [], 'conflict': []} -%}
+      {%- for h in network_appliances_bedrock_hosts -%}
+      {%- set m = network_appliances_bc_existing.json.rows | selectattr('hostname', 'equalto', h.host) | selectattr('domain', 'equalto', h.domain) | selectattr('rr', 'match', '^A( |$)') | list -%}
+      {%- if m | length == 0 -%}{%- set _ = out.create.append(h) -%}
+      {%- elif m[0].server == network_appliances_bedrock_target_ip and m[0].enabled == '1' -%}{%- set _ = out.unchanged.append(h) -%}
+      {%- elif network_appliances_bedrock_marker in m[0].description -%}{%- set _ = out.set.append(h | combine({'uuid': m[0].uuid})) -%}
+      {%- else -%}{%- set _ = out.conflict.append(h) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+
+- name: Plan (Bedrock DNS)
+  ansible.builtin.debug:
+    msg: >-
+      create={{ network_appliances_bc_plan.create | length }} set={{ network_appliances_bc_plan.set | length }}
+      unchanged={{ network_appliances_bc_plan.unchanged | length }}
+      conflict(hand-made, left alone)={{ network_appliances_bc_plan.conflict }}
+      apply={{ network_appliances_unbound_apply }}
+
+- name: Create/update Bedrock redirect overrides
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/{{ 'setHostOverride/' ~ item.uuid if item.uuid is defined else 'addHostOverride' }}"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host:
+        enabled: "1"
+        hostname: "{{ item.host }}"
+        domain: "{{ item.domain }}"
+        rr: A
+        server: "{{ network_appliances_bedrock_target_ip }}"
+        description: "{{ network_appliances_bedrock_marker }}"
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_bc_written
+  failed_when: network_appliances_bc_written.json.result | default('') != 'saved'
+  loop: "{{ network_appliances_bc_plan.create + network_appliances_bc_plan.set }}"
+  loop_control: {label: "{{ item.host }}.{{ item.domain }}"}
+  when: network_appliances_unbound_apply
+
+# --- port alias used by the WAN pass rule / LAN rule ---
+- name: Fetch port alias
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/firewall/alias/searchItem"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {rowCount: 1000, current: 1, searchPhrase: "{{ network_appliances_bedrock_port_alias }}"}
+    validate_certs: false
+    status_code: [200]
+  check_mode: false
+  register: network_appliances_bc_alias
+  no_log: true
+
+- name: Work out alias drift
+  ansible.builtin.set_fact:
+    network_appliances_bc_alias_row: "{{ network_appliances_bc_alias.json.rows | selectattr('name', 'equalto', network_appliances_bedrock_port_alias) | first | default({}) }}"
+    network_appliances_bc_alias_missing: >-
+      {{ network_appliances_bedrock_ports | difference(
+           (network_appliances_bc_alias.json.rows | selectattr('name', 'equalto', network_appliances_bedrock_port_alias) | map(attribute='content') | first | default('')).split(',') | map('trim') | list) }}
+
+- name: Update port alias (adds missing ports, never removes)
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/firewall/alias/setItem/{{ network_appliances_bc_alias_row.uuid }}"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      alias:
+        enabled: "1"
+        name: "{{ network_appliances_bedrock_port_alias }}"
+        type: port
+        content: "{{ (network_appliances_bc_alias_row.content.split(',') + network_appliances_bc_alias_missing) | unique | sort | join('\n') }}"
+        description: "{{ network_appliances_bc_alias_row.description }}"
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_bc_alias_set
+  failed_when: network_appliances_bc_alias_set.json.result | default('') != 'saved'
+  when:
+    - network_appliances_unbound_apply
+    - network_appliances_bc_alias_row.uuid is defined
+    - network_appliances_bc_alias_missing | length > 0
+
+- name: Apply aliases + Unbound
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/{{ item }}"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {}
+    validate_certs: false
+    status_code: [200]
+  loop: >-
+    {{ (['unbound/service/reconfigure'] if (network_appliances_bc_written.results | default([]) | selectattr('changed', 'defined') | list | length) > 0 else [])
+       + (['firewall/alias/reconfigure'] if network_appliances_bc_alias_set is changed else []) }}
+  when: network_appliances_unbound_apply
+
+- name: Verify redirects resolve to the BedrockConnect host
+  ansible.builtin.command: "dig +short +time=3 +tries=2 @{{ network_appliances_unbound_resolver }} {{ item.host }}.{{ item.domain }}"
+  register: network_appliances_bc_check
+  changed_when: false
+  failed_when: network_appliances_bedrock_target_ip not in network_appliances_bc_check.stdout_lines
+  loop: "{{ network_appliances_bedrock_hosts }}"
+  loop_control: {label: "{{ item.host }}.{{ item.domain }}"}
+  when: network_appliances_unbound_apply

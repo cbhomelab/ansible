@@ -66,6 +66,27 @@ network_appliances_unbound_remove_forward: true
 # the inventory address is as valid as any other.
 network_appliances_unbound_resolver: "{{ hostvars['vm100-opnsense'].ansible_host }}"
 
+# ---- Bedrock console support (BedrockConnect "DNS method") -------------
+# Consoles (Switch/PS/Xbox) can only join custom servers via Featured Server
+# entries. Point those hostnames at the BedrockConnect container on saturn
+# (UDP 19132); the console's DNS must be OPNsense (default on our VLANs).
+# Overrides carry the marker below; only those are ever changed/deleted.
+network_appliances_bedrock_dns_enabled: true
+network_appliances_bedrock_marker: "ansible:network_appliances bedrockconnect (featured server redirect)"
+network_appliances_bedrock_target_ip: "{{ hostvars['saturn'].ansible_host | default('10.20.0.2') }}"
+network_appliances_bedrock_hosts:
+  - {host: geo, domain: hivebedrock.network}
+  - {host: play, domain: inpvp.net}
+  - {host: mco, domain: lbsg.net}
+  - {host: mco, domain: cubecraft.net}
+  - {host: play, domain: galaxite.net}
+  - {host: play, domain: enchanted.gg}
+  - {host: mco, domain: mineplex.com}
+# Ports in the OPNsense port alias used by the WAN pass rule + LAN rule.
+# NAT (port-forward) rules themselves are NOT API-manageable on OPNsense 24.1.
+network_appliances_bedrock_port_alias: minecraft_ports
+network_appliances_bedrock_ports: ["19132", "19133", "19134", "25565"]
+
 network_appliances_npm:
   host: "{{ hostvars['lxc102-intranet'].ansible_host }}:81"
   identity: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='username') | first }}"

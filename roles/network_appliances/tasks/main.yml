@@ -19,3 +19,13 @@
       tags: [unbound_dns]
   when: network_appliances_enabled and network_appliances_unbound_enabled
   tags: [unbound_dns]
+
+- name: Bedrock console DNS redirects + port alias (OPNsense)
+  ansible.builtin.include_tasks:
+    file: bedrock_dns.yml
+    apply:
+      tags: [bedrock_dns]
+  when: >-
+    network_appliances_enabled and network_appliances_unbound_enabled
+    and network_appliances_bedrock_dns_enabled and inventory_hostname == 'vm100-opnsense'
+  tags: [bedrock_dns]
