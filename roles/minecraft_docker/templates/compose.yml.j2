@@ -42,7 +42,9 @@ services:
     image: pugmatt/bedrock-connect:latest
     container_name: minecraft-bedrockconnect
     restart: unless-stopped
-    environment: {NODB: "true", CUSTOM_SERVERS: /config/custom_servers.json, TZ: America/Los_Angeles}
+    # net_mode=raknet: the Switch/console flow uses RakNet; NetherNet mode would fight Geyser for TCP 19132 signaling
+    command: ["nodb=true", "net_mode=raknet", "custom_servers=/config/custom_servers.json"]
+    environment: {TZ: America/Los_Angeles}
     volumes: ["./bedrockconnect:/config:ro"]
     ports:
       - "{{ minecraft_docker_bedrockconnect_port }}:19132/udp"
