@@ -13,3 +13,12 @@ windows_baseline_user_catalog:
   christian:
     fullname: Christian Bishop
     bw_item: homelab-windows-christian
+  ally:
+    fullname: Ally
+    bw_item: homelab-windows-ally
+  violet:
+    fullname: Violet
+    bw_item: homelab-windows-violet
+  scarlett:
+    fullname: Scarlett
+    bw_item: homelab-windows-scarlett
