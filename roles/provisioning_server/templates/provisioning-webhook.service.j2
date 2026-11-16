@@ -3,6 +3,7 @@ Description=Windows provisioning webhook
 After=network-online.target
 
 [Service]
+Environment=PATH={{ ansible_env.HOME }}/.local/bin:/usr/local/bin:/usr/bin:/bin
 EnvironmentFile={{ provisioning_base }}/env
 ExecStart=/usr/bin/python3 {{ provisioning_base }}/webhook.py
 Restart=on-failure

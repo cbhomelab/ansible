@@ -3,8 +3,8 @@
 
 GET  /bootstrap.ps1  -> serves the bootstrap script (no secrets in it)
 POST /provision      -> {"hostname": "...", "token": "..."}
-    Verifies the token, that the hostname is in the ansible `windows` group,
-    and that the caller's source IP equals that host's ansible_host. Then runs
+    Verifies the token and that the hostname is in the ansible `windows` group
+    (source IP is not checked: inter-VLAN traffic is source-NATed). Then runs
     playbooks/windows.yml --limit <host> (one run at a time) in the background.
 """
 import hmac, json, os, subprocess, threading, time
@@ -70,8 +70,6 @@ class H(BaseHTTPRequestHandler):
             hosts = windows_hosts()
             if host not in hosts:
                 return self._send(404, b"unknown host\n")
-            if self.client_address[0] != hosts[host]:
-                return self._send(403, b"source ip does not match inventory\n")
         except Exception as e:
             return self._send(400, f"bad request: {e}\n".encode())
         threading.Thread(target=run_playbook, args=(host,), daemon=True).start()
