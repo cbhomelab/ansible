@@ -18,4 +18,17 @@ minecraft_docker_velocity_build: 49
 minecraft_docker_velocity_jar: velocity-4.3.2-{{ minecraft_docker_velocity_build }}.jar
 minecraft_docker_velocity_url: https://fill-data.papermc.io/v1/objects/74fa2a58d9c25aaff0354ae5c20be0a63b30391f8a3d0895ed517f354e3720ee/velocity-4.3.2-SNAPSHOT-49.jar
 minecraft_docker_velocity_sha256: 74fa2a58d9c25aaff0354ae5c20be0a63b30391f8a3d0895ed517f354e3720ee
+# Bedrock (Geyser + Floodgate on Velocity). LAN only; no WAN NAT is configured for it.
+minecraft_docker_bedrock: true
+minecraft_docker_geyser_port: 19133        # host UDP+TCP (RakNet + NetherNet signaling) -> Geyser 19132 in the container
+minecraft_docker_geyser_webrtc_port: 19134 # host UDP, NetherNet data
+minecraft_docker_geyser_url: https://download.geysermc.org/v2/projects/geyser/versions/2.12.1/builds/1303/downloads/velocity
+minecraft_docker_geyser_sha256: 32b5dae5bf10f1fd9f6d8412b5ae3b6ac33bdff58a28e1630406bdc35cd75375
+minecraft_docker_floodgate_url: https://download.geysermc.org/v2/projects/floodgate/versions/2.2.5/builds/141/downloads/velocity
+minecraft_docker_floodgate_sha256: 649835022de37ff09255fc626d4bfe7bc2a3b926d07b0dfaf1f51e12bf37001d
+# BedrockConnect lets consoles (Switch) pick this server: point the console's DNS at saturn, it listens on UDP 19132.
+minecraft_docker_bedrockconnect: true
+minecraft_docker_bedrockconnect_port: 19132
+minecraft_docker_bedrockconnect_servers:
+  - {name: CBHomelab, address: 10.20.0.2, port: 19133}
 minecraft_docker_dns: [10.20.0.1]     # explicit resolver; Paper hit UnknownHostException for Mojang hosts after a restart

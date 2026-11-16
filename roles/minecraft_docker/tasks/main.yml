@@ -32,6 +32,52 @@
     regexp: '^download_velocity velocity.jar$'
     replace: '# download_velocity velocity.jar  # pinned by ansible (minecraft_docker_velocity_*)'
 
+- name: Fix vane-velocity config key casing (v1.23 reads AllowAnyone)
+  ansible.builtin.replace:
+    path: "{{ minecraft_docker_data }}/deploy/proxy/plugins/vane-velocity/config.toml"
+    regexp: '^(\s*)allow_anyone\b'
+    replace: '\1AllowAnyone'
+  failed_when: false
+
+- name: Geyser + Floodgate jars
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "{{ minecraft_docker_data }}/deploy/proxy/plugins/{{ item.dest }}"
+    checksum: "sha256:{{ item.sha }}"
+    owner: "{{ minecraft_docker_uid }}"
+    group: "{{ minecraft_docker_gid }}"
+    mode: "0644"
+  loop:
+    - {url: "{{ minecraft_docker_geyser_url }}", sha: "{{ minecraft_docker_geyser_sha256 }}", dest: Geyser-Velocity.jar}
+    - {url: "{{ minecraft_docker_floodgate_url }}", sha: "{{ minecraft_docker_floodgate_sha256 }}", dest: floodgate-velocity.jar}
+  register: mcd_bedrock_jars
+  when: minecraft_docker_bedrock
+
+- name: Geyser config (exists after first start)
+  ansible.builtin.stat: {path: "{{ minecraft_docker_data }}/deploy/proxy/plugins/Geyser-Velocity/config.yml"}
+  register: mcd_geyser_cfg
+
+- name: Geyser accepts direct RakNet joins as well as NetherNet (new Bedrock clients otherwise fail with 'terracotta')
+  ansible.builtin.lineinfile:
+    path: "{{ minecraft_docker_data }}/deploy/proxy/plugins/Geyser-Velocity/config.yml"
+    regexp: "{{ item.re }}"
+    line: "{{ item.line }}"
+    backrefs: true
+  loop:
+    - {re: '^  transport:.*', line: '  transport: both'}
+    - {re: '^  webrtc-port:.*', line: '  webrtc-port: 19134'}
+  register: mcd_geyser_lines
+  when: minecraft_docker_bedrock and mcd_geyser_cfg.stat.exists
+
+- name: BedrockConnect server list
+  ansible.builtin.file: {path: "{{ minecraft_docker_dir }}/bedrockconnect", state: directory, mode: "0755"}
+  when: minecraft_docker_bedrock and minecraft_docker_bedrockconnect
+
+- name: BedrockConnect custom_servers.json
+  ansible.builtin.template: {src: custom_servers.json.j2, dest: "{{ minecraft_docker_dir }}/bedrockconnect/custom_servers.json", mode: "0644"}
+  register: mcd_bc
+  when: minecraft_docker_bedrock and minecraft_docker_bedrockconnect
+
 - name: Packages (zstd for backups)
   ansible.builtin.apt: {name: zstd, state: present}
 
@@ -53,7 +99,11 @@
   ansible.builtin.command: docker compose up -d --build
   args: {chdir: "{{ minecraft_docker_dir }}"}
   register: mcd_up
-  changed_when: "'Started' in mcd_up.stdout or 'Created' in mcd_up.stderr or 'Recreated' in mcd_up.stderr or mcd_files.changed or mcd_vjar.changed or mcd_vlink.changed"
+  changed_when: "'Started' in mcd_up.stdout or 'Created' in mcd_up.stderr or 'Recreated' in mcd_up.stderr or mcd_files.changed or mcd_vjar.changed or mcd_vlink.changed or (mcd_bedrock_jars.changed | default(false)) or (mcd_geyser_lines.changed | default(false)) or (mcd_bc.changed | default(false))"
+
+- name: Restart proxy when Bedrock plugins/config changed (compose up does not notice)
+  ansible.builtin.command: docker restart minecraft-proxy
+  when: (mcd_bedrock_jars.changed | default(false)) or (mcd_geyser_lines.changed | default(false))
 
 - name: Proxy listening
   ansible.builtin.wait_for: {host: 127.0.0.1, port: "{{ minecraft_docker_proxy_port }}", timeout: 60}

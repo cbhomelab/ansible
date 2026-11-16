@@ -1,0 +1,5 @@
+[
+{% for s in minecraft_docker_bedrockconnect_servers %}
+  {"name": "{{ s.name }}", "iconUrl": "{{ s.icon | default('https://i.imgur.com/3BmWZnc.png') }}", "address": "{{ s.address }}", "port": {{ s.port }}}{{ "," if not loop.last }}
+{% endfor %}
+]

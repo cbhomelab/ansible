@@ -16,6 +16,11 @@ services:
       - "{{ minecraft_docker_proxy_port }}:25565"
       - "{{ minecraft_docker_mux_port }}:25566"
       - "{{ minecraft_docker_bluemap_port }}:8100"
+{% if minecraft_docker_bedrock %}
+      - "{{ minecraft_docker_geyser_port }}:19132/udp"
+      - "{{ minecraft_docker_geyser_port }}:19132/tcp"
+      - "{{ minecraft_docker_geyser_webrtc_port }}:19134/udp"
+{% endif %}
     mem_limit: {{ minecraft_docker_mem_limit }}
     dns: {{ minecraft_docker_dns | to_json }}
   server:
@@ -32,3 +37,13 @@ services:
     stop_grace_period: 90s
     environment: {HOME: /var/lib/minecraft, TZ: America/Los_Angeles}
     volumes: ["{{ minecraft_docker_data }}:/var/lib/minecraft"]
+{% if minecraft_docker_bedrock and minecraft_docker_bedrockconnect %}
+  bedrockconnect:
+    image: pugmatt/bedrock-connect:latest
+    container_name: minecraft-bedrockconnect
+    restart: unless-stopped
+    environment: {NODB: "true", CUSTOM_SERVERS: /config/custom_servers.json, TZ: America/Los_Angeles}
+    volumes: ["./bedrockconnect:/config:ro"]
+    ports:
+      - "{{ minecraft_docker_bedrockconnect_port }}:19132/udp"
+{% endif %}
