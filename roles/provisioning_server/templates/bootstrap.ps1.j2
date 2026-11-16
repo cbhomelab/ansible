@@ -1,0 +1,47 @@
+# Bootstrap for a freshly installed Windows PC. Served by the provisioning
+# webhook; contains no secrets. Run elevated, called from unattend.xml:
+#   & ([scriptblock]::Create((irm http://{{ provisioning_server_ip }}:{{ provisioning_listen_port }}/bootstrap.ps1))) -Token <token>
+param([Parameter(Mandatory)][string]$Token)
+$ErrorActionPreference = 'Stop'
+Start-Transcript -Path C:\Windows\Temp\bootstrap.log -Append
+
+# 1. OpenSSH server
+$cap = Get-WindowsCapability -Online -Name 'OpenSSH.Server*'
+if ($cap.State -ne 'Installed') { Add-WindowsCapability -Online -Name $cap.Name | Out-Null }
+Set-Service sshd -StartupType Automatic
+Start-Service sshd
+
+# 2. PowerShell as the SSH default shell (matches inventory ansible_shell_type)
+New-ItemProperty -Path 'HKLM:\SOFTWARE\OpenSSH' -Name DefaultShell -PropertyType String `
+  -Value 'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' -Force | Out-Null
+
+# 3. Admin key (administrators_authorized_keys, locked to SYSTEM + Administrators)
+$kf = 'C:\ProgramData\ssh\administrators_authorized_keys'
+Set-Content -Path $kf -Value '{{ lookup("ansible.builtin.file", provisioning_admin_key_file) | trim }}' -Encoding ascii
+icacls $kf /inheritance:r /grant 'SYSTEM:(F)' /grant 'BUILTIN\Administrators:(F)' | Out-Null
+
+# 4. Key-only auth, then restart with config validated
+$cfg = 'C:\ProgramData\ssh\sshd_config'
+$t = Get-Content $cfg
+$t = $t -replace '^\s*#?\s*PasswordAuthentication\s.*','PasswordAuthentication no' `
+       -replace '^\s*#?\s*PubkeyAuthentication\s.*','PubkeyAuthentication yes'
+if (-not ($t -match '^KbdInteractiveAuthentication')) { $t = @('KbdInteractiveAuthentication no') + $t }
+Set-Content $cfg $t
+& C:\Windows\System32\OpenSSH\sshd.exe -t
+Restart-Service sshd
+
+# 5. SSH only from the provisioning host
+Get-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -ErrorAction SilentlyContinue | Remove-NetFirewallRule
+New-NetFirewallRule -Name 'OpenSSH-Server-In-TCP' -DisplayName 'OpenSSH Server (Ansible host only)' `
+  -Direction Inbound -Protocol TCP -LocalPort 22 -Action Allow -RemoteAddress {{ provisioning_server_ip }} | Out-Null
+
+# 6. Tell the provisioning server we're ready (retries until it is reachable)
+$body = @{ hostname = $env:COMPUTERNAME; token = $Token } | ConvertTo-Json
+for ($i = 0; $i -lt 20; $i++) {
+  try {
+    Invoke-RestMethod -Method Post -Uri 'http://{{ provisioning_server_ip }}:{{ provisioning_listen_port }}/provision' `
+      -ContentType 'application/json' -Body $body | Out-Null
+    break
+  } catch { Start-Sleep -Seconds 15 }
+}
+Stop-Transcript

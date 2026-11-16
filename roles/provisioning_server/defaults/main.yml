@@ -1,0 +1,12 @@
+---
+# Windows provisioning server (runs on the Hermes host, user-level systemd).
+provisioning_listen_port: 8765
+provisioning_server_ip: 10.20.0.21
+provisioning_lan_cidr: 10.10.0.0/24
+provisioning_base: "{{ ansible_env.HOME }}/provisioning"
+provisioning_repo: "{{ ansible_env.HOME }}/ansible"
+provisioning_token_bw_item: homelab-provisioning-webhook
+# Hosts to render unattend.xml for (must exist in inventory group `windows`).
+provisioning_unattend_hosts: [ab-gaming, girls-pc]
+provisioning_unattend_timezone: Pacific Standard Time
+provisioning_admin_key_file: "{{ ansible_env.HOME }}/.ssh/christian_windows.pub"

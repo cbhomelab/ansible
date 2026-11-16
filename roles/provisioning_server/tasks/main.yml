@@ -1,0 +1,74 @@
+---
+# Runs against localhost (the Hermes host). User-level systemd: no sudo needed
+# (linger is enabled for the hermes user).
+- name: Resolve webhook token from Bitwarden
+  ansible.builtin.set_fact:
+    provisioning_token: "{{ lookup('community.general.bitwarden', provisioning_token_bw_item, field='password')[0] }}"
+  no_log: true
+
+- name: Directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0700"
+  loop:
+    - "{{ provisioning_base }}"
+    - "{{ provisioning_base }}/www"
+    - "{{ provisioning_base }}/logs"
+    - "{{ provisioning_base }}/out"
+    - "{{ ansible_env.HOME }}/.config/systemd/user"
+
+- name: Webhook script
+  ansible.builtin.copy:
+    src: webhook.py
+    dest: "{{ provisioning_base }}/webhook.py"
+    mode: "0700"
+  notify: Restart provisioning webhook
+
+- name: Webhook environment (token)
+  ansible.builtin.copy:
+    dest: "{{ provisioning_base }}/env"
+    mode: "0600"
+    content: |
+      PROV_BASE={{ provisioning_base }}
+      PROV_REPO={{ provisioning_repo }}
+      PROV_PORT={{ provisioning_listen_port }}
+      PROV_TOKEN={{ provisioning_token }}
+  no_log: true
+  notify: Restart provisioning webhook
+
+- name: Bootstrap script (served, no secrets)
+  ansible.builtin.template:
+    src: bootstrap.ps1.j2
+    dest: "{{ provisioning_base }}/www/bootstrap.ps1"
+    mode: "0644"
+
+- name: systemd user unit
+  ansible.builtin.template:
+    src: provisioning-webhook.service.j2
+    dest: "{{ ansible_env.HOME }}/.config/systemd/user/provisioning-webhook.service"
+    mode: "0644"
+  notify: Restart provisioning webhook
+
+- name: Generate first-boot passwords (stable across runs once created)
+  ansible.builtin.set_fact:
+    unattend_first_boot_password: >-
+      {{ unattend_first_boot_password | default({}) | combine({item: lookup('ansible.builtin.password', provisioning_base ~ '/out/.' ~ item ~ '.firstboot chars=ascii_letters,digits length=20')}) }}
+  loop: "{{ provisioning_unattend_hosts }}"
+  no_log: true
+
+- name: Render unattend.xml per host
+  ansible.builtin.template:
+    src: unattend.xml.j2
+    dest: "{{ provisioning_base }}/out/{{ item }}.unattend.xml"
+    mode: "0600"
+  loop: "{{ provisioning_unattend_hosts }}"
+  no_log: true
+
+- name: Enable and start the webhook
+  ansible.builtin.systemd_service:
+    name: provisioning-webhook
+    scope: user
+    enabled: true
+    state: started
+    daemon_reload: true

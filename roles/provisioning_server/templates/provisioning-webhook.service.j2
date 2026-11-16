@@ -1,0 +1,12 @@
+[Unit]
+Description=Windows provisioning webhook
+After=network-online.target
+
+[Service]
+EnvironmentFile={{ provisioning_base }}/env
+ExecStart=/usr/bin/python3 {{ provisioning_base }}/webhook.py
+Restart=on-failure
+WorkingDirectory={{ provisioning_base }}
+
+[Install]
+WantedBy=default.target

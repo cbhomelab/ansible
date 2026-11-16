@@ -1,0 +1,9 @@
+---
+# Provisioning webhook + bootstrap + per-host unattend.xml (Hermes host only).
+- name: Windows provisioning server
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  gather_subset: [env]
+  roles:
+    - provisioning_server
