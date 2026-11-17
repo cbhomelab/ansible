@@ -50,4 +50,4 @@ itd_env_plain:
 itd_env_overrides: {}
 itd_vault_prefix: "{{ itd_name | replace('iracing-tms-', 'itms-') }}"
 itd_vault_required: [SECRET_KEY, ADMIN_PASSWORD, POSTGRES_PASSWORD]
-itd_vault_optional: [DISCORD_BOT_TOKEN, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_GUILD_ID, DISCORD_ADMIN_ROLE_ID]
+itd_vault_optional: [DISCORD_BOT_TOKEN, GITHUB_ISSUES_TOKEN, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_GUILD_ID, DISCORD_ADMIN_ROLE_ID]
