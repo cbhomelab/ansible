@@ -1,17 +1,33 @@
 ---
-# One-time, by hand (never by this role): create {{ itd_data }}/env (0600) from the old LXC's /etc/iracing-tms/env with
-# DATABASE_URL pointing at host 'db'. Dev only: clone the repo to {{ itd_data }}/src (git checkout, owned by the dev user).
-- name: Env file must exist
-  ansible.builtin.stat: {path: "{{ itd_env_file }}"}
-  register: itd_env
-  failed_when: not itd_env.stat.exists
+# Dev only (by hand, once): clone the repo to {{ itd_data }}/src (git checkout, owned by the dev user).
+# The env file is rendered below. Needs BW_SESSION exported on the controller (vault unlocked).
+- name: Data dir (for env)
+  ansible.builtin.file: {path: "{{ itd_data }}", state: directory, owner: "{{ itd_uid }}", group: "{{ itd_gid }}", mode: "0755"}
+
+- name: Read secrets from Bitwarden
+  ansible.builtin.set_fact:
+    itd_secrets: "{{ itd_secrets | default({}) | combine({item: (lookup('community.general.bitwarden', itd_vault_prefix ~ '/' ~ item, field='password') | first | default('', true))}) }}"
+  loop: "{{ itd_vault_required + itd_vault_optional }}"
+  no_log: true
+
+- name: Required secrets present
+  ansible.builtin.assert:
+    that: itd_secrets[item] | length > 0
+    fail_msg: "Bitwarden item {{ itd_vault_prefix }}/{{ item }} is missing or empty"
+  loop: "{{ itd_vault_required }}"
+  no_log: true
+
+- name: Render env file
+  ansible.builtin.template: {src: env.j2, dest: "{{ itd_env_file }}", mode: "0600", owner: root, group: root}
+  no_log: true
+  register: itd_env_rendered
 
 - name: Data dirs
   ansible.builtin.file: {path: "{{ item.p }}", state: directory, owner: "{{ item.o | default(itd_uid) }}", group: "{{ item.g | default(itd_gid) }}", mode: "{{ item.m | default('0755') }}"}
   loop:
     - {p: "{{ itd_dir }}", o: root}
     - {p: "{{ itd_data }}"}
-    - {p: "{{ itd_data }}/pgdata", o: root}
+    - {p: "{{ itd_data }}/pgdata", o: 70, g: 70, m: "0700"}
     - {p: "{{ itd_data }}/logs", o: "{{ itd_dev_mode | ternary(itd_uid, itd_app_uid) }}", g: "{{ itd_dev_mode | ternary(itd_gid, itd_app_gid) }}"}
     - {p: "{{ itd_backup_dir }}", o: root}
   loop_control: {label: "{{ item.p }}"}
@@ -70,7 +86,7 @@
   ansible.builtin.command: docker compose up -d --build
   args: {chdir: "{{ itd_dir }}"}
   register: itd_up
-  changed_when: "'Started' in itd_up.stderr or 'Created' in itd_up.stderr or 'Recreated' in itd_up.stderr or itd_compose.changed or (itd_shipped.changed | default(false))"
+  changed_when: "itd_env_rendered.changed or 'Started' in itd_up.stderr or 'Created' in itd_up.stderr or 'Recreated' in itd_up.stderr or itd_compose.changed or (itd_shipped.changed | default(false))"
 
 - name: Healthy (checked inside the container; the host cannot reach its own macvlan IP)
   ansible.builtin.command: docker exec {{ itd_name }} curl -fsS http://localhost:8000/health

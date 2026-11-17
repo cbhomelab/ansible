@@ -8,7 +8,7 @@ itd_dev_mode: false
 itd_nvme: /srv/dev-disk-by-uuid-d66051ef-e45a-4ade-8c47-b4cd6feddbe7
 itd_dir: "/opt/{{ itd_name }}"                 # compose.yml (+ prod source on the root disk)
 itd_data: "{{ itd_nvme }}/{{ itd_name }}"      # pgdata, uploads, logs, env, dev source (NVMe)
-itd_env_file: "{{ itd_data }}/env"             # seeded once by hand, never overwritten (secrets); DATABASE_URL host must be 'db'
+itd_env_file: "{{ itd_data }}/env"             # rendered by this role from the plain settings below + Bitwarden secrets
 itd_uid: 1006
 itd_gid: 100
 # Prod runs as the image's appuser (it owns /app/webui/static etc.); runtime dirs are chowned to match.
@@ -21,3 +21,33 @@ itd_backup_dir: "{{ itd_nvme }}/{{ itd_name }}-backups"
 itd_backup_keep: 14
 itd_backup_hour: 3
 itd_backup_minute: 30
+
+# --- env file (rendered by the role) ---
+# Plain settings live here; override per instance with itd_env_overrides (play vars). Secrets live in Bitwarden
+# (folder Homelab-Infra), one Login per value named "<itd_vault_prefix>/<VAR>" with the value in the password field.
+itd_env_plain:
+  APP_ENV: production
+  DEBUG: "false"
+  LOG_LEVEL: INFO
+  APP_PORT: "8000"
+  APP_BIND: 0.0.0.0
+  APP_NAME: iRacing Team Manager
+  ADMIN_USERNAME: admin
+  POSTGRES_DB: iracing_tms
+  POSTGRES_USER: iracing_user
+  DISCORD_BOT_ENABLED: "false"       # set true (itd_env_overrides) once DISCORD_BOT_TOKEN is in the vault
+  SCHEDULER_ENABLED: "true"
+  SCHEDULER_SYNC_INTERVAL_HOURS: "6"
+  SCHEDULER_SCRAPER_INTERVAL_HOURS: "24"
+  SCHEDULER_SYNC_EVENTS: "false"     # no event parameters to match against yet
+  SCRAPER_REQUEST_DELAY: "1.0"
+  SCRAPER_USER_AGENT: iRacing-Team-Manager/1.0
+  SCRAPER_MAX_RETRIES: "3"
+  IRACING_JSON_API_URL: https://members.iracing.com/membership/json
+  USE_STATIC_JSON: "true"            # load cars/classes/tracks from the JSON archive (the live API path 301s)
+  WEBUI_TITLE: iRacing Team Manager
+  WEBUI_TEMPLATE_DIR: app/webui/templates
+itd_env_overrides: {}
+itd_vault_prefix: "{{ itd_name | replace('iracing-tms-', 'itms-') }}"
+itd_vault_required: [SECRET_KEY, ADMIN_PASSWORD, POSTGRES_PASSWORD]
+itd_vault_optional: [DISCORD_BOT_TOKEN, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_GUILD_ID, DISCORD_ADMIN_ROLE_ID]
