@@ -42,6 +42,28 @@
   failed_when: not itd_src.stat.exists
   when: itd_dev_mode
 
+- name: Dev git access (read-only GitHub deploy key, so the checkout can fetch/pull)
+  when: itd_dev_mode
+  block:
+    - name: Deploy key pair (generated once, never overwritten)
+      ansible.builtin.command:
+        cmd: ssh-keygen -q -t ed25519 -N "" -C "{{ itd_name }}-deploy@saturn" -f {{ itd_data }}/deploy_key
+        creates: "{{ itd_data }}/deploy_key"
+    - name: Deploy key ownership
+      ansible.builtin.file: {path: "{{ item }}", owner: "{{ itd_dev_uid | default(itd_uid) }}", group: "{{ itd_gid }}", mode: "0600"}
+      loop: ["{{ itd_data }}/deploy_key"]
+    - name: Public key (register it as a read-only deploy key on the GitHub repo)
+      ansible.builtin.slurp: {src: "{{ itd_data }}/deploy_key.pub"}
+      register: itd_deploy_pub
+    - name: Checkout uses the deploy key
+      ansible.builtin.command:
+        cmd: git config --file {{ itd_data }}/src/.git/config core.sshCommand "ssh -i {{ itd_data }}/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+      register: itd_sshcmd
+      changed_when: false
+      check_mode: false
+    - name: Show public key
+      ansible.builtin.debug: {msg: "{{ itd_deploy_pub.content | b64decode | trim }}"}
+
 - name: Prod source (pinned ref, shipped from the controller with git archive)
   when: not itd_dev_mode
   block:
