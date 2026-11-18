@@ -1,0 +1,11 @@
+---
+# Let christian SSH to the Deck as `deck` with his normal key (same public key
+# stored in Bitwarden item homelab-ssh-christian, used on every other host).
+# User-level (~/.ssh/authorized_keys): survives SteamOS updates, no sudo needed.
+- name: Authorize christian's SSH key for the deck user
+  ansible.posix.authorized_key:
+    user: "{{ steamdeck_config_user }}"
+    key: "{{ lookup('community.general.bitwarden', 'homelab-ssh-christian', field='notes')[0] | trim }}"
+    comment: christian
+    state: present
+  tags: [ssh]

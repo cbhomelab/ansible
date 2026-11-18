@@ -1,4 +1,8 @@
 ---
+- name: SSH access (christian's key)
+  ansible.builtin.import_tasks: ssh.yml
+  tags: [ssh]
+
 - name: Flatpaks (system, flathub)
   ansible.builtin.import_tasks: flatpak.yml
   tags: [flatpak]
