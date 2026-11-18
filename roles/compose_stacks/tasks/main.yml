@@ -76,6 +76,33 @@
           global.env is OMV-managed (Compose > Global environment) and untracked; set it there, not via this repo.
       when: compose_stacks_required_global_vars | length > 0
 
+    - name: Read global.env (only used for the Bitwarden drift check below)
+      ansible.builtin.slurp:
+        src: "{{ compose_stacks_global_env }}"
+      register: cs_genv
+      when: compose_stacks_global_env_bitwarden | length > 0
+      no_log: true
+
+    - name: Compare global.env secrets with Bitwarden (never printed)
+      ansible.builtin.set_fact:
+        cs_secret_drift: >-
+          {{ cs_secret_drift | default([]) + ([item.key]
+             if ((cs_genv.content | b64decode | regex_findall('(?m)^' ~ item.key ~ '="?([^"\s]*)"?$') | first | default(''))
+                 != (query('community.general.bitwarden', item.value, field='password') | flatten | first | string | trim))
+             else []) }}
+      loop: "{{ compose_stacks_global_env_bitwarden | dict2items }}"
+      loop_control: {label: "{{ item.key }}"}
+      when: compose_stacks_global_env_bitwarden | length > 0
+      no_log: true
+
+    - name: Fail if global.env differs from Bitwarden
+      ansible.builtin.assert:
+        that: (cs_secret_drift | default([])) | length == 0
+        fail_msg: >-
+          global.env differs from Bitwarden for {{ cs_secret_drift | default([]) }}. Bitwarden is the source of truth;
+          update OMV (Compose > Global environment) to match.
+      when: compose_stacks_global_env_bitwarden | length > 0
+
     - name: Pull images for opted-in projects
       ansible.builtin.command:
         cmd: "{{ cs_cmd }} pull"

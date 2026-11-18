@@ -13,3 +13,6 @@ compose_stacks_protected: [00-networks, 00-ddns]
 # Variables that must already exist (non-empty) in global.env; the run fails early
 # otherwise. global.env is OMV-managed and untracked, so secrets live there only.
 compose_stacks_required_global_vars: []
+# global.env VAR -> Bitwarden item name (password field). Bitwarden is the source of truth;
+# the run fails if the live global.env value differs. Needs BW_SESSION exported.
+compose_stacks_global_env_bitwarden: {}

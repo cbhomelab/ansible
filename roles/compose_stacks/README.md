@@ -27,7 +27,9 @@ qBittorrent by gluetun) and `20-vpn-la/co/au` (gluetun + SOCKS5 + Tailscale exit
 Denver, Stockholm) are in `compose_stacks_projects` in `inventory/group_vars/omv.yml`. They need
 `PROTON_WG_PRIVATE_KEY` in saturn's `global.env`; the role fails early if it is missing
 (`compose_stacks_required_global_vars`). `global.env` is OMV-managed and untracked, so set the key in
-OMV (Compose > Global environment), never in this repo. `up -d` only reports `changed` when compose
+OMV (Compose > Global environment), never in this repo. The key's source of truth is the Bitwarden item
+"Proton VPN WireGuard key (gluetun, saturn)"; the role (with `BW_SESSION` exported) fails if global.env
+differs from it (`compose_stacks_global_env_bitwarden`). `up -d` only reports `changed` when compose
 actually started/recreated/stopped something, so a second run shows `changed=0`.
 
 ## Two implementation options considered

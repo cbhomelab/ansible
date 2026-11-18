@@ -43,6 +43,8 @@ compose_stacks_projects:
   - {name: 20-vpn-au, state: started}
 compose_stacks_required_global_vars:
   - PROTON_WG_PRIVATE_KEY
+compose_stacks_global_env_bitwarden:
+  PROTON_WG_PRIVATE_KEY: "Proton VPN WireGuard key (gluetun, saturn)"
 
 # system_baseline: opt-in; OMV manages its own updates, so only
 # packages + timezone-name-compatible bits, no unattended-upgrades/journald.
