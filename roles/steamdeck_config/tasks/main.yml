@@ -20,3 +20,7 @@
   ansible.builtin.import_tasks: prompt.yml
   when: steamdeck_config_nerdfont_enabled
   tags: [prompt]
+
+- name: Sunshine (root config under Docky) + DeckyHub tab setting
+  ansible.builtin.import_tasks: sunshine.yml
+  tags: [sunshine]

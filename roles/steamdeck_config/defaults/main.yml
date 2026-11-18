@@ -56,3 +56,14 @@ steamdeck_config_nerdfont_url: "https://github.com/ryanoasis/nerd-fonts/releases
 steamdeck_config_nerdfont_dir: "/home/deck/.local/share/fonts/JetBrainsMonoNF"
 steamdeck_config_konsole_font: "JetBrainsMono Nerd Font Mono,11,-1,5,50,0,0,0,0,0"
 steamdeck_config_starship_bin_dir: "/home/deck/.local/bin"
+
+# Sunshine runs as root via Docky; its config is in root's flatpak data dir.
+steamdeck_config_sunshine_conf: /root/.var/app/dev.lizardbyte.app.Sunshine/config/sunshine/sunshine.conf
+steamdeck_config_sunshine_origins:
+  - https://cb-steamdeck-dock.cbhomelab.net:47990
+  - https://cb-steamdeck-wifi.cbhomelab.net:47990
+  - https://steamdeck:47990
+  - https://steamdeck.local:47990
+  - https://10.10.0.11:47990
+  - https://10.10.0.13:47990
+steamdeck_config_decky_settings_dir: /home/deck/homebrew/settings

@@ -7,6 +7,7 @@ Manages the Steam Deck (SteamOS 3.x, immutable root) at user level only.
 - **chezmoi:** reports drift from cbhomelab/dotfiles; `--tags chezmoi_apply` applies (scripts excluded).
 
 - **Prompt:** Starship in `~/.local/bin`, JetBrainsMono Nerd Font in `~/.local/share/fonts`, Konsole default profile `Starship` (powerline arrows need the font).
+- **Sunshine / DeckyHub (`--tags sunshine`):** root's `sunshine.conf` gets `system_tray = disabled` (Qt tray aborts as root under Docky -> crash loop) and `csrf_allowed_origins` (web UI CSRF block); DeckyHub's Quick Access tab is turned off (`settings.json`). Needs the deck sudo password (Bitwarden `homelab-ssh-deck`).
 
 Not managed on purpose: pacman/system files (wiped by SteamOS updates), Steam's own state (shortcuts.vdf, controller layouts), CryoUtilities/swap, SLSsteam.
 

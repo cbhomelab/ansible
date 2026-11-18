@@ -1,0 +1,42 @@
+---
+# Sunshine under Docky runs as ROOT, so its config lives in root's flatpak
+# data dir, not ~deck. Two settings are required for it to work at all:
+#  - system_tray = disabled: Sunshine 2026.914 starts a Qt tray icon; as root Qt
+#    can't reach display :0 and the process SIGABRTs every ~2.5s (Docky's
+#    watchdog then restarts it forever).
+#  - csrf_allowed_origins: the web UI rejects any origin except localhost.
+- name: Ensure root's Sunshine config has the tray disabled
+  ansible.builtin.lineinfile:
+    path: "{{ steamdeck_config_sunshine_conf }}"
+    regexp: '^system_tray\s*='
+    line: "system_tray = disabled"
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    ansible_become: true   # inventory sets ansible_become: false, which overrides the keyword
+  notify: Restart Sunshine
+
+- name: Allow web UI access from the Deck's own hostnames/addresses
+  ansible.builtin.lineinfile:
+    path: "{{ steamdeck_config_sunshine_conf }}"
+    regexp: '^csrf_allowed_origins\s*='
+    line: "csrf_allowed_origins = {{ steamdeck_config_sunshine_origins | join(',') }}"
+    create: true
+    owner: root
+    group: root
+    mode: "0644"
+  vars:
+    ansible_become: true   # inventory sets ansible_become: false, which overrides the keyword
+  notify: Restart Sunshine
+
+# DeckyHub adds its own icon to the Quick Access tab strip and left ghost/duplicate
+# tabs there. Off keeps it reachable only via Decky's plugin list.
+- name: Hide DeckyHub's Quick Access tab
+  ansible.builtin.copy:
+    dest: "{{ steamdeck_config_decky_settings_dir }}/DeckyHub/settings.json"
+    content: '{"quickAccessTab": false}\n'
+    force: false
+    mode: "0644"
+  when: "'DeckyHub' in steamdeck_config_decky_plugins"

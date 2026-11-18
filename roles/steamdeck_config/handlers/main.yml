@@ -1,0 +1,8 @@
+---
+# Docky's watchdog relaunches Sunshine within a few seconds of it dying.
+- name: Restart Sunshine
+  ansible.builtin.command: pkill -x sunshine
+  vars:
+    ansible_become: true   # inventory sets ansible_become: false, which overrides the keyword
+  changed_when: true
+  failed_when: false
