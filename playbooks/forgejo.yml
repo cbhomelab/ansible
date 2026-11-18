@@ -3,4 +3,8 @@
 - name: Forgejo
   hosts: lxc110-forgejo
   become: true
-  roles: [forgejo]
+  roles:
+    # Users/keys/sudoers first: new guests otherwise only get them on the next
+    # access.yml run, which broke shell.yml on this host.
+    - access_control
+    - forgejo
