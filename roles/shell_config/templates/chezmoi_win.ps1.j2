@@ -1,0 +1,10 @@
+$ErrorActionPreference = 'Continue'
+$src = Join-Path $env:USERPROFILE '.local\share\chezmoi'
+if (Test-Path (Join-Path $src '.git')) {
+  Set-Location $src
+  git fetch origin 2>&1 | Out-Null
+  git reset --hard origin/HEAD 2>&1
+}
+$p = 'profile={{ item.profile }}{% for k, v in (item.extra_prompts | default({})).items() %},{{ k }}={{ v }}{% endfor %}'
+chezmoi.exe init --apply "--promptString=$p" {{ shell_config_repo_url }} 2>&1
+if ($LASTEXITCODE -ne 0) { Write-Output "CHEZMOI_FAILED rc=$LASTEXITCODE"; exit $LASTEXITCODE }

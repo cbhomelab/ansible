@@ -1,0 +1,31 @@
+$ErrorActionPreference = 'Stop'
+$face = '{{ shell_config_win_font_face }}'
+$fdir = Join-Path $env:LOCALAPPDATA 'Microsoft\Windows\Fonts'
+$reg  = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts'
+$out = @()
+if (-not (Test-Path (Join-Path $fdir 'JetBrainsMonoNerdFontMono-Regular.ttf'))) {
+  $tmp = Join-Path $env:TEMP 'jbmnf'; New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+  Invoke-WebRequest -UseBasicParsing -Uri '{{ shell_config_nerdfont_url }}' -OutFile "$tmp\jb.zip"
+  Expand-Archive -Path "$tmp\jb.zip" -DestinationPath $tmp -Force
+  New-Item -ItemType Directory -Force -Path $fdir | Out-Null
+  Get-ChildItem $tmp -Filter 'JetBrainsMonoNerdFontMono-*.ttf' | ForEach-Object {
+    Copy-Item $_.FullName $fdir -Force
+    $dest = Join-Path $fdir $_.Name
+    New-ItemProperty -Path $reg -Name ($_.BaseName + ' (TrueType)') -Value $dest -PropertyType String -Force | Out-Null
+  }
+  Remove-Item $tmp -Recurse -Force
+  $out += 'font-installed'
+}
+$st = Get-ChildItem "$env:LOCALAPPDATA\Packages\Microsoft.WindowsTerminal*\LocalState\settings.json" -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($st) {
+  $j = Get-Content $st.FullName -Raw | ConvertFrom-Json
+  if (-not $j.profiles.defaults) { $j.profiles | Add-Member -NotePropertyName defaults -NotePropertyValue ([pscustomobject]@{}) -Force }
+  $cur = $j.profiles.defaults.font.face
+  if ($cur -ne $face) {
+    Copy-Item $st.FullName ($st.FullName + '.bak') -Force
+    $j.profiles.defaults | Add-Member -NotePropertyName font -NotePropertyValue ([pscustomobject]@{ face = $face }) -Force
+    $j | ConvertTo-Json -Depth 30 | Set-Content -Path $st.FullName -Encoding UTF8
+    $out += 'wt-font-set'
+  }
+}
+if ($out.Count -eq 0) { 'unchanged' } else { $out -join ',' }

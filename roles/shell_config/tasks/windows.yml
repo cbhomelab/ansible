@@ -27,20 +27,27 @@
   when: "'absent' in shell_config_win_chezmoi_check.stdout"
   changed_when: true
 
-- name: Force chezmoi source checkout to latest origin/HEAD on Windows (existing checkouts only)
+# Refresh source checkout + apply in one encoded script (inline quoting
+# silently broke both steps before: `$src` was eaten and --promptString was
+# mangled, yet rc stayed 0). Script exits non-zero if chezmoi fails.
+- name: Refresh chezmoi source and apply for each Windows account
   ansible.builtin.raw: >-
-    powershell.exe -NoProfile -Command
-    "$src = \"$env:USERPROFILE\.local\share\chezmoi\";
-    if (Test-Path \"$src\.git\") { Set-Location $src; git fetch origin; git reset --hard origin/HEAD }"
-  register: shell_config_win_source_refresh
-  changed_when: "'HEAD is now at' in shell_config_win_source_refresh.stdout"
-
-- name: Run chezmoi init --apply for each Windows account
-  ansible.builtin.raw: >-
-    powershell.exe -NoProfile -Command
-    "chezmoi.exe init --apply --promptString='profile={{ item.profile }}{% for k, v in (item.extra_prompts | default({})).items() %},{{ k }}={{ v }}{% endfor %}' {{ shell_config_repo_url }}"
+    powershell.exe -NoProfile -EncodedCommand
+    {{ lookup('ansible.builtin.template', 'chezmoi_win.ps1.j2') | b64encode(encoding='utf-16-le') }}
   register: shell_config_win_apply_result
-  changed_when: "shell_config_win_apply_result.stdout != ''"
+  changed_when: "'HEAD is now at' in shell_config_win_apply_result.stdout or 'Updating' in shell_config_win_apply_result.stdout"
+  failed_when: shell_config_win_apply_result.rc != 0 or 'CHEZMOI_FAILED' in shell_config_win_apply_result.stdout
   loop: "{{ shell_config_windows_accounts }}"
   loop_control:
     label: "{{ item.user }} (profile={{ item.profile }})"
+
+# Nerd Font + Windows Terminal default font. Script is passed as a base64
+# -EncodedCommand so quoting survives `raw` over SSH. Idempotent: prints
+# "unchanged" when the font is installed and WT already uses it.
+- name: Install Nerd Font and set Windows Terminal font
+  ansible.builtin.raw: >-
+    powershell.exe -NoProfile -EncodedCommand
+    {{ lookup('ansible.builtin.template', 'nerdfont.ps1.j2') | b64encode(encoding='utf-16-le') }}
+  register: shell_config_win_font
+  changed_when: "'unchanged' not in shell_config_win_font.stdout"
+  tags: [nerdfont]

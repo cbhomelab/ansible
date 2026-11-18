@@ -34,3 +34,8 @@ shell_config_windows_accounts:
     extra_prompts:
       name: "Christian Bishop"
       email: "christian@cbho.me"
+
+# Nerd Font (Windows, per-user, no admin) so the Starship powerline prompt
+# renders; also set as Windows Terminal's default font face.
+shell_config_nerdfont_url: "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+shell_config_win_font_face: "JetBrainsMono Nerd Font Mono"
