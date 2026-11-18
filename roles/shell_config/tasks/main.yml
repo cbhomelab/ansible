@@ -10,8 +10,12 @@
 
 - name: Apply Linux shell config
   ansible.builtin.include_tasks: linux.yml
-  when: "'windows' not in group_names"
+  when: "'windows' not in group_names and 'freebsd' not in group_names"
 
 - name: Apply Windows shell config
   ansible.builtin.include_tasks: windows.yml
   when: "'windows' in group_names"
+
+- name: Apply FreeBSD (OPNsense) shell config
+  ansible.builtin.include_tasks: freebsd.yml
+  when: "'freebsd' in group_names"

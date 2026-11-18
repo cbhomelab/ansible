@@ -29,3 +29,27 @@
   gather_facts: false
   roles:
     - shell_config
+
+# OPNsense is API-managed (connection: local in the inventory), so build a
+# throwaway SSH host for it here instead of changing its inventory entry.
+- name: "Register OPNsense over SSH (christian)"
+  hosts: localhost
+  gather_facts: false
+  tags: [opnsense]
+  tasks:
+    - name: Add opnsense-shell
+      ansible.builtin.add_host:
+        name: opnsense-shell
+        groups: [freebsd]
+        ansible_host: "{{ hostvars['vm100-opnsense'].ansible_host }}"
+        ansible_connection: ssh
+        ansible_user: christian
+        ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+        ansible_shell_type: sh
+
+- name: "Apply shell config - OPNsense (christian, Starship only)"
+  hosts: freebsd
+  gather_facts: false
+  tags: [opnsense]
+  roles:
+    - shell_config

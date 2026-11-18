@@ -1,0 +1,39 @@
+---
+# OPNsense (FreeBSD 13.2, /bin/sh, no python, no bash): Starship prompt for
+# `christian`. The router is API-managed (ansible_connection: local) so
+# playbooks/shell.yml reaches it through a dynamic add_host over SSH as
+# christian (hermes's key is in christian's authorized_keys on the router).
+# Everything is `raw` - no interpreter on the target. chezmoi is not used:
+# starship.toml is fetched straight from the dotfiles repo.
+#
+# Prompt hook goes in ~/.shrc (runs after ~/.profile, which would otherwise be
+# overridden by the stock PS1 line). See files/freebsd_shrc_block.sh for why it
+# is recomputed per-cd instead of live.
+
+- name: Install Starship, starship.toml and the ~/.shrc hook
+  ansible.builtin.raw: |
+    set -e
+    changed=no
+    mkdir -p "$HOME/.local/bin" "$HOME/.config"
+    if ! "$HOME/.local/bin/starship" --version 2>/dev/null | grep -q "{{ shell_config_starship_version }}"; then
+      fetch -q -o /tmp/starship.tgz "https://github.com/starship/starship/releases/download/v{{ shell_config_starship_version }}/starship-x86_64-unknown-freebsd.tar.gz"
+      tar xzf /tmp/starship.tgz -C "$HOME/.local/bin" && rm -f /tmp/starship.tgz
+      changed=yes
+    fi
+    fetch -q -o /tmp/starship.toml "{{ shell_config_freebsd_starship_toml_url }}"
+    if ! cmp -s /tmp/starship.toml "$HOME/.config/starship.toml"; then
+      cp /tmp/starship.toml "$HOME/.config/starship.toml"; changed=yes
+    fi
+    rm -f /tmp/starship.toml
+    cat > /tmp/shrc_block <<'HOOK_EOF'
+    {{ lookup('ansible.builtin.file', 'freebsd_shrc_block.sh') }}
+    HOOK_EOF
+    # drop any previous block, then append the current one if it differs
+    sed -e '/^ *# Starship prompt/,$d' "$HOME/.shrc" > /tmp/shrc_new
+    cat /tmp/shrc_block >> /tmp/shrc_new
+    if ! cmp -s /tmp/shrc_new "$HOME/.shrc"; then cp /tmp/shrc_new "$HOME/.shrc"; changed=yes; fi
+    rm -f /tmp/shrc_block /tmp/shrc_new
+    echo "CHANGED=$changed"
+  register: shell_config_freebsd_result
+  changed_when: "'CHANGED=yes' in shell_config_freebsd_result.stdout"
+  failed_when: shell_config_freebsd_result.rc != 0

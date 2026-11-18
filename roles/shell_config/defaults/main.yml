@@ -39,3 +39,7 @@ shell_config_windows_accounts:
 # renders; also set as Windows Terminal's default font face.
 shell_config_nerdfont_url: "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
 shell_config_win_font_face: "JetBrainsMono Nerd Font Mono"
+
+# OPNsense / FreeBSD (tasks/freebsd.yml): Starship only, no chezmoi.
+shell_config_starship_version: "1.27.0"
+shell_config_freebsd_starship_toml_url: "https://raw.githubusercontent.com/cbhomelab/dotfiles/main/dot_config/starship.toml"
