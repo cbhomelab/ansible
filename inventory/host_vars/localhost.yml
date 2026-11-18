@@ -12,8 +12,8 @@ proxmox_guests_lxc:
 
 # Pre-existing VMs: not cloneable/creatable by the role (PCI/USB passthrough), so declared for drift reporting only.
 proxmox_guests_adopted:
-  - {vmid: 100, type: qemu, name: router, cores: 2, memory: 4096, onboot: true, agent: 1}
-  - {vmid: 101, type: qemu, name: homeassistant, cores: 4, memory: 4096, onboot: true, agent: 1}
+  - {vmid: 100, type: qemu, name: router, cores: 2, memory: 6144, onboot: true, agent: 1, update: true}
+  - {vmid: 101, type: qemu, name: homeassistant, cores: 4, memory: 8192, onboot: true, agent: 1, update: true}
 
 # Pre-existing VMs that only get protection=1.
 proxmox_guests_protect_only:
