@@ -1,0 +1,59 @@
+---
+# Everything here lives in /home (SteamOS root is immutable and wiped on update).
+
+- name: Check Starship is installed
+  ansible.builtin.stat:
+    path: "{{ steamdeck_config_starship_bin_dir }}/starship"
+  register: steamdeck_config_starship_stat
+
+- name: Install Starship into ~/.local/bin
+  ansible.builtin.shell: >-
+    curl -fsSL https://starship.rs/install.sh |
+    sh -s -- --yes -b {{ steamdeck_config_starship_bin_dir }}
+  args:
+    creates: "{{ steamdeck_config_starship_bin_dir }}/starship"
+  when: not steamdeck_config_starship_stat.stat.exists
+
+- name: Check Nerd Font is installed
+  ansible.builtin.stat:
+    path: "{{ steamdeck_config_nerdfont_dir }}/JetBrainsMonoNerdFontMono-Regular.ttf"
+  register: steamdeck_config_font_stat
+
+- name: Install JetBrainsMono Nerd Font (user fonts dir)
+  when: not steamdeck_config_font_stat.stat.exists
+  block:
+    - name: Create fonts dir
+      ansible.builtin.file:
+        path: "{{ steamdeck_config_nerdfont_dir }}"
+        state: directory
+        mode: "0755"
+    - name: Download and extract Mono variants
+      ansible.builtin.unarchive:
+        src: "{{ steamdeck_config_nerdfont_url }}"
+        dest: "{{ steamdeck_config_nerdfont_dir }}"
+        remote_src: true
+        include: ["JetBrainsMonoNerdFontMono-*.ttf"]
+    - name: Refresh font cache
+      ansible.builtin.command: fc-cache -f
+      changed_when: true
+
+- name: Konsole profile using the Nerd Font
+  ansible.builtin.copy:
+    dest: /home/deck/.local/share/konsole/Starship.profile
+    mode: "0644"
+    content: |
+      [Appearance]
+      Font={{ steamdeck_config_konsole_font }}
+
+      [General]
+      Name=Starship
+      Parent=FALLBACK/
+
+- name: Make it Konsole's default profile
+  community.general.ini_file:
+    path: /home/deck/.config/konsolerc
+    section: Desktop Entry
+    option: DefaultProfile
+    value: Starship.profile
+    no_extra_spaces: true
+    mode: "0644"

@@ -11,3 +11,8 @@
   ansible.builtin.import_tasks: chezmoi.yml
   when: steamdeck_config_chezmoi_enabled
   tags: [chezmoi]
+
+- name: Prompt tooling (Starship, Nerd Font, Konsole profile)
+  ansible.builtin.import_tasks: prompt.yml
+  when: steamdeck_config_nerdfont_enabled
+  tags: [prompt]

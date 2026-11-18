@@ -48,3 +48,11 @@ steamdeck_config_decky_dir: "/home/deck/homebrew/plugins"
 # chezmoi (cbhomelab/dotfiles) is already initialised on the Deck. By default
 # only report drift; apply with --tags chezmoi_apply.
 steamdeck_config_chezmoi_enabled: true
+
+# Nerd Font for the Starship (bullet-train style) prompt + a Konsole profile
+# that uses it. User-level only (~/.local/share), survives SteamOS updates.
+steamdeck_config_nerdfont_enabled: true
+steamdeck_config_nerdfont_url: "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz"
+steamdeck_config_nerdfont_dir: "/home/deck/.local/share/fonts/JetBrainsMonoNF"
+steamdeck_config_konsole_font: "JetBrainsMono Nerd Font Mono,11,-1,5,50,0,0,0,0,0"
+steamdeck_config_starship_bin_dir: "/home/deck/.local/bin"
