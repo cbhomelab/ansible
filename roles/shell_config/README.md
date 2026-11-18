@@ -56,3 +56,30 @@ signal distinct from "something changed" via stdout alone) — treat
   needed).
 - christian + hermes OS accounts must already exist (roles/access_control,
   t_6fe4b6c0) before this role runs.
+
+## OPNsense (FreeBSD) prerequisites
+
+`tasks/freebsd.yml` runs over SSH as `christian` (play in `playbooks/shell.yml`,
+tag `opnsense`) and installs Starship, `starship.toml` and the `~/.bashrc` /
+`~/.bash_profile` hooks. It does NOT create anything on the router itself.
+These must exist first (currently manual, in the OPNsense UI):
+
+1. **User `christian`** (System > Access > Users), with a shell of
+   `/usr/local/bin/bash`.
+2. **Package `bash`**: `pkg install bash` or System > Firmware > Packages.
+   (FreeBSD 13.2 `/bin/sh` can't render the prompt: libedit strips ESC bytes.)
+3. **Authorized keys on `christian`**: the user's own key plus Hermes's
+   (`~/.ssh/id_ed25519.pub`, saved in Bitwarden as `homelab-ssh-hermes`).
+   The play connects with that key; `hermes` itself has no sudo on the router.
+4. The router is `connection: local` in the inventory, so the play builds a
+   temporary `opnsense-shell` host from `vm100-opnsense`'s `ansible_host`.
+
+### Automation status (OPNsense 24.1.5)
+
+- Package install: the firmware API (`core/firmware/*`, key `homelab-opnsense-api`)
+  works and reports `bash` installed, so an API task for it is feasible
+  (not yet implemented or tested).
+- User, shell and authorized keys: 24.1 has no REST API for users
+  (`core/user` returns "controller not found"), so these can't be set via API.
+  Options: upgrade to a release with the user API, or edit `config.xml`
+  (restore via the config API, risky), or keep it manual.
