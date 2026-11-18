@@ -37,11 +37,19 @@ access_control_sudoers:
 #   20-qbittorrent  gluetun_qbit (US, port forwarding) + qbittorrent in its netns
 #   20-sabnzbd      gluetun_sab (US) + sabnzbd in its netns
 #   20-vpn-arr      gluetun_arr (US) shared by prowlarr/sonarr/radarr/lidarr/bazarr/flaresolverr (10.20.0.149)
+#   40-dispatcharr  gluetun_dispatcharr (US) at 10.40.0.17 + dispatcharr in its netns
 #   20-vpn-la/co/au gluetun + SOCKS5 + Tailscale exit node: Los Angeles / Denver / Stockholm
 compose_stacks_projects:
   - {name: 20-qbittorrent, state: started}
   - {name: 20-sabnzbd, state: started}
   - {name: 20-vpn-arr, state: started}
+  # apps living in the VPN containers' network namespaces; listed after their gluetun so they start in order
+  - {name: 20-prowlarr, state: started}
+  - {name: 20-sonarr, state: started}
+  - {name: 20-radarr, state: started}
+  - {name: 20-lidarr, state: started}
+  - {name: 20-bazarr, state: started}
+  - {name: 40-dispatcharr, state: started}   # gluetun_dispatcharr (US) + dispatcharr; xml_proxy/epgo/tunarr outside the VPN
   - {name: 20-vpn-la, state: started}
   - {name: 20-vpn-co, state: started}
   - {name: 20-vpn-au, state: started}

@@ -32,6 +32,15 @@ OMV (Compose > Global environment), never in this repo. The key's source of trut
 differs from it (`compose_stacks_global_env_bitwarden`). `up -d` only reports `changed` when compose
 actually started/recreated/stopped something, so a second run shows `changed=0`.
 
+### sabnzbd, arr apps and Dispatcharr (2026-11-18)
+
+`20-sabnzbd` (gluetun_sab), `20-vpn-arr` (gluetun_arr, shared by prowlarr/sonarr/radarr/lidarr/bazarr/flaresolverr at
+10.20.0.149) and `40-dispatcharr` (gluetun_dispatcharr at 10.40.0.17) follow the same pattern; the app projects
+(`20-prowlarr`, `20-sonarr`, ...) use `network_mode: container:gluetun_arr`. gluetun's own DNS can't resolve other
+containers, so gluetun_arr / gluetun_dispatcharr carry `extra_hosts` for the peers they need; add one when an app
+must reach a new container by name. A cold start can fail once on gluetun's health wait: re-run `up -d`.
+Proxy-host upstreams for these apps are enforced by the `npm` role (`npm_upstreams`).
+
 ## Two implementation options considered
 
 **Option A — drive OMV's internal Compose RPC API directly** (`uri`

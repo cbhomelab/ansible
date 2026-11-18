@@ -44,3 +44,47 @@
 
 - ansible.builtin.debug:
     msg: "NPM {{ npm_health.json.version.major }}.{{ npm_health.json.version.minor }}.{{ npm_health.json.version.revision }} healthy"
+
+- name: Proxy-host upstreams (npm_upstreams)
+  when: npm_upstreams | length > 0
+  block:
+    - name: NPM API login
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ npm_port }}/api/tokens"
+        method: POST
+        body_format: json
+        body: {identity: "{{ npm_admin_email }}", secret: "{{ npm_admin_pass }}"}
+      register: npm_login
+      no_log: true
+      check_mode: false
+
+    - name: List proxy hosts
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ npm_port }}/api/nginx/proxy-hosts"
+        headers: {Authorization: "Bearer {{ npm_login.json.token }}"}
+      register: npm_hosts
+      no_log: true
+      check_mode: false
+
+    - name: Upstreams that differ from npm_upstreams
+      ansible.builtin.set_fact:
+        npm_drift: >-
+          {{ npm_drift | default([]) + [{'id': h.id, 'domain': item.domain, 'host': item.host, 'port': item.port, 'body': h}] }}
+      vars:
+        h: "{{ (npm_hosts.json | selectattr('domain_names', 'contains', item.domain) | list | first) | default(none) }}"
+      loop: "{{ npm_upstreams }}"
+      when: h is not none and (h.forward_host != item.host or h.forward_port != item.port)
+      no_log: true
+
+    - name: Update drifted proxy host upstreams
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ npm_port }}/api/nginx/proxy-hosts/{{ item.id }}"
+        method: PUT
+        headers: {Authorization: "Bearer {{ npm_login.json.token }}"}
+        body_format: json
+        body: >-
+          {{ item.body | dict2items | selectattr('key', 'in', npm_upstream_keep_fields) | list | items2dict
+             | combine({'forward_host': item.host, 'forward_port': item.port}) }}
+      changed_when: true
+      loop: "{{ npm_drift | default([]) }}"
+      loop_control: {label: "{{ item.domain }} -> {{ item.host }}:{{ item.port }}"}

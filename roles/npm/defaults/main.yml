@@ -1,6 +1,6 @@
 ---
 # Nginx Proxy Manager on lxc102 (native community-scripts install: /app + node, state in /data + /etc/letsencrypt).
-# This role does NOT define proxy hosts: those live in NPM's own sqlite DB and are the source of truth
+# This role does NOT create proxy hosts (only enforces npm_upstreams forward host/port below): those live in NPM's own sqlite DB and are the source of truth
 # (network_appliances reads them to derive Unbound records). It covers service state, backups and health.
 npm_dir: /app
 npm_port: 81
@@ -9,3 +9,21 @@ npm_backup_keep: 14
 npm_backup_hour: 3
 npm_backup_minute: 40
 npm_expected_major: 2
+
+# Proxy-host upstreams enforced by this role (only forward_host/forward_port are managed; everything else on
+# the host is left as is). Hosts are matched by their first domain name. Add an entry when an upstream moves.
+npm_upstreams:
+  # arr apps share gluetun_arr (compose project 20-vpn-arr, saturn)
+  - {domain: shows.cbhomelab.net,    host: 10.20.0.149, port: 8989}   # sonarr
+  - {domain: movies.cbhomelab.net,   host: 10.20.0.149, port: 7878}   # radarr
+  - {domain: lidarr.cbhomelab.net,   host: 10.20.0.149, port: 8686}
+  - {domain: indexers.cbhomelab.net, host: 10.20.0.149, port: 9696}   # prowlarr
+  # own gluetun each (20-sabnzbd, 20-qbittorrent)
+  - {domain: sabnzbd.cbhomelab.net,      host: 10.20.0.150, port: 8080}
+  - {domain: qbittorrent.cbhomelab.net,  host: 10.20.0.151, port: 8081}
+
+npm_admin_email: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='username')[0] }}"
+npm_admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='password')[0] }}"
+npm_upstream_keep_fields: [domain_names, forward_scheme, forward_host, forward_port, certificate_id, ssl_forced, hsts_enabled,
+  hsts_subdomains, http2_support, block_exploits, caching_enabled, allow_websocket_upgrade, access_list_id, advanced_config,
+  enabled, meta, locations]
