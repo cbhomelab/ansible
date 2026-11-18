@@ -78,12 +78,15 @@
   loop_control:
     label: "{{ item.item.user }}"
 
+# --force overwrites hand-edited managed files (e.g. .zshrc) instead of
+# stopping at an interactive prompt, which hung the whole play; --no-tty makes
+# any remaining prompt fail fast instead of waiting forever.
 - name: Run chezmoi init --apply for each account
   become: true
   become_user: "{{ item.user }}"
   ansible.builtin.command:
     cmd: >-
-      {{ shell_config_chezmoi_bin }} init --apply
+      {{ shell_config_chezmoi_bin }} init --apply --force --no-tty
       --promptString="profile={{ item.profile }}{% for k, v in (item.extra_prompts | default({})).items() %},{{ k }}={{ v }}{% endfor %}"
       {{ shell_config_repo_url }}
   environment:
