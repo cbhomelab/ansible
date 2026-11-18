@@ -1,0 +1,50 @@
+---
+# Steam Deck (SteamOS) user-level + Flatpak config. See README.md.
+steamdeck_config_user: deck
+steamdeck_config_chezmoi_bin: "/home/deck/bin/chezmoi"
+
+# Flatpaks (system installation, from flathub). Installed if missing; never removed.
+steamdeck_config_flatpaks:
+  - com.github.Matoking.protontricks
+  - com.github.tchx84.Flatseal
+  - com.heroicgameslauncher.hgl
+  - com.moonlight_stream.Moonlight
+  - com.plexamp.Plexamp
+  - com.usebottles.bottles
+  - dev.lizardbyte.app.Sunshine
+  - net.davidotek.pupgui2
+  - net.lutris.Lutris
+  - net.retrodeck.retrodeck
+  - org.mozilla.firefox
+  - tv.plex.PlexDesktop
+
+# Installed from a third-party remote ("opensave-origin") that is not configured
+# on the Deck, so Ansible only verifies presence and reports.
+steamdeck_config_flatpaks_check_only:
+  - io.github.sivadaboi.OpenSave
+
+# Decky Loader plugins: directory name under ~/homebrew/plugins -> version seen
+# at pin time (Nov 2026). Decky has no stable CLI, so this role verifies
+# presence and reports version drift; install/update via the Decky Store.
+steamdeck_config_decky_plugins:
+  Decky-Metadata: "0.6.3"
+  DeckyHub: "3.3.0"
+  Docky: "1.4.13"
+  MagicPodsDecky: "2.0.24"
+  OpenSave: "2.4.0"
+  PowerTools: "2.0.3"
+  SDH-AnimationChanger: "1.3.2"
+  SDH-AudioLoader: "1.6.1"
+  SDH-CssLoader: "2.1.3"
+  TabMaster: "2.15.1"
+  decky-autoflatpaks: "1.6.8"
+  decky-autosuspend: "2.2.0"
+  decky-steamgriddb: "1.8.1"
+  moondeck: "1.13.0"
+  protondb-decky: "1.3.4"
+  romm-tender: "0.33.0"
+steamdeck_config_decky_dir: "/home/deck/homebrew/plugins"
+
+# chezmoi (cbhomelab/dotfiles) is already initialised on the Deck. By default
+# only report drift; apply with --tags chezmoi_apply.
+steamdeck_config_chezmoi_enabled: true

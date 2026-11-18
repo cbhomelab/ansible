@@ -1,0 +1,10 @@
+---
+# SteamOS: immutable root, Python 3 present, sudo needs the deck password.
+ansible_user: deck
+ansible_python_interpreter: /usr/bin/python3
+ansible_become: false   # roles opt in per task
+ansible_become_method: sudo
+ansible_become_password: "{{ lookup('community.general.bitwarden', 'homelab-ssh-deck', field='password')[0] }}"
+steamdeck_addresses:
+  - cb-steamdeck-dock.cbhomelab.net   # 10.10.0.11 (desk dock, Kea reservation)
+  - cb-steamdeck-wifi.cbhomelab.net   # 10.10.0.13 (WiFi, Kea reservation)

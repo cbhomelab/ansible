@@ -1,0 +1,36 @@
+---
+# Steam Deck: user-level config. Run on demand (the Deck sleeps / moves).
+#   export BW_SESSION=$(cat ~/.config/bitwarden/session)
+#   ansible-playbook playbooks/steamdeck.yml --check --diff
+- name: Steam Deck config
+  hosts: steamdeck
+  gather_facts: false
+  pre_tasks:
+    - name: Find a reachable address (dock first, then WiFi)
+      ansible.builtin.wait_for:
+        host: "{{ item }}"
+        port: 22
+        timeout: 4
+        state: started
+      loop: "{{ steamdeck_addresses }}"
+      delegate_to: localhost
+      register: steamdeck_probe
+      failed_when: false
+      changed_when: false
+      check_mode: false
+
+    - name: Use the first address that answered
+      ansible.builtin.set_fact:
+        ansible_host: "{{ (steamdeck_probe.results | rejectattr('failed') | map(attribute='item') | list | first) }}"
+      when: steamdeck_probe.results | rejectattr('failed') | list | length > 0
+
+    - name: Fail clearly if the Deck is unreachable
+      ansible.builtin.fail:
+        msg: "Steam Deck not reachable on {{ steamdeck_addresses }} (asleep or off the LAN?)"
+      when: steamdeck_probe.results | rejectattr('failed') | list | length == 0
+
+    - name: Gather facts
+      ansible.builtin.setup:
+        gather_subset: [min]
+  roles:
+    - steamdeck_config

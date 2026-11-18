@@ -1,0 +1,13 @@
+---
+- name: Flatpaks (system, flathub)
+  ansible.builtin.import_tasks: flatpak.yml
+  tags: [flatpak]
+
+- name: Decky plugins (verify)
+  ansible.builtin.import_tasks: decky.yml
+  tags: [decky]
+
+- name: chezmoi dotfiles
+  ansible.builtin.import_tasks: chezmoi.yml
+  when: steamdeck_config_chezmoi_enabled
+  tags: [chezmoi]

@@ -1,0 +1,22 @@
+---
+- name: Read Decky plugin versions
+  ansible.builtin.slurp:
+    src: "{{ steamdeck_config_decky_dir }}/{{ item.key }}/package.json"
+  loop: "{{ steamdeck_config_decky_plugins | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  register: steamdeck_config_decky_pkg
+  failed_when: false
+
+- name: Report missing or drifted Decky plugins
+  ansible.builtin.debug:
+    msg: >-
+      {{ item.item.key }}:
+      {{ 'MISSING (install from Decky Store)' if item.failed | default(false) or item.content is not defined
+         else 'version ' ~ (item.content | b64decode | from_json).version ~ ' (pinned ' ~ item.item.value ~ ')' }}
+  loop: "{{ steamdeck_config_decky_pkg.results }}"
+  loop_control:
+    label: "{{ item.item.key }}"
+  when: >-
+    item.failed | default(false) or item.content is not defined
+    or (item.content | b64decode | from_json).version != item.item.value
