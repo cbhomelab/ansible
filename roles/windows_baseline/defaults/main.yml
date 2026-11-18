@@ -122,3 +122,12 @@ windows_baseline_users: []
 # Local admins on every PC. Merged with per-host windows_baseline_admins.
 windows_baseline_global_admins: [christian]
 windows_baseline_admins: []
+
+# --- Apollo stream hooks ---------------------------------------------------
+# Wires StreamHooks.ps1 (PC-Mode-Switcher repo, "Apollo Hooks" dir) into
+# Apollo's global_prep_cmd: stop InputLeap/SyncTrayzor while streaming, start
+# them back after, and force displays back to the current mode's preset.
+# Only enabled per-host (the scripts live in christian's repo checkout).
+windows_baseline_apollo_hooks_enabled: false
+windows_baseline_apollo_conf: 'C:\Program Files\Apollo\config\sunshine.conf'
+windows_baseline_apollo_hooks_script: 'D:\Users\christian\Documents\Repos\Mode Switch Powershell Scripts\Apollo Hooks\StreamHooks.ps1'

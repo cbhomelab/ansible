@@ -1,0 +1,34 @@
+---
+# Apollo global_prep_cmd: user-context entry (processes + display guard) and an
+# elevated entry (services). Undo commands run in reverse order after a stream.
+- name: Set Apollo global_prep_cmd for stream hooks
+  community.windows.win_lineinfile:
+    path: "{{ windows_baseline_apollo_conf }}"
+    regexp: '^global_prep_cmd\s*='
+    line: >-
+      global_prep_cmd = {{ [
+        {'do': 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' ~ windows_baseline_apollo_hooks_script ~ '" -Action Start -Scope User',
+         'undo': 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' ~ windows_baseline_apollo_hooks_script ~ '" -Action End -Scope User',
+         'elevated': false},
+        {'do': 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' ~ windows_baseline_apollo_hooks_script ~ '" -Action Start -Scope Services',
+         'undo': 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "' ~ windows_baseline_apollo_hooks_script ~ '" -Action End -Scope Services',
+         'elevated': true}
+      ] | to_json(ensure_ascii=False) }}
+    encoding: utf-8
+  register: apollo_prep_cmd
+  when: windows_baseline_apollo_hooks_enabled | bool
+
+- name: Check whether a stream is active before restarting Apollo
+  ansible.windows.win_stat:
+    path: 'C:\ProgramData\ModeSwitch\stream-active.flag'
+  register: apollo_stream_flag
+  when: windows_baseline_apollo_hooks_enabled | bool
+
+- name: Restart Apollo to load the new config (skipped while streaming)
+  ansible.windows.win_service:
+    name: ApolloService
+    state: restarted
+  when:
+    - windows_baseline_apollo_hooks_enabled | bool
+    - apollo_prep_cmd is changed
+    - not apollo_stream_flag.stat.exists

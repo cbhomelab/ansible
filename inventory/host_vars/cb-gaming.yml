@@ -3,3 +3,4 @@
 windows_baseline_package_sets: [gaming, dev, media_tools, creative, homelab]
 # Accounts: christian only (global admin, nothing else needed here).
 windows_baseline_users: []
+windows_baseline_apollo_hooks_enabled: true

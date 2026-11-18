@@ -18,3 +18,7 @@
 - name: Package + Windows Update management
   ansible.builtin.import_tasks: updates.yml
   tags: [updates, packages]
+
+- name: Apollo stream hooks
+  ansible.builtin.import_tasks: apollo.yml
+  tags: [apollo]
