@@ -36,10 +36,12 @@ access_control_sudoers:
 # VPN layout (Proton, WireGuard via gluetun):
 #   20-qbittorrent  gluetun_qbit (US, port forwarding) + qbittorrent in its netns
 #   20-sabnzbd      gluetun_sab (US) + sabnzbd in its netns
+#   20-vpn-arr      gluetun_arr (US) shared by prowlarr/sonarr/radarr/lidarr/bazarr/flaresolverr (10.20.0.149)
 #   20-vpn-la/co/au gluetun + SOCKS5 + Tailscale exit node: Los Angeles / Denver / Stockholm
 compose_stacks_projects:
   - {name: 20-qbittorrent, state: started}
   - {name: 20-sabnzbd, state: started}
+  - {name: 20-vpn-arr, state: started}
   - {name: 20-vpn-la, state: started}
   - {name: 20-vpn-co, state: started}
   - {name: 20-vpn-au, state: started}
