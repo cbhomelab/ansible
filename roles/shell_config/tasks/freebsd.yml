@@ -1,16 +1,16 @@
 ---
-# OPNsense (FreeBSD 13.2, /bin/sh, no python, no bash): Starship prompt for
-# `christian`. The router is API-managed (ansible_connection: local) so
-# playbooks/shell.yml reaches it through a dynamic add_host over SSH as
-# christian (hermes's key is in christian's authorized_keys on the router).
+# OPNsense (FreeBSD 13.2, no python): Starship prompt for `christian`.
+# The router is API-managed (ansible_connection: local) so playbooks/shell.yml
+# reaches it through a dynamic add_host over SSH as christian (hermes's key is
+# in christian's authorized_keys on the router).
 # Everything is `raw` - no interpreter on the target. chezmoi is not used:
 # starship.toml is fetched straight from the dotfiles repo.
 #
-# Prompt hook goes in ~/.shrc (runs after ~/.profile, which would otherwise be
-# overridden by the stock PS1 line). See files/freebsd_shrc_block.sh for why it
-# is recomputed per-cd instead of live.
+# christian's login shell is bash (pkg install bash, set in the OPNsense UI),
+# so the hook is the normal `starship init bash` in ~/.bashrc. (FreeBSD 13.2
+# /bin/sh can't do this: libedit strips the colour escapes from PS1.)
 
-- name: Install Starship, starship.toml and the ~/.shrc hook
+- name: Install Starship, starship.toml and the bash hook
   ansible.builtin.raw: |
     set -e
     changed=no
@@ -25,14 +25,24 @@
       cp /tmp/starship.toml "$HOME/.config/starship.toml"; changed=yes
     fi
     rm -f /tmp/starship.toml
-    cat > /tmp/shrc_block <<'HOOK_EOF'
-    {{ lookup('ansible.builtin.file', 'freebsd_shrc_block.sh') }}
-    HOOK_EOF
-    # drop any previous block, then append the current one if it differs
-    sed -e '/^ *# Starship prompt/,$d' "$HOME/.shrc" > /tmp/shrc_new
-    cat /tmp/shrc_block >> /tmp/shrc_new
-    if ! cmp -s /tmp/shrc_new "$HOME/.shrc"; then cp /tmp/shrc_new "$HOME/.shrc"; changed=yes; fi
-    rm -f /tmp/shrc_block /tmp/shrc_new
+    printf '%s\n' \
+      '# Managed by ansible (shell_config/freebsd.yml)' \
+      'case $- in *i*)' \
+      '  export PATH="$HOME/.local/bin:$PATH"' \
+      '  eval "$(starship init bash)"' \
+      '  ;;' \
+      'esac' > /tmp/bashrc_new
+    printf '%s\n' \
+      '# Managed by ansible (shell_config/freebsd.yml)' \
+      '[ -f "$HOME/.bashrc" ] && . "$HOME/.bashrc"' > /tmp/bash_profile_new
+    for f in bashrc bash_profile; do
+      if ! cmp -s /tmp/${f}_new "$HOME/.$f"; then cp /tmp/${f}_new "$HOME/.$f"; changed=yes; fi
+      rm -f /tmp/${f}_new
+    done
+    # retire the old sh-based hook
+    if grep -q "^ *# Starship prompt" "$HOME/.shrc"; then
+      sed -i '' -e '/^ *# Starship prompt/,$d' "$HOME/.shrc"; changed=yes
+    fi
     echo "CHANGED=$changed"
   register: shell_config_freebsd_result
   changed_when: "'CHANGED=yes' in shell_config_freebsd_result.stdout"
