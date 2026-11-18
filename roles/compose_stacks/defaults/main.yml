@@ -10,3 +10,6 @@ compose_stacks_global_env: "{{ compose_stacks_base_dir }}/global.env"
 compose_stacks_projects: []
 # Never touched by apply even if listed (networks/DNS others depend on).
 compose_stacks_protected: [00-networks, 00-ddns]
+# Variables that must already exist (non-empty) in global.env; the run fails early
+# otherwise. global.env is OMV-managed and untracked, so secrets live there only.
+compose_stacks_required_global_vars: []

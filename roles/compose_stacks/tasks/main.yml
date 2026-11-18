@@ -58,6 +58,24 @@
           - "config validation failures: {{ cs_invalid }}"
           - "git: {{ cs_git.stdout_lines | first | default('n/a') }}; uncommitted entries: {{ (cs_git.stdout_lines | length) - 1 }}"
 
+    - name: Check required secrets exist in global.env (names only, values never read into output)
+      ansible.builtin.command:
+        cmd: grep -q -E '^{{ item }}=.+' {{ compose_stacks_global_env }}
+      loop: "{{ compose_stacks_required_global_vars }}"
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      no_log: true
+      register: cs_secrets
+
+    - name: Fail early if a required global.env variable is missing
+      ansible.builtin.assert:
+        that: cs_secrets.results | rejectattr('rc', 'equalto', 0) | list | length == 0
+        fail_msg: >-
+          global.env is missing: {{ cs_secrets.results | rejectattr('rc', 'equalto', 0) | map(attribute='item') | list }}.
+          global.env is OMV-managed (Compose > Global environment) and untracked; set it there, not via this repo.
+      when: compose_stacks_required_global_vars | length > 0
+
     - name: Pull images for opted-in projects
       ansible.builtin.command:
         cmd: "{{ cs_cmd }} pull"
@@ -74,4 +92,7 @@
       loop: "{{ compose_stacks_projects }}"
       loop_control: {label: "{{ item.name }}"}
       when: item.name not in compose_stacks_protected and item.name in cs_defined and item.name not in cs_invalid
-      changed_when: true
+      register: cs_updown
+      # compose prints 'Running'/'Healthy' for untouched containers and
+      # Started/Created/Recreated/Stopped/Removed only when it acts.
+      changed_when: cs_updown.stderr is search('(Started|Created|Recreated|Stopped|Removed)') or cs_updown.stdout is search('(Started|Created|Recreated|Stopped|Removed)')

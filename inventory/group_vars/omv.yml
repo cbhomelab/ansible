@@ -31,10 +31,18 @@ access_control_sudoers:
   - name: hermes
     rule: "hermes ALL=(ALL) NOPASSWD:ALL"
 
-# compose_stacks placeholder (scaffolded, not implemented — see
-# roles/compose_stacks/README.md). Real project list to be enumerated
-# from saturn:/opt/docker-compose/ when implemented.
-# compose_stacks_projects: []
+# compose_stacks: opt-in projects kept running by the role. Compose files come
+# from cbhomelab/docker-compose (deployed through OMV's compose plugin).
+# VPN layout (Proton, WireGuard via gluetun):
+#   20-qbittorrent  gluetun_qbit (US, port forwarding) + qbittorrent in its netns
+#   20-vpn-la/co/au gluetun + SOCKS5 + Tailscale exit node: Los Angeles / Denver / Stockholm
+compose_stacks_projects:
+  - {name: 20-qbittorrent, state: started}
+  - {name: 20-vpn-la, state: started}
+  - {name: 20-vpn-co, state: started}
+  - {name: 20-vpn-au, state: started}
+compose_stacks_required_global_vars:
+  - PROTON_WG_PRIVATE_KEY
 
 # system_baseline: opt-in; OMV manages its own updates, so only
 # packages + timezone-name-compatible bits, no unattended-upgrades/journald.

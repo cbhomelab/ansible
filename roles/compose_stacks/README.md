@@ -20,6 +20,16 @@ already-running OMV-managed compose projects on saturn (start/stop,
 pull+recreate on update, add/remove a project), not installing Docker
 itself.
 
+## VPN projects managed here (Proton, since 2026-11-17)
+
+`20-qbittorrent` (gluetun_qbit + qbittorrent sharing its network namespace, forwarded port pushed into
+qBittorrent by gluetun) and `20-vpn-la/co/au` (gluetun + SOCKS5 + Tailscale exit node for Los Angeles,
+Denver, Stockholm) are in `compose_stacks_projects` in `inventory/group_vars/omv.yml`. They need
+`PROTON_WG_PRIVATE_KEY` in saturn's `global.env`; the role fails early if it is missing
+(`compose_stacks_required_global_vars`). `global.env` is OMV-managed and untracked, so set the key in
+OMV (Compose > Global environment), never in this repo. `up -d` only reports `changed` when compose
+actually started/recreated/stopped something, so a second run shows `changed=0`.
+
 ## Two implementation options considered
 
 **Option A — drive OMV's internal Compose RPC API directly** (`uri`
