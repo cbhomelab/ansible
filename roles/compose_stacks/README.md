@@ -109,3 +109,10 @@ metadata (e.g. its auto-generated env/compose templates under
 ## Variables
 
 See `defaults/main.yml`.
+
+## Env self-heal (`tasks/env_heal.yml`)
+OMV has been seen resetting per-project `.env` files to an empty header-only stub, which makes the
+project's compose file fail to render (the update flow then skips it as `skipped_invalid_config`).
+Both `compose.yml` and `compose-update.yml` first restore any EMPTY live `NN-name.env` from the same
+file in the controller checkout `compose_stacks_repo_dir` (default `~/docker-compose`; `git pull` it first).
+Files that already have variables are never overwritten. Keep the repo copies current.

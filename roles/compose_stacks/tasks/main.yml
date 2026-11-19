@@ -9,6 +9,9 @@
       -f {{ compose_stacks_base_dir }}/{{ cs_p }}/{{ cs_p }}.yml
       -f {{ compose_stacks_base_dir }}/{{ cs_p }}/compose.override.yml
   block:
+    - name: Restore empty per-project env files (OMV resets them)
+      ansible.builtin.include_tasks: env_heal.yml
+
     - name: Find OMV compose project files (NN-name/NN-name.yml)
       ansible.builtin.find:
         paths: "{{ compose_stacks_base_dir }}"

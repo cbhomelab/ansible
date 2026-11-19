@@ -9,6 +9,9 @@
 - name: compose_stacks update
   when: compose_stacks_enabled
   block:
+    - name: Restore empty per-project env files (OMV resets them; see env_heal.yml)
+      ansible.builtin.include_tasks: env_heal.yml
+
     - name: Install helper script
       ansible.builtin.copy:
         src: cs_docker.py

@@ -1,0 +1,38 @@
+---
+# Self-heal per-project .env files that OMV has reset to an empty stub (header only, no VAR=value
+# lines), which makes the project's compose file fail to render and blocks updates. The reference
+# copy is the project's .env in the cbhomelab/docker-compose checkout (compose_stacks_repo_dir).
+# Only EMPTY live files are replaced; a live file that has variables is never overwritten
+# (OMV/Ansible-managed ones such as 20-lidarr may legitimately be ahead of the repo).
+- name: Find live per-project env files
+  ansible.builtin.find:
+    paths: "{{ compose_stacks_base_dir }}"
+    patterns: '[0-9][0-9]-*.env'
+    recurse: true
+    depth: 2
+  register: cs_envfiles
+
+- name: Count variable lines in each live env file
+  ansible.builtin.command: grep -c -E '^[A-Za-z_][A-Za-z0-9_]*=' {{ item.path }}
+  loop: "{{ cs_envfiles.files }}"
+  loop_control: {label: "{{ item.path | basename }}"}
+  register: cs_envcount
+  changed_when: false
+  failed_when: cs_envcount.rc > 1     # rc 1 == zero matches
+  check_mode: false
+
+- name: Restore empty env files from the repo copy
+  ansible.builtin.copy:
+    content: "{{ lookup('ansible.builtin.file', cs_repo_env) }}"
+    dest: "{{ item.item.path }}"
+    owner: "{{ item.item.pw_name }}"
+    group: "{{ item.item.gr_name }}"
+    mode: "0660"
+  vars:
+    cs_repo_env: "{{ compose_stacks_repo_dir }}/{{ item.item.path | dirname | basename }}/{{ item.item.path | basename }}"
+  loop: "{{ cs_envcount.results }}"
+  loop_control: {label: "{{ item.item.path | basename }}"}
+  when:
+    - item.stdout | int == 0
+    - (compose_stacks_repo_dir ~ '/' ~ (item.item.path | dirname | basename) ~ '/' ~ (item.item.path | basename)) is file
+    - lookup('ansible.builtin.file', compose_stacks_repo_dir ~ '/' ~ (item.item.path | dirname | basename) ~ '/' ~ (item.item.path | basename)) is search('(?m)^[A-Za-z_][A-Za-z0-9_]*=')

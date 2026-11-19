@@ -27,3 +27,7 @@ compose_update_timeout: 240
 compose_update_settle: 20
 # Refuse to pull when the docker root has less free space than this (GiB).
 compose_update_min_free_gb: 5
+
+# Controller-side checkout of cbhomelab/docker-compose; reference for env_heal.yml (restores per-project
+# .env files that OMV reset to an empty header-only stub). `git -C <dir> pull` before running.
+compose_stacks_repo_dir: "{{ lookup('ansible.builtin.env', 'HOME') }}/docker-compose"
