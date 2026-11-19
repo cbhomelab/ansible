@@ -5,7 +5,7 @@ pihole_installer_url: https://install.pi-hole.net
 pihole_interface: eth0
 pihole_web_theme: default-darker
 pihole_upstreams: ["10.20.0.1"]
-pihole_dnssec: true
+pihole_dnssec: false   # Unbound (10.20.0.1, sole upstream) validates; Pi-hole DNSSEC SERVFAILs private rDNS zones
 pihole_listening_mode: ALL
 pihole_domain_needed: true
 pihole_expand_hosts: true
