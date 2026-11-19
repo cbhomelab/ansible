@@ -1,0 +1,52 @@
+---
+# One project (cs_p). Never fails the play itself; appends exactly one entry to cs_u_results.
+- name: "{{ cs_p }}: update"
+  vars:
+    cs_cmd: >-
+      docker compose --project-name {{ cs_p }}
+      --env-file {{ compose_stacks_global_env }}
+      --env-file {{ compose_stacks_base_dir }}/{{ cs_p }}/{{ cs_p }}.env
+      -f {{ compose_stacks_base_dir }}/{{ cs_p }}/{{ cs_p }}.yml
+      -f {{ compose_stacks_base_dir }}/{{ cs_p }}/compose.override.yml
+  block:
+    - name: "{{ cs_p }}: running containers before"
+      ansible.builtin.command: /usr/local/bin/cs_docker.py state {{ cs_p }}
+      register: cs_state
+      changed_when: false
+      check_mode: false
+
+    - name: "{{ cs_p }}: facts"
+      ansible.builtin.set_fact:
+        cs_before: "{{ cs_state.stdout | from_json | selectattr('running') | list }}"
+        cs_changed: []
+        cs_verify: {stdout: ''}
+
+    - name: "{{ cs_p }}: config renders?"
+      ansible.builtin.command: "{{ cs_cmd }} config -q"
+      register: cs_cfg
+      changed_when: false
+      failed_when: false
+      check_mode: false
+      when: cs_before | length > 0
+
+    - name: "{{ cs_p }}: skip (nothing running; stopped projects stay stopped)"
+      ansible.builtin.set_fact:
+        cs_u_results: "{{ cs_u_results + [{'project': cs_p, 'result': 'skipped_not_running'}] }}"
+      when: cs_before | length == 0
+
+    - name: "{{ cs_p }}: skip (compose file does not render, e.g. env vars missing; recreating would break it)"
+      ansible.builtin.set_fact:
+        cs_u_results: >-
+          {{ cs_u_results + [{'project': cs_p, 'result': 'skipped_invalid_config',
+          'error': cs_cfg.stderr_lines | reject('search', 'level=warning') | join(' ') | truncate(200)}] }}
+      when: cs_before | length > 0 and cs_cfg.rc != 0
+
+    - name: "{{ cs_p }}: pull, recreate, verify, roll back on failure"
+      ansible.builtin.include_tasks: update_apply.yml
+      when: cs_before | length > 0 and cs_cfg.rc == 0
+  rescue:
+    - name: "{{ cs_p }}: step failed before any container was recreated (e.g. pull)"
+      ansible.builtin.set_fact:
+        cs_u_results: >-
+          {{ cs_u_results + [{'project': cs_p, 'result': 'pull_failed',
+          'error': (ansible_failed_result | default({})).stderr | default((ansible_failed_result | default({})).msg | default('')) | string | truncate(300)}] }}

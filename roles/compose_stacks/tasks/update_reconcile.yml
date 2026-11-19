@@ -1,0 +1,39 @@
+---
+# Second pass for one project (cs_p). A container with network_mode: container:<name> stores the
+# ID of that container; when the VPN container is recreated the ID is stale (dead netns) and
+# compose does NOT notice, even on `up -d`. Find those and force-recreate them. Images do not
+# change here, so there is nothing to roll back; a failure is reported.
+- name: "{{ cs_p }}: reconcile"
+  vars:
+    cs_cmd: >-
+      docker compose --project-name {{ cs_p }}
+      --env-file {{ compose_stacks_global_env }}
+      --env-file {{ compose_stacks_base_dir }}/{{ cs_p }}/{{ cs_p }}.env
+      -f {{ compose_stacks_base_dir }}/{{ cs_p }}/{{ cs_p }}.yml
+      -f {{ compose_stacks_base_dir }}/{{ cs_p }}/compose.override.yml
+  block:
+    - name: "{{ cs_p }}: containers attached to a namespace that no longer exists"
+      ansible.builtin.command: /usr/local/bin/cs_docker.py stale {{ cs_p }}
+      register: cs_stale
+      changed_when: false
+      check_mode: false
+
+    - name: "{{ cs_p }}: force-recreate them"
+      ansible.builtin.command: "{{ cs_cmd }} up -d --force-recreate --no-deps {{ (cs_stale.stdout | from_json | map(attribute='service') | list) | join(' ') }}"
+      register: cs_rc_up
+      changed_when: true
+      retries: 3
+      delay: 20
+      until: cs_rc_up.rc == 0
+      when: (cs_stale.stdout | from_json) | length > 0
+
+    - name: "{{ cs_p }}: verify"
+      ansible.builtin.command: >-
+        /usr/local/bin/cs_docker.py verify {{ compose_update_timeout }} {{ compose_update_settle }}
+        {{ cs_u_names[cs_p] | join(' ') }}
+      changed_when: false
+      when: (cs_stale.stdout | from_json) | length > 0
+  rescue:
+    - name: "{{ cs_p }}: reconcile failed"
+      ansible.builtin.set_fact:
+        cs_u_results: "{{ cs_u_results + [{'project': cs_p, 'result': 'reconcile_failed'}] }}"

@@ -1,0 +1,101 @@
+---
+# Needs cs_p, cs_cmd, cs_before. Appends one entry to cs_u_results.
+# Not run in --check mode past the pull (a real pull/recreate would change the host).
+- name: "{{ cs_p }}: pull (buildable images are skipped)"
+  ansible.builtin.command: "{{ cs_cmd }} pull --ignore-buildable --quiet"
+  register: cs_pull
+  changed_when: false
+  retries: 3      # registries rate-limit (toomanyrequests) when many images are pulled back to back
+  delay: 30
+  until: cs_pull.rc == 0
+
+- name: "{{ cs_p }}: which containers have a newer image?"
+  ansible.builtin.command: /usr/local/bin/cs_docker.py changed {{ cs_p }}
+  register: cs_chg
+  changed_when: false
+  check_mode: false
+
+- name: "{{ cs_p }}: facts"
+  ansible.builtin.set_fact:
+    cs_changed: "{{ cs_chg.stdout | from_json }}"
+
+- name: "{{ cs_p }}: already up to date"
+  ansible.builtin.set_fact:
+    cs_u_results: "{{ cs_u_results + [{'project': cs_p, 'result': 'up_to_date'}] }}"
+  when: cs_changed | length == 0
+
+- name: "{{ cs_p }}: apply update"
+  when: cs_changed | length > 0
+  block:
+    - name: "{{ cs_p }}: pin current images for rollback (cs-rollback/<project>-<service>:prev)"
+      ansible.builtin.command: "docker tag {{ item.image_id }} cs-rollback/{{ cs_p }}-{{ item.service }}:prev"
+      loop: "{{ cs_changed }}"
+      loop_control: {label: "{{ item.name }}"}
+      changed_when: true
+
+    # No --remove-orphans: an update must never delete containers.
+    - name: "{{ cs_p }}: recreate with the new images"
+      ansible.builtin.command: "{{ cs_cmd }} up -d"
+      register: cs_up
+      changed_when: true
+      retries: 3      # compose aborts if a dependency (gluetun) is still starting/unhealthy at that instant
+      delay: 20
+      until: cs_up.rc == 0
+
+    - name: "{{ cs_p }}: verify (running, healthy, no restarts for {{ compose_update_settle }}s)"
+      ansible.builtin.command: >-
+        /usr/local/bin/cs_docker.py verify {{ compose_update_timeout }} {{ compose_update_settle }}
+        {{ cs_before | map(attribute='name') | join(' ') }}
+      register: cs_verify
+      changed_when: false
+
+    - name: "{{ cs_p }}: record success"
+      ansible.builtin.set_fact:
+        cs_u_results: >-
+          {{ cs_u_results + [{'project': cs_p, 'result': 'updated',
+          'services': cs_changed | map(attribute='service') | list}] }}
+  rescue:
+    - name: "{{ cs_p }}: UPDATE FAILED - what verify saw"
+      ansible.builtin.debug:
+        msg: "{{ cs_verify.stdout | default('') or (ansible_failed_result | default({})).stderr | default('') }}"
+
+    - name: "{{ cs_p }}: ROLLBACK - re-tag previous images to their original refs"
+      ansible.builtin.command: "docker tag {{ item.image_id }} {{ item.image_ref }}"
+      loop: "{{ cs_changed }}"
+      loop_control: {label: "{{ item.name }}"}
+      changed_when: true
+
+    - name: "{{ cs_p }}: ROLLBACK - recreate on the previous images"
+      ansible.builtin.command: "{{ cs_cmd }} up -d"
+      register: cs_rbup
+      changed_when: true
+      retries: 3
+      delay: 20
+      until: cs_rbup.rc == 0
+      ignore_errors: true
+
+    - name: "{{ cs_p }}: ROLLBACK - verify"
+      ansible.builtin.command: >-
+        /usr/local/bin/cs_docker.py verify {{ compose_update_timeout }} {{ compose_update_settle }}
+        {{ cs_before | map(attribute='name') | join(' ') }}
+      register: cs_rbv
+      changed_when: false
+      ignore_errors: true
+
+    - name: "{{ cs_p }}: ROLLBACK - containers on the previous image IDs?"
+      ansible.builtin.command: /usr/local/bin/cs_docker.py state {{ cs_p }}
+      register: cs_after_rb
+      changed_when: false
+      check_mode: false
+
+    - name: "{{ cs_p }}: record rollback outcome"
+      ansible.builtin.set_fact:
+        cs_u_results: >-
+          {{ cs_u_results + [{'project': cs_p,
+          'result': 'rolled_back' if (cs_rbv is succeeded and cs_rbup is succeeded and
+              ((cs_after_rb.stdout | from_json
+                | selectattr('name', 'in', cs_changed | map(attribute='name') | list)
+                | selectattr('image_id', 'in', cs_changed | map(attribute='image_id') | list) | list | length) == (cs_changed | length)))
+              else 'rollback_failed',
+          'services': cs_changed | map(attribute='service') | list,
+          'failure': cs_verify.stdout | default('') | truncate(300)}] }}

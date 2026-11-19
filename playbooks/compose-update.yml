@@ -1,0 +1,14 @@
+---
+# Safe update of all running compose projects on saturn: pull -> recreate -> verify -> roll back on failure.
+#   ansible-playbook playbooks/compose-update.yml                     # everything running
+#   ansible-playbook playbooks/compose-update.yml -e '{"compose_update_only":["20-radarr"]}'
+#   ansible-playbook playbooks/compose-update.yml -e '{"compose_update_skip":["40-plex"]}'
+- name: Update docker compose projects safely
+  hosts: omv
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Run the update flow
+      ansible.builtin.include_role:
+        name: compose_stacks
+        tasks_from: update.yml

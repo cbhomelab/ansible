@@ -16,3 +16,14 @@ compose_stacks_required_global_vars: []
 # global.env VAR -> Bitwarden item name (password field). Bitwarden is the source of truth;
 # the run fails if the live global.env value differs. Needs BW_SESSION exported.
 compose_stacks_global_env_bitwarden: {}
+
+# --- update.yml (safe update with verification + rollback), see README ---
+# Projects (dir names) to skip in an update run, in addition to compose_stacks_protected.
+compose_update_skip: []
+# Limit a run to these projects (empty = every RUNNING project under the base dir): -e '{"compose_update_only":["20-radarr"]}'
+compose_update_only: []
+# Seconds to wait for running(+healthy) after `up -d`, then seconds it must stay up with no restarts.
+compose_update_timeout: 240
+compose_update_settle: 20
+# Refuse to pull when the docker root has less free space than this (GiB).
+compose_update_min_free_gb: 5

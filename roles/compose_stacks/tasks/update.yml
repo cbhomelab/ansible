@@ -1,0 +1,87 @@
+---
+# Safe update of every running compose project: pull -> recreate -> verify -> rollback.
+#   ansible-playbook playbooks/compose-update.yml [--check] [-e '{"compose_update_only":["20-radarr"]}']
+# Per project: record running containers + image IDs, pull, skip if no image changed, pin the old
+# images under cs-rollback/<project>-<service>:prev, `up -d`, verify (running, healthy, no restart
+# for the settle window). On failure the old image IDs are re-tagged to the original refs and the
+# project is recreated and re-verified. Projects are independent: one failure does not stop the
+# rest; the play fails at the end if anything was rolled back.
+- name: compose_stacks update
+  when: compose_stacks_enabled
+  block:
+    - name: Install helper script
+      ansible.builtin.copy:
+        src: cs_docker.py
+        dest: /usr/local/bin/cs_docker.py
+        mode: "0755"
+
+    - name: Free space on docker root (GiB)
+      ansible.builtin.shell: df -BG --output=avail "$(docker info -f '{{ "{{" }}.DockerRootDir{{ "}}" }}')" | tail -1 | tr -dc 0-9
+      register: cs_free
+      changed_when: false
+      check_mode: false
+
+    - name: Refuse to pull when disk is low
+      ansible.builtin.assert:
+        that: cs_free.stdout | int >= compose_update_min_free_gb
+        fail_msg: "Only {{ cs_free.stdout }} GiB free on the docker root (< {{ compose_update_min_free_gb }})."
+
+    - name: Find OMV compose projects
+      ansible.builtin.find:
+        paths: "{{ compose_stacks_base_dir }}"
+        patterns: '[0-9][0-9]-*.yml'
+        recurse: true
+        depth: 2
+      register: cs_u_files
+      check_mode: false
+
+    - name: Candidate projects
+      ansible.builtin.set_fact:
+        cs_u_projects: >-
+          {{ cs_u_files.files | map(attribute='path') | map('dirname') | map('basename') | unique | sort
+             | difference(compose_stacks_protected + compose_update_skip)
+             | select('in', compose_update_only) | list if compose_update_only | length > 0 else
+             cs_u_files.files | map(attribute='path') | map('dirname') | map('basename') | unique | sort
+             | difference(compose_stacks_protected + compose_update_skip) | list }}
+        cs_u_results: []
+
+    - name: Update each project
+      ansible.builtin.include_tasks: update_project.yml
+      loop: "{{ cs_u_projects }}"
+      loop_control:
+        loop_var: cs_p
+        label: "{{ cs_p }}"
+
+    # Names of containers to verify per project in the reconcile pass.
+    - name: Running container names per project
+      ansible.builtin.command: /usr/local/bin/cs_docker.py state {{ item }}
+      loop: "{{ cs_u_results | rejectattr('result', 'equalto', 'skipped_not_running') | map(attribute='project') | list }}"
+      register: cs_u_names_raw
+      changed_when: false
+      check_mode: false
+
+    - name: Build name map
+      ansible.builtin.set_fact:
+        cs_u_names: >-
+          {{ dict(cs_u_names_raw.results | map(attribute='item') | zip(
+             cs_u_names_raw.results | map(attribute='stdout') | map('from_json')
+             | map('selectattr', 'running') | map('map', attribute='name') | map('list') )) }}
+
+    - name: Reconcile pass (re-resolve shared network namespaces after VPN containers were recreated)
+      ansible.builtin.include_tasks: update_reconcile.yml
+      loop: "{{ cs_u_results | rejectattr('result', 'in', ['skipped_not_running', 'rolled_back', 'rollback_failed', 'pull_failed']) | map(attribute='project') | list }}"
+      loop_control:
+        loop_var: cs_p
+        label: "{{ cs_p }}"
+      when: not ansible_check_mode
+
+    - name: Update summary
+      ansible.builtin.debug:
+        msg: "{{ cs_u_results }}"
+
+    - name: Fail if any project was rolled back or could not be updated
+      ansible.builtin.assert:
+        that: cs_u_results | selectattr('result', 'in', ['rolled_back', 'rollback_failed', 'pull_failed', 'reconcile_failed']) | list | length == 0
+        fail_msg: >-
+          Problems: {{ cs_u_results | selectattr('result', 'in', ['rolled_back', 'rollback_failed', 'pull_failed', 'reconcile_failed'])
+          | map(attribute='project') | list }} (see summary above).
