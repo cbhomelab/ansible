@@ -78,6 +78,19 @@
         label: "{{ cs_p }}"
       when: not ansible_check_mode
 
+    # Rollback tags are only needed until verification passes; keep them for projects that failed.
+    - name: Drop rollback tags of projects that updated successfully
+      ansible.builtin.shell: |
+        docker image ls --format '{% raw %}{{.Repository}}:{{.Tag}}{% endraw %}' --filter 'reference=cs-rollback/{{ item.project }}-*' | xargs -r docker rmi
+      loop: "{{ cs_u_results | selectattr('result', 'equalto', 'updated') | list }}"
+      loop_control: {label: "{{ item.project }}"}
+      changed_when: true
+      failed_when: false
+
+    - name: Prune dangling (superseded) images
+      ansible.builtin.command: docker image prune -f
+      changed_when: false
+
     - name: Update summary
       ansible.builtin.debug:
         msg: "{{ cs_u_results }}"
