@@ -3,6 +3,7 @@
 # On failure pushes a HomeAssistantReportFailed alert to Alertmanager (-> Discord),
 # valid for 26h so the next daily run refreshes it; it resolves itself once runs pass.
 set -u
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
 cd {{ homeassistant_repo_dir }} && git pull --ff-only -q 2>&1 | tail -2
 out=$(ansible-playbook playbooks/homeassistant.yml 2>&1); rc=$?
 am={{ homeassistant_alertmanager_url }}/api/v2/alerts
