@@ -11,7 +11,7 @@ pihole_domain_needed: true
 pihole_expand_hosts: true
 pihole_bogus_priv: false
 pihole_local_domain: lan
-pihole_query_log_max_days: 91
+pihole_query_log_max_days: 30
 # [enabled, network, server, domain]
 pihole_rev_servers: ["false,10.0.0.0/8,10.10.0.1,cbho.me"]
 pihole_hosts: ["10.20.0.4 intranet.cbhomelab.net"]
