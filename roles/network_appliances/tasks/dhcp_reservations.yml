@@ -26,11 +26,12 @@
 - name: Build reservation plan (hostname -> desired ip/mac) from inventory
   ansible.builtin.set_fact:
     network_appliances_dhcp_plan: "{{ network_appliances_dhcp_plan | default([]) + [{'host': item, 'ip': hostvars[item].ansible_host, 'mac': hostvars[item].mac | lower, 'description': 'ansible: ' + item}] }}"
-  loop: "{{ (groups['lxc_guests'] | default([])) + (groups['vm_guests'] | default([])) }}"
+  loop: "{{ (groups['lxc_guests'] | default([])) + (groups['vm_guests'] | default([])) + (groups['rpi_hosts'] | default([])) }}"
   when:
     - inventory_hostname == 'vm100-opnsense'
     - hostvars[item].dhcp_reservation | default(false)
     - hostvars[item].mac is defined
+    - hostvars[item].ansible_host is defined
   run_once: true
 
 - name: No reservations to manage — nothing in inventory opted in
