@@ -6,7 +6,7 @@ from pyfatfs.PyFatFS import PyFatFS
 SRC, OUT = sys.argv[1], sys.argv[2]
 KEYS = [open(os.path.expanduser(p)).read().strip() for p in sys.argv[3:]]
 START, COUNT = 16384, 1048576   # boot partition, sectors (verified with sfdisk -d)
-HOST, USER = "statusmon", "statusmon"
+HOST = USER = os.environ.get("PI_HOST", "statusmon")
 user_data = f"""#cloud-config
 hostname: {HOST}
 manage_etc_hosts: true

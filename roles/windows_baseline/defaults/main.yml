@@ -60,7 +60,7 @@ windows_baseline_package_sets_available:
     - ClassicOldSong.Apollo
     - ViGEm.ViGEmBus
     - beeradmoore.dlss-swapper
-    - EarTrumpet.EarTrumpet
+    - File-New-Project.EarTrumpet
     - Logitech.OptionsPlus
     - Mojang.MinecraftLauncher
     - PrismLauncher.PrismLauncher
@@ -76,6 +76,8 @@ windows_baseline_package_sets_available:
     - Microsoft.WSL
     - PuTTY.PuTTY
     - Gyan.FFmpeg
+    - Mattermost.MattermostDesktop
+    - RaspberryPiFoundation.RaspberryPiImager
   media_tools:
     - Plex.Plex
     - Plex.Plexamp

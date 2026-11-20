@@ -17,7 +17,8 @@
 
 - name: Package + Windows Update management
   ansible.builtin.import_tasks: updates.yml
-  tags: [updates, packages]
+  # no tags here: import_tasks inherits them, which made `--tags packages`
+  # also run the [never, updates] tasks. Inner tasks carry their own tags.
 
 - name: Apollo stream hooks
   ansible.builtin.import_tasks: apollo.yml
