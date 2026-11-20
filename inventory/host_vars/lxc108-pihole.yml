@@ -31,7 +31,6 @@ pihole_cname_names:
   - logs.cbhomelab.net
   - movies.cbhomelab.net
   - music.cbhomelab.net
-  - navidrome.cbhomelab.net
   - neptune.cbhomelab.net
   - nvr.cbhomelab.net
   - omv.cbhomelab.net

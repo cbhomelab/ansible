@@ -56,7 +56,6 @@ npm_proxy_hosts:
   - {"domain_names": ["mc-map.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 8100, "access_list_id": 0}
   - {"domain_names": ["minecraft.cbhomelab.net"], "forward_host": "10.40.0.30", "forward_port": 19132, "access_list_id": 0}
   - {"domain_names": ["movies.cbhomelab.net", "radarr.cbhomelab.net"], "forward_host": "10.20.0.149", "forward_port": 7878}
-  - {"domain_names": ["navidrome.cbhomelab.net"], "forward_host": "10.20.0.73", "forward_port": 4533}
   - {"domain_names": ["neptune.cbhomelab.net", "proxmox.cbhomelab.net", "pve.cbhomelab.net"], "forward_host": "10.20.0.6", "forward_port": 8006, "forward_scheme": "https", "block_exploits": 0, "advanced_config": "proxy_redirect off;"}
   - {"domain_names": ["nextpvr.cbhomelab.net"], "forward_host": "10.40.0.21", "forward_port": 8866, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
   - {"domain_names": ["nvr.cbhomelab.net"], "forward_host": "10.20.0.17", "forward_port": 5000}
