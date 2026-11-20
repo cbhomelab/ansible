@@ -102,8 +102,13 @@ separate change — not bundled into this pass.
 
 ## Credentials
 
-**Known gap: no OPNsense API key with DHCP-write privilege exists in
-Bitwarden yet**, so this role has not been executed against the live
+**Update (Nov 2026): `homelab-opnsense-dhcp-api` now exists in Bitwarden and
+lists Kea subnets/reservations (verified read-only; unlock via
+`BW_SESSION=$(cat ~/.config/bitwarden/session)`). The note below is the
+original history.**
+
+**Original gap: no OPNsense API key with DHCP-write privilege existed in
+Bitwarden**, so this role has not been executed against the live
 router. Checked (Nov 2026): neither `homelab-opnsense-api` nor
 `homelab-webui-christian-opnsense` (referenced by `group_vars/all.yml`'s
 `webui_identity_accounts`) exist as real Bitwarden items — `webui_identity`
