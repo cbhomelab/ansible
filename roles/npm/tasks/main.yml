@@ -88,3 +88,65 @@
       changed_when: true
       loop: "{{ npm_drift | default([]) }}"
       loop_control: {label: "{{ item.domain }} -> {{ item.host }}:{{ item.port }}"}
+
+- name: Proxy hosts (npm_proxy_hosts)
+  when: npm_proxy_hosts | length > 0
+  block:
+    - name: NPM API login
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ npm_port }}/api/tokens"
+        method: POST
+        body_format: json
+        body: {identity: "{{ npm_admin_email }}", secret: "{{ npm_admin_pass }}"}
+      register: npm_login2
+      no_log: true
+      check_mode: false
+
+    - name: List proxy hosts
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ npm_port }}/api/nginx/proxy-hosts"
+        headers: {Authorization: "Bearer {{ npm_login2.json.token }}"}
+      register: npm_hosts2
+      no_log: true
+      check_mode: false
+
+    - name: Work out creates and updates
+      ansible.builtin.set_fact:
+        npm_ph_create: "{{ npm_ph_create | default([]) + [want] if cur is none else npm_ph_create | default([]) }}"
+        npm_ph_update: >-
+          {{ npm_ph_update | default([]) + [{'id': cur.id, 'name': item.domain_names[0], 'body': (cur | dict2items | selectattr('key', 'in', npm_upstream_keep_fields) | list | items2dict) | combine(want)}]
+             if (cur is not none and cur_subset != want_cmp) else npm_ph_update | default([]) }}
+      vars:
+        want: "{{ npm_proxy_host_defaults | combine(item) }}"
+        cur: "{{ (npm_hosts2.json | selectattr('domain_names.0', 'equalto', item.domain_names[0]) | list | first) | default(none) }}"
+        want_cmp: "{{ want | dict2items | rejectattr('key', 'equalto', 'locations') | list | items2dict }}"
+        cur_subset: "{{ (cur | default({})) | dict2items | selectattr('key', 'in', want_cmp.keys()) | list | items2dict }}"
+      loop: "{{ npm_proxy_hosts }}"
+      loop_control: {label: "{{ item.domain_names[0] }}"}
+      no_log: true
+
+    - name: Show pending proxy host changes
+      ansible.builtin.debug:
+        msg: "create: {{ npm_ph_create | default([]) | map(attribute='domain_names') | map('first') | list }} / update: {{ npm_ph_update | default([]) | map(attribute='name') | list }}"
+
+    - name: Create missing proxy hosts
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ npm_port }}/api/nginx/proxy-hosts"
+        method: POST
+        headers: {Authorization: "Bearer {{ npm_login2.json.token }}"}
+        body_format: json
+        body: "{{ item | combine({'meta': {}}) }}"
+      changed_when: true
+      loop: "{{ npm_ph_create | default([]) }}"
+      loop_control: {label: "{{ item.domain_names[0] }}"}
+
+    - name: Update drifted proxy hosts
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ npm_port }}/api/nginx/proxy-hosts/{{ item.id }}"
+        method: PUT
+        headers: {Authorization: "Bearer {{ npm_login2.json.token }}"}
+        body_format: json
+        body: "{{ item.body }}"
+      changed_when: true
+      loop: "{{ npm_ph_update | default([]) }}"
+      loop_control: {label: "{{ item.name }}"}

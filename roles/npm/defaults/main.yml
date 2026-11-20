@@ -1,7 +1,7 @@
 ---
 # Nginx Proxy Manager on lxc102 (native community-scripts install: /app + node, state in /data + /etc/letsencrypt).
-# This role does NOT create proxy hosts (only enforces npm_upstreams forward host/port below): those live in NPM's own sqlite DB and are the source of truth
-# (network_appliances reads them to derive Unbound records). It covers service state, backups and health.
+# Proxy hosts are declared in npm_proxy_hosts below (created if missing, drifted fields updated, never deleted). NPM's sqlite DB remains
+# what network_appliances reads to derive Unbound records. It also covers service state, backups and health.
 npm_dir: /app
 npm_port: 81
 npm_backup_dir: /var/backups/npm
@@ -27,3 +27,69 @@ npm_admin_pass: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', f
 npm_upstream_keep_fields: [domain_names, forward_scheme, forward_host, forward_port, certificate_id, ssl_forced, hsts_enabled,
   hsts_subdomains, http2_support, block_exploits, caching_enabled, allow_websocket_upgrade, access_list_id, advanced_config,
   enabled, meta, locations]
+
+# ---- Proxy hosts (full management) ----
+# Desired NPM proxy hosts (seeded from the live lxc102 state). Matched by first domain; the npm role creates missing hosts and
+# updates drifted fields. Keys omitted from an entry fall back to npm_proxy_host_defaults. Hosts not listed are never touched or deleted.
+npm_proxy_hosts:
+  - {"domain_names": ["alertmanager.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 9093, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["apollo-gaming.cbhomelab.net"], "forward_host": "10.10.0.17", "forward_port": 47990, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "block_exploits": 0, "caching_enabled": 0}
+  - {"domain_names": ["apollo-laptop-dock.cbhomelab.net"], "forward_host": "10.10.0.10", "forward_port": 47990, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "block_exploits": 0, "caching_enabled": 0}
+  - {"domain_names": ["apollo-laptop.cbhomelab.net"], "forward_host": "10.10.0.12", "forward_port": 47990, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "block_exploits": 0, "caching_enabled": 0}
+  - {"domain_names": ["apollo-steamdeck-dock.cbhomelab.net"], "forward_host": "10.10.0.11", "forward_port": 47990, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "block_exploits": 0, "caching_enabled": 0}
+  - {"domain_names": ["apollo-steamdeck-wifi.cbhomelab.net"], "forward_host": "10.10.0.13", "forward_port": 47990, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "block_exploits": 0, "caching_enabled": 0}
+  - {"domain_names": ["aurral.cbhomelab.net", "discover-music.cbhomelab.net"], "forward_host": "10.20.0.144", "forward_port": 3001}
+  - {"domain_names": ["bazarr.cbhomelab.net"], "forward_host": "10.20.0.149", "forward_port": 6767, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["bookmarks.cbhomelab.net", "links.cbhomelab.net", "linkwarden.cbhomelab.net"], "forward_host": "10.20.0.27", "forward_port": 3000}
+  - {"domain_names": ["dispatcharr.cbhomelab.net"], "forward_host": "10.40.0.17", "forward_port": 9191, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["dns.cbhomelab.net", "pihole.cbhomelab.net"], "forward_host": "10.20.0.8", "forward_port": 80, "block_exploits": 0, "locations": [{"advanced_config": "return 301 /admin;", "forward_host": "10.20.0.8", "forward_port": 80, "forward_scheme": "http", "path": "/"}, {"advanced_config": "", "forward_host": "10.20.0.8", "forward_port": 80, "forward_scheme": "http", "path": "/admin"}]}
+  - {"domain_names": ["filebrowser.cbhomelab.net", "files.cbhomelab.net"], "forward_host": "10.20.0.191", "forward_port": 80}
+  - {"domain_names": ["forgejo.cbhomelab.net", "git.cbhomelab.net"], "forward_host": "10.20.0.50", "forward_port": 3000, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["glance.cbhomelab.net", "homepage.cbhomelab.net"], "forward_host": "10.20.0.199", "forward_port": 8998}
+  - {"domain_names": ["hass.cbhomelab.net", "home.cbhomelab.net", "homeassistant.cbhomelab.net"], "forward_host": "10.20.0.5", "forward_port": 8123, "block_exploits": 0}
+  - {"domain_names": ["indexers.cbhomelab.net", "prowlarr.cbhomelab.net", "search.cbhomelab.net"], "forward_host": "10.20.0.149", "forward_port": 9696}
+  - {"domain_names": ["intranet.cbhomelab.net"], "forward_host": "10.20.0.4", "forward_port": 81, "block_exploits": 0}
+  - {"domain_names": ["jellyfin.cbhomelab.net"], "forward_host": "10.40.0.24", "forward_port": 8096, "block_exploits": 0, "access_list_id": 0}
+  - {"domain_names": ["lidarr.cbhomelab.net", "music.cbhomelab.net"], "forward_host": "10.20.0.149", "forward_port": 8686}
+  - {"domain_names": ["logs.cbhomelab.net"], "forward_host": "10.20.0.161", "forward_port": 3000}
+  - {"domain_names": ["mattermost.cbhomelab.net"], "forward_host": "10.20.0.51", "forward_port": 8065, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "advanced_config": "client_max_body_size 100M;\nproxy_read_timeout 600s;"}
+  - {"domain_names": ["mc-map.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 8100, "access_list_id": 0}
+  - {"domain_names": ["minecraft.cbhomelab.net"], "forward_host": "10.40.0.30", "forward_port": 19132, "access_list_id": 0}
+  - {"domain_names": ["movies.cbhomelab.net", "radarr.cbhomelab.net"], "forward_host": "10.20.0.149", "forward_port": 7878}
+  - {"domain_names": ["navidrome.cbhomelab.net"], "forward_host": "10.20.0.73", "forward_port": 4533}
+  - {"domain_names": ["neptune.cbhomelab.net", "proxmox.cbhomelab.net", "pve.cbhomelab.net"], "forward_host": "10.20.0.6", "forward_port": 8006, "forward_scheme": "https", "block_exploits": 0, "advanced_config": "proxy_redirect off;"}
+  - {"domain_names": ["nextpvr.cbhomelab.net"], "forward_host": "10.40.0.21", "forward_port": 8866, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["nvr.cbhomelab.net"], "forward_host": "10.20.0.17", "forward_port": 5000}
+  - {"domain_names": ["omv.cbhomelab.net", "saturn.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 80, "block_exploits": 0}
+  - {"domain_names": ["opnsense.cbhomelab.net", "router.cbhomelab.net"], "forward_host": "10.20.0.1", "forward_port": 443, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["overseerr.cbhomelab.net", "seerr.cbhomelab.net"], "forward_host": "10.40.0.99", "forward_port": 5055, "block_exploits": 0, "access_list_id": 0}
+  - {"domain_names": ["plex.cbhomelab.net"], "forward_host": "10.40.0.20", "forward_port": 32400, "block_exploits": 0, "access_list_id": 0}
+  - {"domain_names": ["prometheus.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 9090, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["qbittorrent.cbhomelab.net", "torrent.cbhomelab.net"], "forward_host": "10.20.0.151", "forward_port": 8081}
+  - {"domain_names": ["romm.cbhomelab.net"], "forward_host": "10.20.0.70", "forward_port": 8080, "access_list_id": 0}
+  - {"domain_names": ["rss.cbhomelab.net"], "forward_host": "10.20.0.26", "forward_port": 80}
+  - {"domain_names": ["sabnzbd.cbhomelab.net"], "forward_host": "10.20.0.150", "forward_port": 8080}
+  - {"domain_names": ["shows.cbhomelab.net", "sonarr.cbhomelab.net", "tv.cbhomelab.net"], "forward_host": "10.20.0.149", "forward_port": 8989}
+  - {"domain_names": ["sync.cbhomelab.net", "syncthing.cbhomelab.net"], "forward_host": "10.20.0.88", "forward_port": 8384}
+  - {"domain_names": ["tautulli.cbhomelab.net"], "forward_host": "10.20.0.121", "forward_port": 8181, "block_exploits": 0}
+  - {"domain_names": ["tdarr.cbhomelab.net"], "forward_host": "10.20.0.49", "forward_port": 8265}
+  - {"domain_names": ["tms-dev.cbhomelab.net"], "forward_host": "10.20.0.163", "forward_port": 8000, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0}
+  - {"domain_names": ["tms.cbhomelab.net"], "forward_host": "10.20.0.162", "forward_port": 8000, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0}
+  - {"domain_names": ["tunarr.cbhomelab.net"], "forward_host": "10.40.0.18", "forward_port": 8000, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["unifi.cbhomelab.net"], "forward_host": "10.20.0.19", "forward_port": 8443, "forward_scheme": "https", "block_exploits": 0}
+  - {"domain_names": ["youtarr.cbhomelab.net"], "forward_host": "10.20.0.153", "forward_port": 3011, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+
+npm_proxy_host_defaults:
+  forward_scheme: "http"
+  certificate_id: 3
+  ssl_forced: 1
+  hsts_enabled: 1
+  hsts_subdomains: 1
+  http2_support: 1
+  block_exploits: 1
+  caching_enabled: 1
+  allow_websocket_upgrade: 1
+  access_list_id: 1
+  advanced_config: ""
+  enabled: 1
+  locations: []
