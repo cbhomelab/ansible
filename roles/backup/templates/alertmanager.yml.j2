@@ -1,12 +1,19 @@
 # Managed by Ansible (roles/backup). Webhook URL is read from a file, not stored here.
+# Mattermost incoming webhooks accept Slack-format payloads, so slack_configs is used.
 route:
-  receiver: discord
+  receiver: mattermost
   group_by: [alertname]
   group_wait: 30s
   group_interval: 10m
   repeat_interval: 12h
 receivers:
-  - name: discord
-    discord_configs:
-      - webhook_url_file: /etc/alertmanager/discord_webhook
+  - name: mattermost
+    slack_configs:
+      - api_url_file: /etc/alertmanager/mattermost_webhook
         send_resolved: true
+        username: Homelab Alert
+        title: '{{ "{{" }} .Status | toUpper {{ "}}" }}{{ "{{" }} if eq .Status "firing" {{ "}}" }}:{{ "{{" }} .Alerts.Firing | len {{ "}}" }}{{ "{{" }} end {{ "}}" }} {{ "{{" }} .CommonLabels.alertname {{ "}}" }} ({{ "{{" }} .CommonLabels.severity {{ "}}" }})'
+        text: |-
+          {{ "{{" }} range .Alerts {{ "}}" }}{{ "{{" }} if .Annotations.summary {{ "}}" }}{{ "{{" }} .Annotations.summary {{ "}}" }}{{ "{{" }} else {{ "}}" }}{{ "{{" }} .Labels.alertname {{ "}}" }}{{ "{{" }} end {{ "}}" }}{{ "{{" }} if .Annotations.description {{ "}}" }} - {{ "{{" }} .Annotations.description {{ "}}" }}{{ "{{" }} end {{ "}}" }}
+          {{ "{{" }} end {{ "}}" }}
+        color: '{{ "{{" }} if eq .Status "firing" {{ "}}" }}danger{{ "{{" }} else {{ "}}" }}good{{ "{{" }} end {{ "}}" }}'

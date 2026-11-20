@@ -102,7 +102,7 @@
       ansible.builtin.uri: {url: "http://10.20.0.2:9090/-/reload", method: POST}
       when: (backup_rules.changed or backup_promcfg.changed) and not backup_compose.changed
 
-- name: backup — Alertmanager (Discord)
+- name: backup — Alertmanager (Mattermost)
   when: backup_alertmanager_enabled | default(false)
   block:
     - name: Alertmanager dirs
@@ -138,7 +138,7 @@
                 - ${DNS}
               volumes:
                 - ${APPDATA_DIR}/alertmanager/config/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
-                - ${APPDATA_DIR}/alertmanager/config/discord_webhook:/etc/alertmanager/discord_webhook:ro
+                - ${APPDATA_DIR}/alertmanager/config/mattermost_webhook:/etc/alertmanager/mattermost_webhook:ro
                 - ${APPDATA_DIR}/alertmanager/data:/alertmanager
               deploy:
                 resources:
@@ -161,7 +161,7 @@
                   - targets: ["alertmanager:9093"]
       register: backup_am_prom
     - name: Check webhook secret file exists
-      ansible.builtin.stat: {path: "{{ backup_appdata }}/alertmanager/config/discord_webhook"}
+      ansible.builtin.stat: {path: "{{ backup_appdata }}/alertmanager/config/mattermost_webhook"}
       register: backup_am_secret
     - name: Bring up alertmanager (only once the secret exists)
       ansible.builtin.command: >-

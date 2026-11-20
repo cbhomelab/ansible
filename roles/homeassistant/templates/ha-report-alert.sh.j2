@@ -1,6 +1,6 @@
 #!/bin/bash
 # Managed by Ansible (roles/homeassistant). Daily HA drift/backup-freshness report.
-# On failure pushes a HomeAssistantReportFailed alert to Alertmanager (-> Discord),
+# On failure pushes a HomeAssistantReportFailed alert to Alertmanager (-> Mattermost #alerts),
 # valid for 26h so the next daily run refreshes it; it resolves itself once runs pass.
 set -u
 export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin"
