@@ -56,6 +56,7 @@ compose_stacks_projects:
   - {name: 20-vpn-la, state: started}
   - {name: 20-vpn-co, state: started}
   - {name: 20-vpn-au, state: started}
+  - {name: 40-mumble, state: started}   # Mumble voice server on EXT 10.40.0.26 (secrets in appdata/mumble-secrets.env, untracked)
 compose_stacks_required_global_vars:
   - PROTON_WG_KEY_ARR
   - PROTON_WG_KEY_QBIT
