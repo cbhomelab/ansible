@@ -15,6 +15,7 @@ compose_stacks_protected: [00-networks, 00-ddns]
 compose_stacks_required_global_vars: []
 # global.env VAR -> Bitwarden item name (password field). Bitwarden is the source of truth;
 # the run fails if the live global.env value differs. Needs BW_SESSION exported.
+# Value is a Bitwarden item name (password field) or {item: <name>, field: <custom field name>}.
 compose_stacks_global_env_bitwarden: {}
 
 # --- update.yml (safe update with verification + rollback), see README ---

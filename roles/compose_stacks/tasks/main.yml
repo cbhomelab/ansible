@@ -91,7 +91,7 @@
         cs_secret_drift: >-
           {{ cs_secret_drift | default([]) + ([item.key]
              if ((cs_genv.content | b64decode | regex_findall('(?m)^' ~ item.key ~ '="?([^"\s]*)"?$') | first | default(''))
-                 != (query('community.general.bitwarden', item.value, field='password') | flatten | first | string | trim))
+                 != (query('community.general.bitwarden', (item.value.item if item.value is mapping else item.value), field=(item.value.field | default('password') if item.value is mapping else 'password')) | flatten | first | string | trim))
              else []) }}
       loop: "{{ compose_stacks_global_env_bitwarden | dict2items }}"
       loop_control: {label: "{{ item.key }}"}

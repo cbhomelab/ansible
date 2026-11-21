@@ -40,6 +40,7 @@ access_control_sudoers:
 #   20-sabnzbd      gluetun_sab (US) + sabnzbd in its netns
 #   20-vpn-arr      gluetun_arr (US) shared by prowlarr/sonarr/radarr/lidarr/bazarr/flaresolverr (10.20.0.149)
 #   40-dispatcharr  gluetun_dispatcharr (US) at 10.40.0.17 + dispatcharr in its netns
+#   Each tunnel has its own Proton key: global.env PROTON_WG_KEY_<ARR|QBIT|SAB|DISPATCHARR|LA|CO|AU>, from Bitwarden account.protonvpn.com custom fields
 #   20-vpn-la/co/au gluetun + SOCKS5 + Tailscale exit node: Los Angeles / Denver / Stockholm
 compose_stacks_projects:
   - {name: 20-qbittorrent, state: started}
@@ -56,9 +57,22 @@ compose_stacks_projects:
   - {name: 20-vpn-co, state: started}
   - {name: 20-vpn-au, state: started}
 compose_stacks_required_global_vars:
-  - PROTON_WG_PRIVATE_KEY
+  - PROTON_WG_KEY_ARR
+  - PROTON_WG_KEY_QBIT
+  - PROTON_WG_KEY_SAB
+  - PROTON_WG_KEY_DISPATCHARR
+  - PROTON_WG_KEY_LA
+  - PROTON_WG_KEY_CO
+  - PROTON_WG_KEY_AU
 compose_stacks_global_env_bitwarden:
-  PROTON_WG_PRIVATE_KEY: "Proton VPN WireGuard key (gluetun, saturn)"
+  PROTON_WG_PRIVATE_KEY: "Proton VPN WireGuard key (gluetun, saturn)"   # legacy shared key, no longer referenced
+  PROTON_WG_KEY_ARR: {item: account.protonvpn.com, field: arr}
+  PROTON_WG_KEY_QBIT: {item: account.protonvpn.com, field: qbit}
+  PROTON_WG_KEY_SAB: {item: account.protonvpn.com, field: sab}
+  PROTON_WG_KEY_DISPATCHARR: {item: account.protonvpn.com, field: dispatcharr}
+  PROTON_WG_KEY_LA: {item: account.protonvpn.com, field: la}
+  PROTON_WG_KEY_CO: {item: account.protonvpn.com, field: co}
+  PROTON_WG_KEY_AU: {item: account.protonvpn.com, field: au}
 
 # system_baseline: opt-in; OMV manages its own updates, so only
 # packages + timezone-name-compatible bits, no unattended-upgrades/journald.
