@@ -35,6 +35,8 @@ access_control_sudoers:
 # from cbhomelab/docker-compose (deployed through OMV's compose plugin).
 # VPN layout (Proton, WireGuard via gluetun):
 #   20-qbittorrent  gluetun_qbit (US, port forwarding) + qbittorrent in its netns
+#   (20-qbittorrent also runs `autoheal`; qbittorrent/sabnzbd carry an outbound-curl healthcheck + label autoheal=true,
+#    so they restart themselves when their gluetun netns goes stale after a gluetun restart)
 #   20-sabnzbd      gluetun_sab (US) + sabnzbd in its netns
 #   20-vpn-arr      gluetun_arr (US) shared by prowlarr/sonarr/radarr/lidarr/bazarr/flaresolverr (10.20.0.149)
 #   40-dispatcharr  gluetun_dispatcharr (US) at 10.40.0.17 + dispatcharr in its netns
