@@ -61,3 +61,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+{% if itd_mumble %}
+  mumble:
+    image: {{ itd_mumble_image }}
+    container_name: {{ itd_name }}-mumble
+    restart: unless-stopped
+    env_file: {{ itd_mumble_env_file }}
+    environment:
+      TZ: America/Los_Angeles
+      PUID: "{{ itd_uid }}"
+      PGID: "{{ itd_gid }}"
+    dns: {{ itd_dns | to_json }}
+    networks:
+      {{ itd_network }}:
+        ipv4_address: {{ itd_mumble_ip }}
+      internal: {}
+    volumes: ["{{ itd_mumble_data }}:/data:rw"]
+    deploy: {resources: {limits: {memory: 512M, pids: 512}}}
+    logging: {options: {max-size: 50m}}
+{% endif %}

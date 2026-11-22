@@ -51,3 +51,15 @@ itd_env_overrides: {}
 itd_vault_prefix: "{{ itd_name | replace('iracing-tms-', 'itms-') }}"
 itd_vault_required: [SECRET_KEY, ADMIN_PASSWORD, POSTGRES_PASSWORD]
 itd_vault_optional: [DISCORD_BOT_TOKEN, GITHUB_ISSUES_TOKEN, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_GUILD_ID, DISCORD_ADMIN_ROLE_ID]
+
+# --- Mumble voice server, bundled in this stack (per instance; off unless itd_mumble: true) ---
+# Own macvlan IP on itd_network for clients (tcp+udp 64738). ICE (6502) is bound inside the private `internal`
+# network only, so the app reaches it at mumble:6502 and nothing else can. Secrets come from Bitwarden as above.
+itd_mumble: false
+itd_mumble_ip: ""
+itd_mumble_image: mumblevoip/mumble-server:latest
+itd_mumble_data: "{{ itd_data }}/mumble"
+itd_mumble_env_file: "{{ itd_data }}/mumble.env"
+itd_mumble_welcome: "iRacing Team Manager voice"
+itd_mumble_max_users: 30
+itd_mumble_vault: [MUMBLE_ICE_SECRET, MUMBLE_SERVER_PASSWORD, MUMBLE_SUPERUSER_PASSWORD]

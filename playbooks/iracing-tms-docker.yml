@@ -9,5 +9,5 @@
 - name: iRacing Team Manager (dev)
   hosts: saturn
   become: true
-  vars: {itd_name: iracing-tms-dev, itd_ip: 10.20.0.163, itd_ref: dev, itd_dev_mode: true, itd_backup_keep: 3, itd_dev_uid: 1008, itd_env_overrides: {DISCORD_BOT_ENABLED: "true", APP_ENV: development, DEBUG: "true", LOG_LEVEL: DEBUG, SCRAPER_REQUEST_DELAY: "2", SCHEDULER_SYNC_EVENTS: "true"}}
+  vars: {itd_name: iracing-tms-dev, itd_ip: 10.20.0.163, itd_ref: dev, itd_dev_mode: true, itd_mumble: true, itd_mumble_ip: 10.20.0.165, itd_backup_keep: 3, itd_dev_uid: 1008, itd_env_overrides: {DISCORD_BOT_ENABLED: "true", APP_ENV: development, DEBUG: "true", LOG_LEVEL: DEBUG, SCRAPER_REQUEST_DELAY: "2", SCHEDULER_SYNC_EVENTS: "true"}}
   roles: [iracing_tms_docker]
