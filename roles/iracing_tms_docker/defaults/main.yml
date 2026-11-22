@@ -5,6 +5,7 @@
 itd_repo: git@github.com:cbhomelab/iracing-team-manager.git
 itd_ref: main
 itd_dev_mode: false
+itd_proxy_ip: 10.20.0.4                     # Nginx Proxy Manager: the only peer whose X-Forwarded-* headers uvicorn trusts
 itd_nvme: /srv/dev-disk-by-uuid-d66051ef-e45a-4ade-8c47-b4cd6feddbe7
 itd_dir: "/opt/{{ itd_name }}"                 # compose.yml (+ prod source on the root disk)
 itd_data: "{{ itd_nvme }}/{{ itd_name }}"      # pgdata, uploads, logs, env, dev source (NVMe)

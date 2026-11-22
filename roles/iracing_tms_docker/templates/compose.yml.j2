@@ -57,7 +57,7 @@ services:
     command:
       - sh
       - -c
-      - alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000{{ itd_dev_mode | ternary(' --reload --log-level debug', '') }}
+      - alembic upgrade head && exec uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers --forwarded-allow-ips {{ itd_proxy_ip }}{{ itd_dev_mode | ternary(' --reload --log-level debug', '') }}
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
       interval: 30s
