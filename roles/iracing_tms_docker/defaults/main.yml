@@ -63,3 +63,7 @@ itd_mumble_env_file: "{{ itd_data }}/mumble.env"
 itd_mumble_welcome: "iRacing Team Manager voice"
 itd_mumble_max_users: 30
 itd_mumble_vault: [MUMBLE_ICE_SECRET, MUMBLE_SERVER_PASSWORD, MUMBLE_SUPERUSER_PASSWORD]
+# ICE listens only on this address inside the stack's private network (never on the macvlan IP). Pick a subnet
+# not used by another docker network (docker network ls) and a free address in it.
+itd_internal_subnet: ""
+itd_mumble_internal_ip: ""
