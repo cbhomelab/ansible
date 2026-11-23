@@ -1,0 +1,16 @@
+---
+# Removes youtube_new/.archive copies orphaned by Tdarr transcodes (see files/tdarr/archive_cleanup.py).
+- name: Tdarr youtube_new archive cleanup
+  hosts: omv
+  become: true
+  tasks:
+    - name: Install cleanup script
+      ansible.builtin.copy:
+        src: ../files/tdarr/archive_cleanup.py
+        dest: /usr/local/bin/tdarr-archive-cleanup
+        mode: "0755"
+    - name: Run hourly
+      ansible.builtin.cron:
+        name: tdarr-archive-cleanup
+        minute: "17"
+        job: /usr/local/bin/tdarr-archive-cleanup --apply >> /var/log/tdarr-archive-cleanup.log 2>&1
