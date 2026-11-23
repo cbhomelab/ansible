@@ -130,7 +130,7 @@
    }
   },
   {
-   "name": "Gate: size 20%-95% of original",
+   "name": "Gate: size 10%-95% of original",
    "sourceRepo": "Community",
    "pluginName": "compareFileSizeRatio",
    "version": "2.0.0",
@@ -141,7 +141,7 @@
    },
    "fpEnabled": true,
    "inputsDB": {
-    "greaterThan": "20",
+    "greaterThan": "10",
     "lessThan": "95"
    }
   },
@@ -198,6 +198,24 @@
    },
    "fpEnabled": true,
    "inputsDB": {}
+  },
+  {
+   "name": "Drop attached pictures (mjpeg/png cover art breaks QSV)",
+   "sourceRepo": "Community",
+   "pluginName": "ffmpegCommandRemoveStreamByProperty",
+   "version": "1.0.0",
+   "id": "rmPicStrm1",
+   "position": {
+    "x": 400,
+    "y": 420
+   },
+   "fpEnabled": true,
+   "inputsDB": {
+    "codecType": "video",
+    "propertyToCheck": "codec_name",
+    "valuesToRemove": "mjpeg,png,bmp",
+    "condition": "includes"
+   }
   }
  ],
  "flowEdges": [
@@ -231,7 +249,7 @@
   {
    "source": "3FvCf3ML6",
    "sourceHandle": "1",
-   "target": "ncLhIA4XI",
+   "target": "rmPicStrm1",
    "targetHandle": null,
    "id": "TB0s4sl2I",
    "animated": true,
@@ -342,6 +360,15 @@
    "target": "vrPi4dlmW",
    "targetHandle": null,
    "id": "Aoom5psVX",
+   "animated": true,
+   "type": "smoothstep"
+  },
+  {
+   "source": "rmPicStrm1",
+   "sourceHandle": "1",
+   "target": "ncLhIA4XI",
+   "targetHandle": null,
+   "id": "edge_rmpic_1",
    "animated": true,
    "type": "smoothstep"
   }
