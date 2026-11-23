@@ -1,0 +1,5 @@
+@echo off
+net use \\10.20.0.2\media /delete /y >nul 2>&1
+net use \\10.20.0.2\media <SMB_PASS> /user:tdarrnode /persistent:no
+cd /d C:\Tdarr_Node
+Tdarr_Node.exe
