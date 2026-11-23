@@ -44,6 +44,13 @@
   ansible.builtin.file: {path: "{{ itd_data }}/uploads", state: directory, owner: "{{ itd_app_uid }}", group: "{{ itd_app_gid }}", mode: "0755"}
   when: not itd_dev_mode
 
+- name: Persistent WebUI branding + flag uploads dirs (prod)
+  # These live under webui/static inside the image; without a bind mount every container recreate wipes
+  # the uploaded favicon/icon (branding) and flag images.
+  ansible.builtin.file: {path: "{{ itd_data }}/{{ item }}", state: directory, owner: "{{ itd_app_uid }}", group: "{{ itd_app_gid }}", mode: "0755"}
+  loop: [static-branding, static-flags]
+  when: not itd_dev_mode
+
 - name: Dev source must be a checkout already
   ansible.builtin.stat: {path: "{{ itd_data }}/src/.git"}
   register: itd_src

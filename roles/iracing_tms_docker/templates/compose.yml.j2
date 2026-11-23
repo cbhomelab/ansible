@@ -52,6 +52,8 @@ services:
       - "{{ itd_data }}/src:/app"
 {% else %}
       - "{{ itd_data }}/uploads:/app/data/uploads"
+      - "{{ itd_data }}/static-branding:/app/webui/static/branding"
+      - "{{ itd_data }}/static-flags:/app/webui/static/flags"
 {% endif %}
       - "{{ itd_data }}/logs:/app/logs"
     command:
