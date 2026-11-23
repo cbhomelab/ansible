@@ -88,6 +88,14 @@ for it in items:
         elif pt:
             print(f'skip {it["name"]}: no m3u yet')
 
+# Plex doesn't auto-scan new Aurral downloads reliably: nudge a scan of the Aurral folder when any
+# playlist is new/changed/incomplete, so tracks resolve on this or the next run.
+if not DRY and any(ust_.get(n, {}).get('mtime') != os.path.getmtime(f)
+                   for pt_, d_ in want.items() for n, f in d_.items() for ust_ in [state.get(pt_, {})]):
+    plex('GET', f'/library/sections/{E["SECTION_ID"]}/refresh', E['PLEX_TOKEN'],
+         path=E['M3U_DIR_PLEX'].rsplit('/_playlists', 1)[0])
+    import time; time.sleep(int(E.get('SCAN_WAIT', '45')))
+
 changed = 0
 for pt in sorted(set(want) | set(state)):
     tok = user_token(pt)
