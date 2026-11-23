@@ -1,0 +1,40 @@
+---
+# Mirrors Aurral flows/playlists into each owner's own Plex Home account
+# (Aurral 3.x only publishes to the Plex server owner). See files/aurral/plex_sync.py.
+# Needs: BW_SESSION exported (Aurral admin login in Bitwarden item "Aurral");
+#        ~/.config/plex/env on the controller holds PLEX_TOKEN.
+# Mapping: Aurral username -> Plex Home user title.
+- name: Aurral -> per-user Plex playlist sync
+  hosts: omv
+  become: true
+  vars:
+    aurral_plex_user_map: "christian=Christian,ally=Ally,family=Family"
+    plex_env: "{{ lookup('ansible.builtin.file', lookup('env', 'HOME') + '/.config/plex/env') }}"
+  tasks:
+    - name: Install sync script
+      ansible.builtin.copy:
+        src: ../files/aurral/plex_sync.py
+        dest: /usr/local/bin/aurral-plex-sync
+        mode: "0755"
+    - name: Write config (secrets)
+      ansible.builtin.copy:
+        dest: /etc/aurral-plex-sync.env
+        mode: "0600"
+        owner: root
+        content: |
+          PLEX_TOKEN={{ plex_env | regex_search('PLEX_TOKEN="?([^"\n]+)', '\1') | first }}
+          PLEX_URL=http://10.40.0.20:32400
+          SECTION_ID=8
+          AURRAL_URL=http://127.0.0.1:3001
+          AURRAL_ADMIN_USER={{ lookup('community.general.bitwarden', 'Aurral', field='username')[0] }}
+          AURRAL_ADMIN_PASS={{ lookup('community.general.bitwarden', 'Aurral', field='password')[0] }}
+          M3U_DIR_LOCAL=/srv/mergerfs/Array/media/aurral/_playlists
+          M3U_DIR_PLEX=/data/downloads/aurral/_playlists
+          PLEX_MACHINE_ID=84a9689d6f303b69e566b411fc14686d4b429d23
+          USER_MAP={{ aurral_plex_user_map }}
+      no_log: true
+    - name: Sync every 15 minutes (only touches Plex when an M3U changed)
+      ansible.builtin.cron:
+        name: aurral-plex-sync
+        minute: "*/15"
+        job: /usr/local/bin/aurral-plex-sync >> /var/log/aurral-plex-sync.log 2>&1
