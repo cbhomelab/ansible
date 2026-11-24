@@ -1,33 +1,37 @@
 ---
-# OPNsense (VM 100 router): own local FreeBSD user DB, independent of the
-# Proxmox PAM trick. Create christian as a real interactive WebUI/SSH-
-# capable account. hermes stays scoped to an API key (key+secret via HTTP
-# Basic, NOT the account password - see homelab-infrastructure skill) for
-# firewall automation only, never an interactive login.
+# OPNsense (VM 100 router): local user DB. Uses the auth/user API that
+# ships on current releases (the router is past 24.1; the old
+# core/user/* path no longer exists). hermes keeps an API key for
+# automation (HTTP Basic key+secret, not the account password).
 #
-# NOTE: core User CRUD lives under /api/core/user/* (searchUser, addUser,
-# get, set/<uuid>, del/<uuid>) on current OPNsense releases - verify
-# against this install's actual version before running for real; the
-# skill notes OPNsense's API CRUD coverage is uneven by subsystem, and
-# every POST needs a body or it 411s (`-d ""` even for no-op actions).
+# 1. christian must exist (admins group, bash shell). Created from the
+#    Bitwarden password when missing; an existing account is left alone
+#    (password and SSH key are not rewritten).
+# 2. Passwordless sudo for the wheel group (christian + hermes). OPNsense
+#    has no API for System > Settings > Administration > Sudo
+#    (system.sudo_allow_wheel: 0 off, 1 ask password, 2 NOPASSWD), so it is
+#    verified from the generated sudoers file and set via the guest agent
+#    on neptune (hermes has passwordless sudo there) using OPNsense's own
+#    PHP config class, then the Auth template is reloaded.
 
-- name: "OPNsense: check if christian already exists"
+- name: "OPNsense: list local users"
   ansible.builtin.uri:
-    url: "https://{{ item.api_base_url }}/api/core/user/searchUser"
+    url: "https://{{ item.api_base_url }}/api/auth/user/search"
     method: POST
     url_username: "{{ item.extra.api_key }}"
     url_password: "{{ item.extra.api_secret }}"
     force_basic_auth: true
     body_format: json
-    body: {}
+    body: { rowCount: 100 }
     validate_certs: false
     status_code: [200]
   check_mode: false
+  no_log: true
   register: webui_identity_opnsense_existing
 
-- name: "OPNsense: create christian account"
+- name: "OPNsense: create christian account (only if missing)"
   ansible.builtin.uri:
-    url: "https://{{ item.api_base_url }}/api/core/user/addUser"
+    url: "https://{{ item.api_base_url }}/api/auth/user/add"
     method: POST
     url_username: "{{ item.extra.api_key }}"
     url_password: "{{ item.extra.api_secret }}"
@@ -37,30 +41,41 @@
       user:
         name: "{{ item.username }}"
         password: "{{ item.password }}"
-        full_name: "{{ item.extra.full_name | default('Christian Bishop') }}"
-        groups: "admins"
-        shell: "/bin/csh"
+        descr: "{{ item.extra.full_name | default('Christian Bishop') }}"
+        group_memberships: "1999"
+        shell: "/usr/local/bin/bash"
     validate_certs: false
     status_code: [200]
+  no_log: true
   when: >
     webui_identity_opnsense_existing.json.rows
     | selectattr('name', 'equalto', item.username) | list | length == 0
   register: webui_identity_opnsense_create
 
-- name: "OPNsense: apply changes (reconfigure)"
-  ansible.builtin.uri:
-    url: "https://{{ item.api_base_url }}/api/core/user/reconfigure"
-    method: POST
-    url_username: "{{ item.extra.api_key }}"
-    url_password: "{{ item.extra.api_secret }}"
-    force_basic_auth: true
-    body: ""
-    validate_certs: false
-    status_code: [200]
-  when: webui_identity_opnsense_create.changed | default(false)
+- name: "OPNsense: read generated sudoers"
+  ansible.builtin.command: >-
+    ssh -o BatchMode=yes {{ item.extra.guest_agent_host | default('neptune') }}
+    sudo qm guest exec {{ item.extra.vmid | default(100) }} -- cat /usr/local/etc/sudoers.d/20-opnsense
+  check_mode: false
+  changed_when: false
+  register: webui_identity_opnsense_sudoers
+
+- name: "OPNsense: enable passwordless sudo for wheel"
+  ansible.builtin.shell: |
+    set -e
+    B=$(printf '%s' '<?php
+    require_once("/usr/local/etc/inc/config.inc");
+    $c = OPNsense\Core\Config::getInstance(); $c->lock();
+    $c->object()->system->sudo_allow_wheel = "2";
+    $c->save(); echo "saved\n";' | base64 -w0)
+    ssh -o BatchMode=yes {{ item.extra.guest_agent_host | default('neptune') }} \
+      "sudo qm guest exec {{ item.extra.vmid | default(100) }} -- /bin/sh -c 'echo $B | b64decode -r > /tmp/sudo.php; php /tmp/sudo.php; rm /tmp/sudo.php; configctl template reload OPNsense/Auth'"
+  when: "'%wheel ALL=(ALL) NOPASSWD: ALL' not in webui_identity_opnsense_sudoers.stdout"
+  register: webui_identity_opnsense_sudo
 
 - name: "OPNsense: report result"
   ansible.builtin.debug:
-    msg: >
-      christian OPNsense account {{ 'created' if (webui_identity_opnsense_create.changed | default(false))
-      else 'already present' }} on {{ item.api_base_url }}.
+    msg: >-
+      {{ item.username }} {{ 'created' if (webui_identity_opnsense_create.changed | default(false)) else 'already present' }};
+      wheel NOPASSWD sudo {{ 'enabled' if (webui_identity_opnsense_sudo.changed | default(false)) else 'already on' }}
+      on {{ item.api_base_url }}.

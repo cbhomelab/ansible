@@ -86,25 +86,16 @@ webui_identity_accounts:
     # no password/extra needed - this one is a documented manual step,
     # see roles/webui_identity/tasks/home_assistant.yml
 
-  # DEFERRED (verified live 2026-11-12): this OPNsense install is 24.1.5_3,
-  # which predates the Core\Api\UserController the opnsense.yml task
-  # targets - POST /api/core/user/searchUser 400s with "controller ...
-  # UserController not found" (confirmed via curl). On this version, local
-  # user CRUD only exists at the legacy /system_usermanager.php form, not
-  # the REST API. Re-enable this entry once OPNsense is upgraded past the
-  # version that ships the User API controller (tracked alongside the
-  # "OPNsense Config Review" firmware-update note - 60 pending updates as
-  # of 2026-11-12). hermes's automation already goes through the API key
-  # in ~/.config/opnsense/env (no interactive hermes login configured for
-  # Ansible), so that part of this task is satisfied independent of this.
-  # - service: opnsense
-  #   username: christian
-  #   password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-opnsense', field='password')[0] }}"
-  #   api_base_url: "10.10.0.1"
-  #   extra:
-  #     api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='username')[0] }}"
-  #     api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='password')[0] }}"
-  #     full_name: "Christian Bishop"
+  # OPNsense: auth/user API (router is on a current release). christian
+  # already exists; the task verifies it and enforces wheel NOPASSWD sudo.
+  - service: opnsense
+    username: christian
+    password: "{{ lookup('community.general.bitwarden', 'homelab-webui-christian-opnsense', field='password')[0] }}"
+    api_base_url: "10.10.0.1"
+    extra:
+      api_key: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='username')[0] }}"
+      api_secret: "{{ lookup('community.general.bitwarden', 'homelab-opnsense-api', field='password')[0] }}"
+      full_name: "Christian Bishop"
 
   - service: pihole
     username: christian
