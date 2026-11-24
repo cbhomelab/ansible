@@ -6,3 +6,5 @@ Libraries Movies/TV: filterCodecsSkip=hevc,av1, global queueSortType=sortSizeLar
 
 ## YouTube New library (id `yTnew0001`, `/media/youtube_new/`)
 Cloned from TV settings (flow h265safe01). Ignores `.archive,.youtarr_tmp,.poster_backup_1116,orig-thumbs`. Library files under `__Motorsports/<Show>/Season NN/` are hardlinked to `.archive/`, so a transcode alone saves nothing: `files/tdarr/archive_cleanup.py` (installed hourly by `playbooks/tdarr-archive-cleanup.yml`) deletes archive copies once the library copy is a smaller, newer, unlinked file with the same `[videoid]`.
+
+Flow `h265yt27` (`h265yt27.flow.json`): copy of h265safe01 with QSV CQ27, used by the YouTube New library (low-bitrate H.264 sources came out ~170% of original at CQ20).
