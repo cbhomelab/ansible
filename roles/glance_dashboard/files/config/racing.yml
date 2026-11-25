@@ -1,0 +1,360 @@
+- name: Racing
+  show-mobile-header: true
+  # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
+  # hide-desktop-navigation: true
+  head-widgets:
+    - type: html
+      source: |
+        <div class="widget-header"><h2>VIDEOS</h2></div>
+    - type: group
+      widgets:
+        - type: videos
+          title: Formula 1
+          channels:
+            - UCB_qr75-ydFVKSF9Dmo6izg # Formula 1
+        - type: videos
+          title: Missed Apex
+          channels:
+            - UCh0DXE29XstuMbLrghZdgHA # Missed Apex
+        - type: videos
+          title: IMSA
+          channels:
+            - UC58em84jwiyM20qR-iqBDZw # IMSA
+        - type: videos
+          title: WEC
+          channels:
+            - UCwU7U7PiarcJKLjDJTnANjw # WEC
+        - type: videos
+          title: IndyCar
+          channels:
+            - UCy1F61QvUUQXAXi2Voa_fUw # IndyCar
+        - type: videos
+          title: NASCAR
+          channels:
+            - UCuN9hYw2RpoAW8rZ3VK3isA # NASCAR
+        - type: videos
+          title: S1apShoes
+          channels:
+            - UCuyD0SAhBfxwHLvbOF3RFCg # S1apShoes
+        - type: videos
+          title: JakeSimRacing
+          channels:
+            - UC2NfaiUliEvDz8tz9h1-kYw # JakeSimRacing
+
+  columns:
+    - size: small
+      widgets:
+        - type: group
+          widgets:
+            - type: custom-api
+              title: Next
+              cache: 5m
+              url: http://${F1_API_URL}:4463/f1/next_race/
+              template: |
+                <div class="flex flex-column gap-10">
+                  {{ $session := index (.JSON.Array "race") 0 }}
+                  <p class="size-h5">
+                    {{ .JSON.String "season" }}, Round {{ .JSON.String "round" }}
+                  </p>
+
+                  <div class="margin-block-4">
+                    <p class="color-highlight">{{ $session.String "raceName" }}</p>
+                    <p class="color-primary">
+                      <span>
+                        {{ .JSON.String "next_event.session" }}
+                      </span>
+                      {{ $datetime := .JSON.String "next_event.datetime" }}
+                      <span
+                        class="color-highlight"
+                        {{ parseRelativeTime "rfc3339" $datetime }}
+                      ></span>
+                    </p>
+                    <p class="size-h5">
+                      {{ .JSON.String "next_event.date" }} @  {{ .JSON.String "next_event.time" }}
+                    </p>
+
+                    <div style="margin-block: 1rem;">
+                      <img
+                        src="http://${F1_API_URL}:4463/f1/next_map/"
+                        onerror="this.style.display='none'"
+                        style="max-width: 100%; height: auto; border-radius: 8px;"
+                      />
+                    </div>
+
+                    <p class="color-highlight">
+                      Circuit Details
+                    </p>
+                    <p class="size-h6">
+                      Name: {{ $session.String "circuit.circuitName" }}
+                    </p>
+                    <p class="size-h6">
+                      Lap Record: {{ $session.String "circuit.lapRecord" }}, {{ $session.String "circuit.fastestLapDriverName" }} ({{ $session.String "circuit.fastestLapYear"}})
+                    </p>
+                    <p class="size-h6">
+                      Length: {{ $session.String "laps" }} laps @ {{ $session.String "circuit.circuitLengthKm" }} KMs
+                    </p>
+                  </div>
+                </div>
+
+            - type: custom-api
+              title: Drivers
+              cache: 5m
+              url: http://${F1_API_URL}:4463/f1/drivers_standings/
+              template: |
+                <ul class="list collapsible-container" data-collapse-after="3">
+                  {{ range $i, $v := .JSON.Array "drivers" }}
+                  <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
+                    <div class="grow min-width-0">
+                      <span>{{ .String "position" }}. {{ .String "surname" }} <img src="https://flagcdn.com/w20/{{ .String "flag" }}.png"
+                            alt=""
+                            style="width: 20px; height: 14px; object-fit: cover; vertical-align: middle"
+                            class="inline-block rounded-sm" /> </span>
+                      {{ $id := .String "teamId" }}
+                        <span class="size-h6">
+                          ( {{- if eq $id "red_bull" -}}Red Bull
+                          {{- else if eq $id "aston_martin" -}}Aston Martin
+                          {{- else if eq $id "mercedes" -}}Mercedes
+                          {{- else if eq $id "ferrari" -}}Ferrari
+                          {{- else if eq $id "mclaren" -}}McLaren
+                          {{- else if eq $id "williams" -}}Williams
+                          {{- else if eq $id "alpine" -}}Alpine
+                          {{- else if eq $id "haas" -}}Haas
+                          {{- else if eq $id "rb" -}}RB
+                          {{- else if eq $id "sauber" -}}Sauber
+                          {{- else -}}{{ $id }}{{- end -}})
+                        </span>
+                    </div>
+                    <span class="shrink-0 text-right">{{ .String "points" }}</span>
+                  </li>
+                  {{ end }}
+                </ul>
+
+            - type: custom-api
+              title: Constructors
+              cache: 5m
+              url: http://${F1_API_URL}:4463/f1/constructors_standings/
+              template: |
+                  <ul class="list collapsible-container" data-collapse-after="5">
+                    {{ range $i, $v := .JSON.Array "constructors" }}
+                    <li class="flex items-center {{ if eq $i 0 }}color-primary{{ else if eq $i 1 }}color-highlight{{ end }}">
+                      <span class="grow min-width-0">
+                        {{ .String "position" }}. {{ .String "team" }}<span style="margin-left: 2px;">
+                          <img src="https://flagcdn.com/w20/{{ .String "flag" }}.png"
+                              alt=""
+                              style="width: 20px; height: 14px; object-fit: cover; vertical-align: middle"
+                              class="inline-block rounded-sm" />
+                        </span>
+                      </span>
+                      <span class="shrink-0 text-right">{{ .String "points" }}</span>
+                    </li>
+                    {{ end }}
+                  </ul>
+
+        - type: bookmarks
+          groups:
+            - title: Formula 1
+              color: 0 74 43
+              links:
+                - title: Website
+                  url: https://www.formula1.com/
+                - title: Fantasy
+                  url: https://fantasy.formula1.com/en/?utm_source=web_formula1.com&utm_medium=internal_referral&utm_campaign=navigation
+                - title: F1TV
+                  url: https://f1tv.formula1.com/
+                - title: Schedule
+                  url: https://www.formula1.com/en/racing/2026
+            - title: IMSA
+              color: 0 100 50
+              links:
+                - title: Website
+                  url: https://www.imsa.com/
+                - title: Schedule
+                  url: https://www.imsa.com/weathertech/weathertech-2026-schedule/
+            - title: WEC
+              color: 183 100 50
+              links:
+                - title: Website
+                  url: https://www.fiawec.com/
+            - title: IndyCar
+              color: 0 100 50
+              links:
+                - title: Website
+                  url: https://www.indycar.com/
+                - title: Schedule
+                  url: https://www.indycar.com/Schedule
+            - title: NASCAR
+              color: 48 87 48
+              links:
+                - title: Website
+                  url: https://www.nascar.com/
+                - title: Schedule
+                  url: https://www.nascar.com/nascar-cup-series/2026/schedule/
+
+
+
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>NEWS</h2></div>
+        - type: group
+          define: &shared-properties
+            type: rss
+            limit: ${FEED_LIMIT}
+            collapse-after: ${COLLAPSE_AFTER}
+            cache: 12h
+            style: detailed-list
+          widgets:
+            - title: Formula 1
+              <<: *shared-properties
+              feeds:
+                - url: https://feeds.bbci.co.uk/sport/formula1/rss.xml
+                  title: BBC News
+                - url: https://www.motorsport.com/rss/f1/news/
+                  title: Motorsport.com
+                - url: https://www.formula1.com/en/latest/all.xml
+                  title: Formula1.com
+            - title: IMSA
+              <<: *shared-properties
+              feeds:
+                  - url: https://www.motorsport.com/rss/imsa/news/
+                    title: Motorsport.com
+            - title: IndyCar
+              <<: *shared-properties
+              feeds:
+                  - url: https://www.motorsport.com/rss/indycar/news/
+                    title: Motorsport.com
+            - title: NASCAR
+              <<: *shared-properties
+              feeds:
+                  - url: https://www.motorsport.com/rss/nascar-cup/news/
+                    title: Motorsport.com
+                  - url: https://www.motorsport.com/rss/category/nascar/news/
+                    title: Motorsport.com
+
+
+        - type: html
+          source: |
+            <br>
+            <div class="widget-header"><h2>SUBREDDITS</h2></div>
+        - type: group
+          define: &shared-properties
+            type: reddit
+            show-thumbnails: true
+            limit: ${FEED_LIMIT}
+            collapse-after: ${COLLAPSE_AFTER_REDDIT}
+          widgets:
+            - subreddit: formula1
+              <<: *shared-properties
+            - subreddit: imsaracing
+              <<: *shared-properties
+            - subreddit: wec
+              <<: *shared-properties
+            - subreddit: indycar
+              <<: *shared-properties
+            - subreddit: nascar
+              <<: *shared-properties
+
+
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>SCHEDULES</h2></div>
+        - type: group
+          define: &shared-properties
+            type: custom-api
+            cache: 15m
+            lookback_days: 3
+            horizon_days: 3650
+            url: http://glances-ical-api:8076/events
+            template: |
+              {{ $events := .JSON.Array "events" }}
+              {{ $count  := len $events }}
+              {{ $limit  := 3 }}  <!-- how many upcoming to show before collapse -->
+
+              {{ if eq $count 0 }}
+                <div style="padding:8px 10px; border-radius:10px; background:var(--surface-2);">
+                  No entries found.
+                </div>
+              {{ end }}
+
+              <!-- 1) Ongoing first (never collapsible) -->
+              <ul class="list list-gap-10">
+                {{ range $i, $e := $events }}
+                  {{ $ongoing := $e.Bool "ongoing" }}
+                  {{ if $ongoing }}
+                    {{ $start := $e.String "start" | parseTime "rfc3339" }}
+                    {{ $end   := $e.String "end"   | parseTime "rfc3339" }}
+                    {{ $name  := $e.String "name" }}
+                    {{ $url   := $e.String "url" }}
+                    <li>
+                      <div class="flex items-center justify-between gap-10">
+                        <!-- Left: name (highlight) + absolute date -->
+                        <div>
+                          {{ if $url }}
+                            <a class="size-h3 color-highlight block text-truncate" href="{{ $url }}" target="_blank" rel="noreferrer" title="{{ $name }}">{{ $name }}</a>
+                          {{ else }}
+                            <span class="size-h3 color-highlight block text-truncate" title="{{ $name }}">{{ $name }}</span>
+                          {{ end }}
+                          <div style="font-size:.85em;">{{ $start | formatTime "Mon, 02 Jan 2006" }}</div>
+                        </div>
+                        <!-- Right: relative time until END -->
+                        <div class="size-h3 color-primary" style="white-space:nowrap;">
+                          ends <span {{ $end | toRelativeTime }}></span>
+                        </div>
+                      </div>
+                    </li>
+                  {{ end }}
+                {{ end }}
+              </ul>
+
+              <!-- 2) Upcoming, collapsible after $limit -->
+              {{ $shown := 0 }}
+              <ul class="list list-gap-10 collapsible-container" data-collapse-after="{{ $limit }}">
+                {{ range $i, $e := $events }}
+                  {{ $ongoing := $e.Bool "ongoing" }}
+                  {{ if not $ongoing }}
+                    {{ $start := $e.String "start" | parseTime "rfc3339" }}
+                    {{ $name  := $e.String "name" }}
+                    {{ $url   := $e.String "url" }}
+                    <li {{ if ge $shown $limit }}class="collapsible-item"{{ end }}>
+                      <div class="flex items-center justify-between gap-10">
+                        <!-- Left: name (highlight) + absolute date -->
+                        <div>
+                          {{ if $url }}
+                            <a class="size-h3 color-highlight block text-truncate" href="{{ $url }}" target="_blank" rel="noreferrer" title="{{ $name }}">{{ $name }}</a>
+                          {{ else }}
+                            <span class="size-h3 color-highlight block text-truncate" title="{{ $name }}">{{ $name }}</span>
+                          {{ end }}
+                          <div style="font-size:.85em;">{{ $start | formatTime "Mon, 02 Jan 2006" }}</div>
+                        </div>
+                        <!-- Right: relative time until START -->
+                        <div class="size-h3 color-primary" style="white-space:nowrap;" {{ $start | toRelativeTime }}></div>
+                      </div>
+                    </li>
+                    {{ $shown = add $shown 1 }}
+                  {{ end }}
+                {{ end }}
+              </ul>
+          widgets:
+            - title: IndyCar
+              <<: *shared-properties
+              parameters:
+                url: https://calendar.google.com/calendar/ical/hlskhf7l8ce7btind39bb9kf1o%40group.calendar.google.com/public/basic.ics
+            - title: IMSA
+              <<: *shared-properties
+              parameters:
+                url: https://calendar.google.com/calendar/ical/njulhksvo83qeoruc3nhend9js%40group.calendar.google.com/public/basic.ics
+            - title: ICGT
+              <<: *shared-properties
+              parameters:
+                url: https://calendar.google.com/calendar/ical/kcelko7ictk6okcf4peougahlo%40group.calendar.google.com/public/basic.ics
+            - title: WEC
+              <<: *shared-properties
+              parameters:
+                url: https://calendar.google.com/calendar/ical/61jccgg4rshh1temqk0dj4lens%40group.calendar.google.com/public/basic.ics
+            - title: NASCAR
+              <<: *shared-properties
+              parameters:
+                url: https://calendar.google.com/calendar/ical/db8c47ne2bt9qbld2mhdabm0u8%40group.calendar.google.com/public/basic.ics

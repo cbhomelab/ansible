@@ -1,0 +1,224 @@
+- name: Network
+  show-mobile-header: true
+  # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
+  # hide-desktop-navigation: true
+  columns:
+    - size: small
+      widgets:
+        - type: bookmarks
+          groups:
+            - links:
+                - title: OPNsense
+                  url: https://10.10.0.1
+                - title: Proxmox
+                  url: https://10.20.0.6:8006
+                - title: Pi-Hole
+                  url: http://10.20.0.8/admin
+                - title: Nginx Proxy Manager
+                  url: http://10.20.0.4:81
+                - title: Unifi Controller
+                  url: https://10.20.0.19:8443
+            - title: NAS
+              color: 10 70 50
+              links:
+                - title: OpenMediaVault
+                  url: http://10.20.0.2
+                - title: WebTTY
+                  url: http://10.20.0.2:2222
+            - title: Home Assistant
+              color: 200 50 50
+              links:
+                - title: Home Page
+                  url: http://10.20.0.5:8123
+                - title: Frigate
+                  url: http://10.20.0.17:5000
+            # - title: Endurance Planning
+            #   color: 29 100 39
+            #   links:
+            #     - title: iRacePlan
+            #       url: https://iraceplan.com/
+            #     - title: iPredicter
+            #       url: https://ipredicter.com/
+
+
+        - type: group
+          widgets:
+          - type: docker-containers
+            hide-by-default: false
+            title: Containers
+            category: Network
+          - type: docker-containers
+            hide-by-default: false
+            title: VPN Endpoints
+            category: VPN Endpoint
+        - type: group
+          widgets:
+          - type: dns-stats
+            title: Pi-Hole
+            service: pihole
+            url: ${PIHOLE_URL}
+            token: ${PIHOLE_TOKEN}
+          - type: custom-api
+            title: Nginx
+            cache: 12h
+            url: ${NGINX_PROXY_URL}/api/tokens
+            method: POST
+            body-type: json
+            body:
+              identity: ${NGINX_EMAIL_ID}
+              secret: ${NGINX_PASSWORD}
+            options:
+              collapse-after: 6
+              show-icons: true
+              domain-name: ${NGINX_DOMAIN} # this is your top level DNS domain name
+              tooltip-enabled: true
+              #  if you want custom icons add here [either simple icon id or full url]
+              neptune: ${PROXMOX_ICON}
+              saturn: ${OMV_ICON}
+              pihole: ${PIHOLE_ICON}
+              unifi: ${UNIFI_ICON}
+              intranet: ${NPM_ICON}
+              hass: ${HASS_ICON}
+              nvr: ${FRIGATE_ICON}
+              plex: ${PLEX_ICON}
+              tautulli: ${TAUTULLI_ICON}
+              overseerr: ${OVERSEERR_ICON}
+              jellyfin: ${JELLYFIN_ICON}
+              prowlarr: ${PROWLARR_ICON}
+              sonarr: ${SONARR_ICON}
+              radarr: ${RADARR_ICON}
+              lidarr: ${LIDARR_ICON}
+              bazarr: ${BAZARR_ICON}
+              sabnzbd: ${SABNZBD_ICON}
+              torrent: ${QBITTORRENT_ICON}
+              crafty: ${CRAFTY_ICON}
+              minecraft: ${MINECRAFT_ICON}
+            template: |
+              <style>
+                .widget-type-nginx li {
+                  margin-top: var(--list-half-gap); 
+                  border-top: 1px solid var(--color-separator);
+                  padding-top: var(--list-half-gap);
+                }
+                .widget-ngix-proxy-icon, .widget-ngix-proxy-icon-default  {
+                  display: block;
+                  filter: grayscale(0.4);
+                  object-fit: contain;
+                  aspect-ratio: 1 / 1;
+                  width: 2.7rem;
+                  opacity: 0.8;
+                  transition: filter 0.3s, opacity 0.3s;
+                }
+                // DISABLE THE BELOW CSS FOR COLOR ICONS 
+                :root[data-scheme="dark"] .widget-ngix-proxy-icon {
+                  filter: invert(100%); // this to invert colors for dark and light theme 
+                } 
+              </style>
+
+              {{ $defaultIconUrl := "https://cdn.jsdelivr.net/gh/selfhst/icons/svg/nginx-proxy-manager.svg" }}
+                
+              {{ if eq .Response.StatusCode 200 }}
+                {{ $accessToken := .JSON.String "token" }}
+                {{
+                  $proxyHosts := newRequest (concat "${NGINX_PROXY_URL}" "/api/nginx/proxy-hosts")
+                    | withHeader "Authorization" (print "Bearer " $accessToken)
+                    | getResponse
+                }}
+                <ul  class="dynamic-columns list list-gap-15 list-with-separator  collapsible-container"  data-collapse-after="{{ .Options.IntOr "collapse-after" 6 }}">
+                  {{ range $proxyHosts.JSON.Array "" }}
+                    {{ if and (.String "domain_names.0") (.Bool "enabled")  }}
+                      
+                      {{ $proxy_url  := (concat (.String "forward_scheme") "://" (.String "domain_names.0") ) }}
+                      {{ $host_url   := (concat (.String "forward_scheme") "://" (.String "forward_host") ":" (.String "forward_port") ) }}
+                      {{ $subDomain  := .String "domain_names.0" | trimSuffix ($.Options.StringOr "domain-name" "") }}
+
+                      <li class="flex items-center gap-20" >
+                        <!-- Icon Section -->
+                        {{ if $.Options.BoolOr "show-icons" true }}
+                          <div class="shrink-0">
+                              {{ $iconUrl := $.Options.StringOr $subDomain $defaultIconUrl}}
+                              {{ if eq $iconUrl $defaultIconUrl }}
+                                <img class="widget-ngix-proxy-icon-default" src="{{ $defaultIconUrl }}" loading="lazy">
+                              {{ else }}
+                                {{ if ne (findMatch "://" $iconUrl)  "://" }} <!-- check if url is NOT provided -->
+                                  <img class="widget-ngix-proxy-icon" src="https://simpleicons.org/icons/{{$iconUrl}}.svg" loading="lazy">
+                                {{ else }}
+                                  <img class="widget-ngix-proxy-icon" src="{{ $iconUrl }}" loading="lazy">
+                                {{ end }}
+                              {{ end }}
+                          </div>
+                        {{ end }}
+
+                        <!-- Proxy URLs Section -->
+                        <div class="min-width-0 grow">
+                          <a href='{{ $proxy_url }}' class="color-highlight size-title-dynamic block" style="display: inline;" target="_blank" rel="noreferrer"
+                              {{if $.Options.BoolOr "tooltip-enabled" false}}data-popover-type="text" data-popover-text="{{$proxy_url}}"{{end}}
+                            >{{ $subDomain }}</a>
+                          <div class="flex items-center gap-10" style="margin-bottom: 5px">
+                            <div class="text-left">
+                                  ➔
+                            </div>
+                            <div class="size-h6 flex-1 text-left">
+                              <a href='{{ $host_url }}' target="_blank" rel="noreferrer">{{ $host_url }}</a>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    {{ end }}
+                  {{ end }}
+                </ul>
+
+              {{ else }}
+                <p class='color-negative'>Failed to get token: {{ .JSON.String "error.message" }} ({{ $.Response.Status }}) </p>
+              {{ end }}
+
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>NEWS</h2></div>
+        - type: group
+          define: &shared-properties
+            type: rss
+            limit: ${FEED_LIMIT}
+            collapse-after: ${COLLAPSE_AFTER}
+            cache: 12h
+            style: detailed-list
+          widgets:
+            - title: ServeTheHome
+              <<: *shared-properties
+              feeds:
+                - url: https://www.servethehome.com/feed/
+                  title: ServeTheHome
+            - title: News
+              <<: *shared-properties
+              feeds:
+                - url: https://www.openmediavault.org/?feed=atom
+                  title: OpenMediaVault 
+                - url: https://www.proxmox.com/en/about/company-details/press-releases?format=feed&type=rss
+                  title: Proxmox VE
+                - url: https://home-assistant.io/atom.xml
+                  title: Home Assistant
+            - type: hacker-news
+            - type: lobsters
+
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>SUBREDDITS</h2></div>
+        - type: group
+          define: &shared-properties
+            type: reddit
+            limit: ${FEED_LIMIT}
+            collapse-after: ${COLLAPSE_AFTER_REDDIT}
+            show-thumbnails: true
+          widgets:
+            - subreddit: homelab
+              <<: *shared-properties
+            - subreddit: homeassistant
+              <<: *shared-properties
+            - subreddit: selfhosted
+              <<: *shared-properties
+
+

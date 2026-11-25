@@ -1,0 +1,7 @@
+---
+# Glance dashboard config for the saturn Docker container (project 20-glance, glance.cbhomelab.net).
+# Pages are plain YAML in files/config (glance.yml includes the others). Glance hot-reloads on change,
+# no restart needed. Secrets stay out of git: they are ${VARS} resolved from
+# {{ glance_dashboard_appdata }}/.env (untracked, root-managed on saturn).
+# NOT the same as role `glance`, which manages the old LXC 104 stub.
+glance_dashboard_appdata: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata/glance

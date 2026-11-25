@@ -1,0 +1,93 @@
+- name: iRacing
+  show-mobile-header: true
+  # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
+  # hide-desktop-navigation: true
+  head-widgets:
+    - type: videos
+      channels:
+        - UCPEcqkRG-kf2Vk6Rn_2WZSQ # iRacing
+  columns:
+    - size: small
+      widgets:
+        - type: twitch-channels
+          channels:
+            - spacesheepracingteam
+            - turnsixracing
+            - speedratracing
+            - PhoenixNestTV
+        - type: bookmarks
+          groups:
+            - links:
+                - title: Member Website
+                  url: https://members-ng.iracing.com/web/racing/home/dashboard
+                - title: Forum
+                  url: https://forums.iracing.com/
+                - title: Staff Announcements
+                  url: https://forums.iracing.com/categories/staff-announcements
+                - title: Sporting Code
+                  url: https://www.iracing.com/iracing-official-sporting-code/
+                - title: Special events
+                  url: https://www.iracing.com/special-events/
+            - title: Tools
+              color: 10 70 50
+              links:
+                - title: Garage61
+                  url: https://garage61.net/
+                - title: SimHub
+                  url: https://www.simhubdash.com/
+                - title: SimRacerHub
+                  url: https://www.simracerhub.com/scoring/index.php?welcome=y
+                - title: iRacing League Directory
+                  url: https://www.iracingleagues.com/
+            - title: Paint Resources
+              color: 200 50 50
+              links:
+                - title: Trading Paints
+                  url: https://www.tradingpaints.com/
+                - title: iRacing Series Logos
+                  url: https://www.iracing.com/resources/logos/
+                - title: SimWrapMarket
+                  url: https://www.simwrapmarket.com/
+                - title: Color Tool
+                  url: https://www.simwrapmarket.com/color#hex=2b31d7&mode=square
+                - title: Spec Map Previs. Tool
+                  url: https://gabirmotors.com/tools/specmapping
+                - title: Template Color Tool
+                  url: https://gabirmotors.com/tools/colortemplate
+                - title: Custom Number Builder
+                  url: https://number.tradingpaints.com/
+            - title: Endurance Planning
+              color: 29 100 39
+              links:
+                - title: iRacePlan
+                  url: https://iraceplan.com/
+                - title: iPredicter
+                  url: https://ipredicter.com/
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>NEWS</h2></div>
+        - type: group
+          widgets:
+            - type: rss
+              title: Feed
+              limit: ${FEED_LIMIT}
+              collapse-after: ${COLLAPSE_AFTER}
+              cache: 12h
+              style: detailed-list
+              feeds:
+                - url: https://www.iracing.com/feed/
+                  title: iRacing
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>SUBREDDITS</h2></div>
+        - type: group
+          widgets:
+            - type: reddit
+              subreddit: iracing
+              limit: ${FEED_LIMIT}
+              collapse-after: ${COLLAPSE_AFTER_REDDIT}
+              show-thumbnails: true

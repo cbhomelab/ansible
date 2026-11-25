@@ -1,0 +1,13 @@
+---
+- name: Glance config pages (hot-reloaded)
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ glance_dashboard_appdata }}/config/{{ item | basename }}"
+    mode: "0664"
+  with_fileglob: ["{{ role_path }}/files/config/*.yml"]
+
+- name: Glance custom CSS
+  ansible.builtin.copy:
+    src: assets/user.css
+    dest: "{{ glance_dashboard_appdata }}/assets/user.css"
+    mode: "0664"

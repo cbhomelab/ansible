@@ -1,0 +1,221 @@
+- name: Games
+  show-mobile-header: true
+  # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
+  # hide-desktop-navigation: true
+  columns:
+    - size: small
+      widgets:
+        - type: custom-api
+          title: Free on Epic Games
+          cache: 1h
+          url: https://store-site-backend-static.ak.epicgames.com/freeGamesPromotions?locale=en&country=US&allowCountries=US
+          template: |
+            <div>
+              {{ if eq .Response.StatusCode 200 }}
+                <div class="horizontal-cards-2">
+                  {{ range .JSON.Array "data.Catalog.searchStore.elements" }}
+                    {{ $price := .String "price.totalPrice.discountPrice" }}
+                    {{ $hasPromo := gt (len (.Array "promotions.promotionalOffers")) 0 }}
+                    {{ if and $hasPromo (eq $price "0") }}
+                      {{ $gamePage := .String "productSlug" }}
+                      {{ if gt (len (.Array "offerMappings")) 0 }}
+                        {{ $gamePage = .String "offerMappings.0.pageSlug" }}
+                      {{end }}
+                      <a href="https://store.epicgames.com/en-US/p/{{ $gamePage }}" target="_blank" class="card">
+                        {{ $title := .String "title" }}
+                        {{ range .Array "keyImages" }}
+                          {{ if eq (.String "type") "OfferImageWide" }}
+                            <img src="{{ .String "url" }}" alt="{{ $title }}" style="width: 100%; max-width: 300px; height: 150px; object-fit: cover; border-radius: var(--border-radius);">
+                          {{ end }}
+                        {{ end }}
+                        <div class="card-content">
+                          <span class="size-base color-primary">{{ $title }}</span><br>
+                          <span class="size-h5 color-subdue">
+                            {{ if $hasPromo }}
+                              {{ $promotions := .Array "promotions.promotionalOffers" }}
+                              {{ if gt (len $promotions) 0 }}
+                                {{ $firstPromo := index $promotions 0 }}
+                                {{ $offers := $firstPromo.Array "promotionalOffers" }}
+                                {{ if gt (len $offers) 0 }}
+                                  {{ $firstOffer := index $offers 0 }}
+                                  Free until {{ slice ($firstOffer.String "endDate") 0 10 }}
+                                {{ else }}
+                                  Free this week!
+                                {{ end }}
+                              {{ else }}
+                                Free this week!
+                              {{ end }}
+                            {{ end }}
+                          </span>
+                        </div>
+                      </a>
+                    {{ end }}
+                  {{ end }}
+                </div>
+              {{ else }}
+                <p class="color-negative">Error fetching Epic Games data.</p>
+              {{ end }}
+            </div>
+        - type: custom-api
+          title: Steam Sales
+          cache: 12h
+          url: https://store.steampowered.com/api/featuredcategories?cc=us
+          template: |
+            <ul class="list list-gap-10 collapsible-container" data-collapse-after="5">
+            {{ range .JSON.Array "specials.items" }}
+              {{ $header := .String "header_image" }}
+              {{ $urlPrefix := "https://store.steampowered.com/sub/" }}
+              {{ if findMatch "/steam/apps/" $header }}
+                {{ $urlPrefix = "https://store.steampowered.com/app/" }}
+              {{ end }}
+              <li>
+                <a class="size-h4 color-highlight block text-truncate" href="{{ $urlPrefix }}{{ .Int "id" }}/">{{ .String "name" }}</a>
+                <ul class="list-horizontal-text">
+                  <li>{{ .Int "final_price" | toFloat | mul 0.01 | printf "$%.2f" }}</li>
+                  {{ $discount := .Int "discount_percent" }}
+                  <li{{ if ge $discount 40 }} class="color-positive"{{ end }}>{{ $discount }}% off</li>
+                </ul>
+              </li>
+            {{ end }}
+            </ul>
+
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>NEWS</h2></div>
+        - type: group
+          define: &shared-properties
+            type: rss
+            limit: ${FEED_LIMIT}
+            collapse-after: ${COLLAPSE_AFTER}
+            cache: 12h
+            style: detailed-list
+          widgets:
+            - title: Kotaku
+              <<: *shared-properties
+              feeds:
+                - url: https://kotaku.com/feed
+                  title: Kotaku
+            - title: PC Gamer
+              <<: *shared-properties
+              feeds:
+                - url: https://www.pcgamer.com/feeds.xml
+                  title: PC Gamer
+            - title: Ars Technica
+              <<: *shared-properties
+              feeds:
+                - url: https://feeds.arstechnica.com/arstechnica/gaming
+                  title: Ars Technica
+            - title: Tom's Hardware
+              <<: *shared-properties
+              feeds:
+                - url: https://www.tomshardware.com/feeds.xml
+                  title: Tom's Hardware
+
+    - size: small
+      widgets:
+        # - type: custom-api
+        #   title: Minecraft Server
+        #   cache: 5s
+        #   options:
+        #     base-url: ${CRAFTY_URL}
+        #     api-key: ${CRAFTY_API_TOKEN}
+        #     server-id: ${CRAFTY_SERVER_ID}
+        #     display-MOTD: true
+        #   allow-insecure: true
+        #   template: |
+        #     {{/* Required config options */}}
+        #     {{ $baseURL := .Options.StringOr "base-url" "" }}
+        #     {{ $apiKey := .Options.StringOr "api-key" "" }}
+        #     {{ $serverID := .Options.StringOr "server-id" "" }}
+
+        #     {{/* Optional config options */}}
+        #     {{ $displayMOTD := .Options.BoolOr "display-MOTD" true }}
+
+        #     {{ $serverStats := newRequest (print $baseURL "/api/v2/servers/" $serverID "/stats")
+        #         | withHeader "Authorization" (print "Bearer " $apiKey)
+        #         | withHeader "Accept" "application/json"
+        #         | getResponse }}
+
+        #     {{ $is_running :=  $serverStats.JSON.Bool "data.running" }}
+        #     {{ $online_players :=  $serverStats.JSON.Int "data.online" | formatNumber }}
+        #     {{ $max_players :=  $serverStats.JSON.Int "data.max" | formatNumber }}
+        #     {{ $name :=  $serverStats.JSON.String "data.world_name" }}
+        #     {{ $size :=  $serverStats.JSON.String "data.world_size" }}
+        #     {{ $version :=  $serverStats.JSON.String "data.version" }}
+        #     {{ $icon :=  $serverStats.JSON.String "data.icon" }}
+        #     {{ $server_ip :=  $serverStats.JSON.String "data.server_id.server_ip" }}
+        #     {{ $server_port :=  $serverStats.JSON.String "data.server_id.server_port" }}
+        #     {{ $motd :=  $serverStats.JSON.String "data.desc" }}
+
+        #     {{ $server_addr := "" }}
+        #     {{ if and ($is_running) (eq $server_ip "127.0.0.1") }}
+        #       {{ $server_addr = printf "%s:%s" (replaceMatches "https?://" "" $baseURL) $server_port }}
+        #     {{ else if $is_running }}
+        #       {{ $server_addr = printf "%s:%s" $server_ip $server_port }}
+        #     {{ end }}
+
+        #     {{ $starting := false }}
+        #     {{ if and ($is_running) (eq $max_players "0") (eq $version "False") }}
+        #       {{ $starting = true }}
+        #     {{ end }}
+
+        #     <!-- I couldn't find documentation describing the "waiting_start" state or the other booleans below. Implementation might not be correct. -->
+        #     {{ $updating :=  $serverStats.JSON.Bool "data.updating" }}
+        #     {{ $importing :=  $serverStats.JSON.Bool "data.importing" }}
+        #     {{ $crashed :=  $serverStats.JSON.Bool "data.crashed" }}
+
+        #     <div style="display:flex; align-items:center; gap:12px;">
+        #       <!-- Server Icon -->
+        #       <div style="width:40px; height:40px; flex-shrink:0; border-radius:4px; display:flex; justify-content:center; align-items:center; overflow:hidden;">
+        #         {{ if eq $icon "" }}
+        #           <img src="https://cdn.jsdelivr.net/gh/selfhst/icons/png/minecraft.png" style="width:100%; height:100%; object-fit:contain;" alt="Server icon">
+        #         {{ else }}
+        #           <img src="data:image/png;base64, {{ $icon }}" style="width:100%; height:100%; object-fit:contain;" alt="Server icon">
+        #         {{ end }}
+        #       </div>
+
+        #       <!-- Right side: Info -->
+        #       <div style="display:flex; flex-direction:column;">
+        #         <!-- First row: Server Name + IP -->
+        #         <div style="display:flex; align-items:center; gap:6px;">
+        #           <span class="size-h4 block text-truncate color-primary">
+        #             {{ $name }}
+        #           </span>
+
+        #           {{ if and ($is_running) (not $starting) (not (eq $server_addr "")) }}
+        #           <div style="font-size:0.9em; color:var(--color-secondary);">
+        #             <span class="size-h6 color-secondary">
+        #         - {{ $server_addr }}
+        #             </span>
+        #           </div>
+        #           {{ end }}
+        #         </div>
+
+        #         <!-- Second row: MOTD & Stats if server is running, otherwise show status msg  ... -->
+        #         {{ if and ($is_running) (not $starting) }}
+        #           {{ if and (not (eq $motd "")) ($displayMOTD) }}
+        #             <div style="font-size:0.9em; color:var(--color-secondary);">
+        #         {{ replaceMatches "§." "" $motd }}
+        #             </div>
+        #           {{ end }}
+
+        #           <div style="font-size:0.9em; color:var(--color-secondary);">
+        #             {{ $version }} - {{ $online_players }}/{{ $max_players }} players - {{ $size }}
+        #           </div>
+
+        #         <!-- lots of assumptions about the boolean states meanings from crafty api.. -->
+        #         {{ else if $starting }}
+        #           <div style="font-size:0.9em; color:var(--color-secondary);">Server is starting up..</div>
+        #         {{ else if $importing }}
+        #           <div style="font-size:0.9em; color:var(--color-secondary);">Server is being imported..</div>
+        #         {{ else if $updating }}
+        #           <div style="font-size:0.9em; color:var(--color-secondary);">Server is being updated..</div>
+        #         {{ else if $crashed }}
+        #           <div style="font-size:0.9em; color:var(--color-secondary);">Server has crashed!</div>
+        #         {{ else }}
+        #           <div style="font-size:0.9em; color:var(--color-secondary);">Server is offline</div>
+        #         {{ end }}
+        #       </div>
+        #     </div>

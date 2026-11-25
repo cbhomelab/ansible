@@ -1,0 +1,154 @@
+- name: Launcher
+  slug: launcher
+  show-mobile-header: true
+  width: slim
+  columns:
+    - size: full
+      widgets:
+        - type: monitor
+          title: Media
+          cache: 1m
+          sites:
+            - title: Plex
+              url: https://plex.cbhomelab.net
+              check-url: http://10.40.0.20:32400/identity
+              icon: sh:plex
+            - title: Jellyfin
+              url: https://jellyfin.cbhomelab.net
+              check-url: http://10.40.0.24:8096
+              icon: sh:jellyfin
+            - title: Overseerr
+              url: https://overseerr.cbhomelab.net
+              check-url: http://10.40.0.99:5055
+              icon: sh:overseerr
+            - title: Tautulli
+              url: https://tautulli.cbhomelab.net
+              check-url: http://10.20.0.121:8181
+              icon: sh:tautulli
+            - title: Tunarr
+              url: https://tunarr.cbhomelab.net
+              check-url: http://10.40.0.18:8000
+              icon: mdi:television-classic
+            - title: Romm
+              url: https://romm.cbhomelab.net
+              check-url: http://10.20.0.70:8080
+              icon: sh:romm
+        - type: monitor
+          title: Arr & Downloads
+          cache: 1m
+          sites:
+            - title: Sonarr
+              url: https://shows.cbhomelab.net
+              check-url: http://10.20.0.149:8989
+              icon: sh:sonarr
+            - title: Radarr
+              url: https://movies.cbhomelab.net
+              check-url: http://10.20.0.149:7878
+              icon: sh:radarr
+            - title: Lidarr
+              url: https://lidarr.cbhomelab.net
+              check-url: http://10.20.0.149:8686
+              icon: sh:lidarr
+            - title: Bazarr
+              url: https://bazarr.cbhomelab.net
+              check-url: http://10.20.0.149:6767
+              icon: sh:bazarr
+            - title: Prowlarr
+              url: https://indexers.cbhomelab.net
+              check-url: http://10.20.0.149:9696
+              icon: sh:prowlarr
+            - title: qBittorrent
+              url: https://qbittorrent.cbhomelab.net
+              check-url: http://10.20.0.151:8081
+              icon: sh:qbittorrent
+            - title: SABnzbd
+              url: https://sabnzbd.cbhomelab.net
+              check-url: http://10.20.0.150:8080
+              icon: sh:sabnzbd
+            - title: Tdarr
+              url: https://tdarr.cbhomelab.net
+              check-url: http://10.20.0.49:8265
+              icon: mdi:video-switch
+        - type: monitor
+          title: Infrastructure
+          cache: 1m
+          sites:
+            - title: Proxmox
+              url: https://neptune.cbhomelab.net
+              check-url: https://10.20.0.6:8006
+              icon: sh:proxmox
+              allow-insecure: true
+            - title: OpenMediaVault
+              url: https://omv.cbhomelab.net
+              check-url: https://omv.cbhomelab.net
+              icon: sh:openmediavault
+            - title: OPNsense
+              url: https://opnsense.cbhomelab.net
+              check-url: https://10.20.0.1
+              icon: sh:opnsense
+              allow-insecure: true
+            - title: Pi-hole
+              url: https://dns.cbhomelab.net/admin
+              check-url: http://10.20.0.8/admin/
+              icon: sh:pi-hole
+            - title: Proxy Manager
+              url: https://intranet.cbhomelab.net
+              check-url: http://10.20.0.4:81
+              icon: sh:nginx-proxy-manager
+            - title: UniFi
+              url: https://unifi.cbhomelab.net
+              check-url: https://10.20.0.19:8443
+              icon: si:ubiquiti
+              allow-insecure: true
+        - type: monitor
+          title: Home & Monitoring
+          cache: 1m
+          sites:
+            - title: Home Assistant
+              url: https://hass.cbhomelab.net
+              check-url: http://10.20.0.5:8123
+              icon: sh:home-assistant
+            - title: Frigate
+              url: https://nvr.cbhomelab.net
+              check-url: http://10.20.0.17:5000
+              icon: sh:frigate
+            - title: Grafana Logs
+              url: https://logs.cbhomelab.net
+              check-url: http://10.20.0.161:3000
+              icon: sh:grafana
+            - title: Prometheus
+              url: https://prometheus.cbhomelab.net
+              check-url: https://prometheus.cbhomelab.net
+              icon: sh:prometheus
+            - title: Alertmanager
+              url: https://alertmanager.cbhomelab.net
+              check-url: https://alertmanager.cbhomelab.net
+              icon: mdi:bell-alert
+        - type: monitor
+          title: Tools
+          cache: 1m
+          sites:
+            - title: Mattermost
+              url: https://mattermost.cbhomelab.net
+              check-url: http://10.20.0.51:8065
+              icon: sh:mattermost
+            - title: Forgejo
+              url: https://forgejo.cbhomelab.net
+              check-url: http://10.20.0.50:3000
+              icon: sh:forgejo
+            - title: Syncthing
+              url: https://sync.cbhomelab.net
+              check-url: http://10.20.0.88:8384
+              icon: sh:syncthing
+            - title: File Browser
+              url: https://filebrowser.cbhomelab.net
+              check-url: http://10.20.0.191
+              icon: sh:file-browser
+            - title: Bookmarks
+              url: https://bookmarks.cbhomelab.net
+              check-url: http://10.20.0.27:3000
+              icon: sh:linkding
+            - title: RSS
+              url: https://rss.cbhomelab.net
+              check-url: http://10.20.0.26
+              icon: sh:miniflux

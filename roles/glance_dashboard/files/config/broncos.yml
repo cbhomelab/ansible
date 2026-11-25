@@ -1,0 +1,58 @@
+- name: Broncos
+  show-mobile-header: true
+  # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
+  # hide-desktop-navigation: true
+  head-widgets:
+    - type: html
+      source: |
+        <div class="widget-header"><h2>VIDEOS</h2></div>
+    - type: group
+      widgets:
+        - type: videos
+          title: Denver Broncos
+          channels:
+            - UCDGdBexlDZA8T7hnweWWyow # Denver Broncos
+
+  columns:
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>NEWS</h2></div>
+        - type: group
+          define: &shared-properties
+            type: rss
+            limit: ${FEED_LIMIT}
+            collapse-after: ${COLLAPSE_AFTER}
+            cache: 12h
+            style: detailed-list
+          widgets:
+            - title: Denver Broncos
+              <<: *shared-properties
+              feeds:
+                - url: https://www.denverbroncos.com/rss/news
+                  title: Denver Broncos
+            - title: Mile High Report
+              <<: *shared-properties
+              feeds:
+                - url: https://www.milehighreport.com/rss/index.xml
+                  title: Mile High Report
+            - title: Denver Post
+              <<: *shared-properties
+              feeds:
+                - url: https://www.denverpost.com/sports/nfl/denver-broncos/feed/
+                  title: Denver Post
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>SUBREDDIT</h2></div>
+        - type: group
+          define: &shared-properties
+            type: reddit
+            show-thumbnails: true
+            limit: ${FEED_LIMIT}
+            collapse-after: ${COLLAPSE_AFTER_REDDIT}
+          widgets:
+            - subreddit: denverbroncos
+              <<: *shared-properties

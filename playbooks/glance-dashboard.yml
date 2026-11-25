@@ -1,0 +1,6 @@
+---
+# Glance dashboard pages on saturn (edit roles/glance_dashboard/files/config/*.yml, then run this).
+- name: Apply Glance dashboard config
+  hosts: omv
+  become: true
+  roles: [glance_dashboard]

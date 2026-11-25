@@ -1,0 +1,129 @@
+- name: Home
+  show-mobile-header: true
+  # Optionally, if you only have a single page you can hide the desktop navigation for a cleaner look
+  # hide-desktop-navigation: true
+
+  head-widgets:
+
+    - type: search
+      search-engine: google
+      bangs:
+        - title: YouTube
+          shortcut: "!yt"
+          url: https://www.youtube.com/results?search_query={QUERY}
+
+  columns:
+    - size: small
+      widgets:
+        - type: calendar
+          first-day-of-week: monday
+        - type: weather
+          location: Mission Viejo, California, United States
+          units: imperial # alternatively "imperial"
+          hour-format: 12h # alternatively "24h"
+          # Optionally hide the location from being displayed in the widget
+          # hide-location: true
+        - type: custom-api
+          title: Air Quality
+          cache: 10m
+          url: https://api.waqi.info/feed/geo:${LATITUDE};${LONGITUDE}/?token=${AQICN_TOKEN}
+          template: |
+            {{ $aqi := printf "%03s" (.JSON.String "data.aqi") }}
+            {{ $aqiraw := .JSON.String "data.aqi" }}
+            {{ $updated := .JSON.String "data.time.iso" }}
+            {{ $humidity := .JSON.String "data.iaqi.h.v" }}
+            {{ $ozone := .JSON.String "data.iaqi.o3.v" }}
+            {{ $pm25 := .JSON.String "data.iaqi.pm25.v" }}
+            {{ $pressure := .JSON.String "data.iaqi.p.v" }}
+
+            <div class="flex justify-between">
+              <div class="size-h5">
+                {{ if le $aqi "050" }}
+                  <div class="color-positive">Good air quality</div>
+                {{ else if le $aqi "100" }}
+                  <div class="color-primary">Moderate air quality</div>
+                {{ else }}
+                  <div class="color-negative">Bad air quality</div>
+                {{ end }}
+              </div>
+            </div>
+
+            <div class="color-highlight size-h2">AQI: {{ $aqiraw }}</div>
+            <div style="border-bottom: 1px solid; margin-block: 10px;"></div>
+
+            <div class="margin-block-2">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+
+                <div>
+                  <div class="size-h3 color-highlight">{{ $humidity }}%</div>
+                  <div class="size-h6">HUMIDITY</div>
+                </div>
+
+                <div>
+                  <div class="size-h3 color-highlight">{{ $ozone }} μg/m³</div>
+                  <div class="size-h6">OZONE</div>
+                </div>
+
+                <div>
+                  <div class="size-h3 color-highlight">{{ $pm25 }} μg/m³</div>
+                  <div class="size-h6">PM2.5</div>
+                </div>
+
+                <div>
+                  <div class="size-h3 color-highlight">{{ $pressure }} hPa</div>
+                  <div class="size-h6">PRESSURE</div>
+                </div>
+
+              </div>
+
+              <div class="size-h6" style="margin-top: 10px;">Last Updated at {{ slice $updated 11 16 }}</div>
+            </div>
+
+
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>NEWS</h2></div>
+        - type: group
+          define: &shared-properties
+            type: rss
+            limit: ${FEED_LIMIT}
+            collapse-after: ${COLLAPSE_AFTER}
+            cache: 12h
+            style: detailed-list
+          widgets:
+            - title: US News
+              <<: *shared-properties
+              feeds:
+                # - url: https://news.google.com/rss/search?q=when:24h+allinurl:reuters.com&ceid=US:en&hl=en-US&gl=US
+                #   title: Reuters
+                # - url: https://feeds.bbci.co.uk/news/rss.xml?edition=us
+                #   title: BBC News
+                - url: https://apnews.com/us-news.rss
+                  title: AP News
+                - url: https://www.propublica.org/feeds/propublica/main
+                  title: ProPublica
+                - url: https://www.democracynow.org/democracynow.rss
+                  title: Democracy Now!
+            - title: World News
+              <<: *shared-properties
+              feeds:
+                - url: https://apnews.com/world-news.rss
+                  title: AP News
+    - size: full
+      widgets:
+        - type: html
+          source: |
+            <div class="widget-header"><h2>SUBREDDITS</h2></div>
+        - type: group
+          define: &shared-properties
+            type: reddit
+            show-thumbnails: true
+            limit: ${FEED_LIMIT}
+            collapse-after: ${COLLAPSE_AFTER_REDDIT}
+          widgets:
+            - subreddit: politics
+              <<: *shared-properties
+            - subreddit: worldnews
+              <<: *shared-properties
