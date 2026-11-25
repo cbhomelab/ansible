@@ -15,7 +15,7 @@ prometheus_targets_extra_jobs: |
     metrics_path: /pve
     params:
       module: [jupiter]
-      cluster: ['0']
+      cluster: ['1']
       node: ['1']
     static_configs:
       - targets: ['10.20.0.55']
