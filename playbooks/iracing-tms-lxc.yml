@@ -1,0 +1,16 @@
+---
+# iRacing Team Manager, native LXC install (replaces the Docker dev stack on saturn once cut over).
+#   set -a; . ~/.config/proxmox/jupiter.env; . ~/.config/opnsense/env; set +a; export BW_SESSION=$(cat ~/.config/bitwarden/session)
+#   ansible-playbook playbooks/proxmox-guests-jupiter.yml   # creates the LXC
+#   ansible-playbook playbooks/access.yml --limit lxc130-iracing-dev -e ansible_user=root   # first time only
+#   ansible-playbook playbooks/iracing-tms-lxc.yml
+- name: iRacing Team Manager (dev, native LXC on jupiter)
+  hosts: lxc130-iracing-dev
+  become: true
+  vars:
+    itl_env_overrides:
+      DISCORD_BOT_ENABLED: "true"
+      SCHEDULER_ENABLED: "true"
+      SCHEDULER_SYNC_EVENTS: "true"
+      SCRAPER_REQUEST_DELAY: "2"
+  roles: [iracing_tms_lxc]

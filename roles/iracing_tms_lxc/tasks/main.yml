@@ -1,0 +1,113 @@
+---
+- name: Is it installed?
+  ansible.builtin.stat: {path: /etc/systemd/system/iracing-team-manager.service}
+  register: itl_installed
+
+- name: Secrets from Bitwarden
+  ansible.builtin.set_fact:
+    itl_secrets: "{{ itl_secrets | default({}) | combine({item: (lookup('community.general.bitwarden', itl_vault_prefix ~ '/' ~ item, field='password') | first | default('', true))}) }}"
+  loop: "{{ itl_vault_install + itl_vault_env + (itl_vault_mumble if itl_mumble else []) }}"
+  no_log: true
+  delegate_to: localhost
+  become: false
+
+- name: Install (first run only)
+  when: not itl_installed.stat.exists
+  block:
+    - name: Installer script from the repo
+      ansible.builtin.uri:
+        url: "https://raw.githubusercontent.com/{{ itl_repo }}/{{ itl_installer_ref }}/proxmox/install/iracing-team-manager-install.sh"
+        headers: {Authorization: "token {{ lookup('ansible.builtin.pipe', 'gh auth token') }}"}
+        dest: /root/iracing-team-manager-install.sh
+        mode: "0700"
+        return_content: false
+      no_log: true
+
+    - name: Installer settings (removed by the installer when it finishes)
+      ansible.builtin.copy:
+        dest: /root/.iracing-install.env
+        mode: "0600"
+        content: |
+          CFG_DOMAIN=''
+          CFG_PUBLIC_URL='{{ itl_public_url }}'
+          CFG_PRIVACY_CONTACT=''
+          CFG_DISCORD_BOT=no
+          CFG_DISCORD_BOT_TOKEN=''
+          CFG_DISCORD_LOGIN=no
+          CFG_DISCORD_GUILD_ID=''
+          CFG_DISCORD_ADMIN_ROLE_ID=''
+          CFG_DISCORD_CLIENT_ID=''
+          CFG_DISCORD_CLIENT_SECRET=''
+          CFG_IRACING_CLIENT=no
+          CFG_IRACING_CLIENT_ID=''
+          CFG_IRACING_CLIENT_SECRET=''
+          CFG_IRACING_USERNAME=''
+          CFG_IRACING_PASSWORD=''
+          CFG_MUMBLE={{ 'yes' if itl_mumble else 'no' }}
+          CFG_MUMBLE_PASSWORD=''
+          CFG_APP_ENV={{ itl_app_env }}
+          CFG_ADMIN_USER=admin
+          CFG_ADMIN_PASSWORD='{{ itl_secrets.ADMIN_PASSWORD }}'
+          CFG_BACKUP_KEEP_DAYS=14
+          CFG_REPO={{ itl_repo }}
+          CFG_BRANCH={{ itl_branch }}
+          CFG_GITHUB_TOKEN='{{ lookup('ansible.builtin.pipe', 'gh auth token') }}'
+          CFG_CONSOLE_AUTOLOGIN=no
+          CFG_ENABLE_SSH=no
+          CFG_VERBOSE=no
+      no_log: true
+
+    - name: Run the installer (about 10 minutes)
+      ansible.builtin.command: bash /root/iracing-team-manager-install.sh
+      async: 1800
+      poll: 15
+      register: itl_install_run
+      changed_when: true
+
+    - name: Remove the installer
+      ansible.builtin.file: {path: /root/iracing-team-manager-install.sh, state: absent}
+
+- name: Environment values from the vault
+  ansible.builtin.lineinfile:
+    path: "{{ itl_install_dir }}/.env"
+    regexp: "^{{ item }}="
+    line: "{{ item }}='{{ itl_secrets[item] }}'"
+  loop: "{{ itl_vault_env + (itl_vault_mumble if itl_mumble else []) }}"
+  when: itl_secrets[item] | length > 0
+  no_log: true
+  notify: Restart iracing-team-manager
+
+- name: Environment overrides
+  ansible.builtin.lineinfile:
+    path: "{{ itl_install_dir }}/.env"
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}='{{ item.value }}'"
+  loop: "{{ itl_env_overrides | dict2items }}"
+  notify: Restart iracing-team-manager
+
+- name: Mumble server credentials match the app
+  when: itl_mumble
+  block:
+    - ansible.builtin.lineinfile:
+        path: /etc/mumble/mumble-server.ini
+        regexp: "^;?{{ item.k }}="
+        line: "{{ item.k }}={{ itl_secrets[item.v] }}"
+      loop: [{k: icesecretwrite, v: MUMBLE_ICE_SECRET}, {k: serverpassword, v: MUMBLE_SERVER_PASSWORD}]
+      loop_control: {label: "{{ item.k }}"}
+      no_log: true
+      notify: Restart mumble-server
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers
+
+- name: Service state
+  ansible.builtin.systemd: {name: "{{ item }}", state: started, enabled: true}
+  loop: "{{ ['iracing-team-manager', 'iracing-backup.timer'] + (['mumble-server'] if itl_mumble else []) }}"
+
+- name: Health
+  ansible.builtin.uri: {url: "http://127.0.0.1:8000/health", status_code: 200}
+  register: itl_health
+  retries: 20
+  delay: 5
+  until: itl_health.status == 200
+  changed_when: false
