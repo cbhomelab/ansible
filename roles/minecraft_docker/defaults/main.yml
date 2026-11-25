@@ -40,3 +40,9 @@ minecraft_docker_discord_bw_item: homelab-minecraft-discord-webhook
 minecraft_docker_discord_java_host: play.cbhomelab.net
 minecraft_docker_discord_bedrock_host: minecraft.cbhomelab.net
 minecraft_docker_dns: [10.20.0.1]     # explicit resolver; Paper hit UnknownHostException for Mojang hosts after a restart
+
+# Offsite copy (rsync over ssh after each backup); empty host disables.
+minecraft_docker_offsite_host: ""
+minecraft_docker_offsite_user: hermes
+minecraft_docker_offsite_inv: saturn
+minecraft_docker_offsite_dir: /srv/dev-disk-by-uuid-d66051ef-e45a-4ade-8c47-b4cd6feddbe7/minecraft-backups

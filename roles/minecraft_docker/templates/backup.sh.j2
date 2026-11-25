@@ -16,3 +16,6 @@ tar --zstd -C {{ minecraft_docker_data }} --exclude='deploy/server/backups' --ex
 [ $running = 1 ] && [ $was_blocked = 0 ] && rm -f "$D/server/start.block"
 ls -1t "$B"/minecraft-state-*.tar.zst | tail -n +$(( {{ minecraft_docker_backup_keep }} + 1 )) | xargs -r rm -f
 echo "$f"
+{% if minecraft_docker_offsite_host | length > 0 %}
+rsync -a --delete -e "ssh -i /root/.ssh/minecraft_offsite -o StrictHostKeyChecking=accept-new -o BatchMode=yes" "$B"/ {{ minecraft_docker_offsite_user }}@{{ minecraft_docker_offsite_host }}:{{ minecraft_docker_offsite_dir }}/
+{% endif %}

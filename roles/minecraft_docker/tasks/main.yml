@@ -95,6 +95,27 @@
   loop: [{src: Dockerfile.j2, dest: Dockerfile}, {src: compose.yml.j2, dest: compose.yml}]
   register: mcd_files
 
+- name: Offsite copy of backups (rsync over ssh) - key
+  when: minecraft_docker_offsite_host | length > 0
+  block:
+    - name: Packages (rsync, ssh client)
+      ansible.builtin.apt: {name: [rsync, openssh-client], state: present}
+    - name: Offsite ssh key
+      ansible.builtin.command: ssh-keygen -t ed25519 -N '' -C minecraft-offsite -f /root/.ssh/minecraft_offsite
+      args: {creates: /root/.ssh/minecraft_offsite}
+    - name: Read offsite public key
+      ansible.builtin.slurp: {src: /root/.ssh/minecraft_offsite.pub}
+      register: mcd_offsite_pub
+    - name: Authorize key on offsite host (restricted to rsync is not possible with plain rsync; user is unprivileged)
+      ansible.posix.authorized_key:
+        user: "{{ minecraft_docker_offsite_user }}"
+        key: "{{ mcd_offsite_pub.content | b64decode }}"
+      delegate_to: "{{ minecraft_docker_offsite_inv }}"
+    - name: Offsite directory
+      ansible.builtin.file: {path: "{{ minecraft_docker_offsite_dir }}", state: directory, owner: "{{ minecraft_docker_offsite_user }}", mode: "0750"}
+      delegate_to: "{{ minecraft_docker_offsite_inv }}"
+      become: true
+
 - name: Backup script
   ansible.builtin.template: {src: backup.sh.j2, dest: /usr/local/sbin/minecraft-backup, mode: "0750"}
 
