@@ -1,0 +1,1323 @@
+{
+ "uid": "network-overview",
+ "title": "Network",
+ "tags": [
+  "network",
+  "opnsense",
+  "unifi",
+  "dns"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "refresh": "30s",
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "editable": true,
+ "graphTooltip": 1,
+ "templating": {
+  "list": [
+   {
+    "name": "fwiface",
+    "label": "Firewall interface",
+    "type": "custom",
+    "multi": true,
+    "includeAll": true,
+    "allValue": ".+",
+    "query": "igc0,igc1,igc2,igc3,vlan.*",
+    "current": {
+     "selected": true,
+     "text": "All",
+     "value": "$__all"
+    },
+    "options": []
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "title": "Hosts & links",
+   "id": 2,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "OPNsense log lines (5m)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum(count_over_time({host=\"router.lan.cbho.me\"}[5m]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "description": "0 = router has stopped shipping logs"
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Node exporters up",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "count(up{job=\"node\"} == 1)",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "Node exporters DOWN",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "count(up{job=\"node\"} == 0) or vector(0)",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "red",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Proxmox node",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "pve_up{id=\"node/neptune\"}",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "Guests running",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "count(pve_up{id=~\"qemu/.*|lxc/.*\"} == 1)",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 8,
+   "type": "stat",
+   "title": "Guests stopped",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "count(pve_up{id=~\"qemu/.*|lxc/.*\"} == 0) or vector(0)",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "type": "row",
+   "title": "Firewall (OPNsense filterlog)",
+   "id": 9,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 5
+   },
+   "panels": []
+  },
+  {
+   "id": 10,
+   "type": "timeseries",
+   "title": "Blocked vs passed (events/s)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum by(action)(rate({host=\"router.lan.cbho.me\",app=\"filterlog\"} | regexp `^[^,]*,[^,]*,[^,]*,[^,]*,(?P<iface>[^,]*),[^,]*,(?P<action>[^,]*),(?P<dir>[^,]*),4,(?:[^,]*,){7}(?P<proto>[^,]*),[^,]*,(?P<src>[^,]*),(?P<dst>[^,]*),(?P<sport>[^,]*),(?P<dport>[^,]*)` | iface=~\"$fwiface\" [5m]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "{{action}}",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 11,
+   "type": "timeseries",
+   "title": "Blocked by interface (events/s)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum by(iface)(rate({host=\"router.lan.cbho.me\",app=\"filterlog\"} | regexp `^[^,]*,[^,]*,[^,]*,[^,]*,(?P<iface>[^,]*),[^,]*,(?P<action>[^,]*),(?P<dir>[^,]*),4,(?:[^,]*,){7}(?P<proto>[^,]*),[^,]*,(?P<src>[^,]*),(?P<dst>[^,]*),(?P<sport>[^,]*),(?P<dport>[^,]*)` | action=\"block\" | iface=~\"$fwiface\" [5m]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "{{iface}}",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "normal"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 12,
+   "type": "bargauge",
+   "title": "Top blocked sources (1h)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "topk(10, sum by(src)(count_over_time({host=\"router.lan.cbho.me\",app=\"filterlog\"} | regexp `^[^,]*,[^,]*,[^,]*,[^,]*,(?P<iface>[^,]*),[^,]*,(?P<action>[^,]*),(?P<dir>[^,]*),4,(?:[^,]*,){7}(?P<proto>[^,]*),[^,]*,(?P<src>[^,]*),(?P<dst>[^,]*),(?P<sport>[^,]*),(?P<dport>[^,]*)` | action=\"block\" | iface=~\"$fwiface\" [1h])))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 9,
+    "w": 8,
+    "x": 0,
+    "y": 14
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "orientation": "horizontal",
+    "displayMode": "gradient"
+   }
+  },
+  {
+   "id": 13,
+   "type": "bargauge",
+   "title": "Top blocked destination ports (1h)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "topk(10, sum by(dport)(count_over_time({host=\"router.lan.cbho.me\",app=\"filterlog\"} | regexp `^[^,]*,[^,]*,[^,]*,[^,]*,(?P<iface>[^,]*),[^,]*,(?P<action>[^,]*),(?P<dir>[^,]*),4,(?:[^,]*,){7}(?P<proto>[^,]*),[^,]*,(?P<src>[^,]*),(?P<dst>[^,]*),(?P<sport>[^,]*),(?P<dport>[^,]*)` | action=\"block\" | iface=~\"$fwiface\" [1h])))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 9,
+    "w": 8,
+    "x": 8,
+    "y": 14
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "orientation": "horizontal",
+    "displayMode": "gradient"
+   }
+  },
+  {
+   "id": 14,
+   "type": "bargauge",
+   "title": "Top blocked protocols (1h)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "topk(8, sum by(proto)(count_over_time({host=\"router.lan.cbho.me\",app=\"filterlog\"} | regexp `^[^,]*,[^,]*,[^,]*,[^,]*,(?P<iface>[^,]*),[^,]*,(?P<action>[^,]*),(?P<dir>[^,]*),4,(?:[^,]*,){7}(?P<proto>[^,]*),[^,]*,(?P<src>[^,]*),(?P<dst>[^,]*),(?P<sport>[^,]*),(?P<dport>[^,]*)` | action=\"block\" | iface=~\"$fwiface\" [1h])))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 9,
+    "w": 8,
+    "x": 16,
+    "y": 14
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "orientation": "horizontal",
+    "displayMode": "gradient"
+   }
+  },
+  {
+   "id": 15,
+   "type": "logs",
+   "title": "Recent blocks",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{host=\"router.lan.cbho.me\",app=\"filterlog\"} |= \",block,\" ",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 9,
+    "w": 24,
+    "x": 0,
+    "y": 23
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  },
+  {
+   "type": "row",
+   "title": "Traffic by link (node_exporter)",
+   "id": 16,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 32
+   },
+   "panels": []
+  },
+  {
+   "id": 17,
+   "type": "timeseries",
+   "title": "saturn NICs",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "rate(node_network_receive_bytes_total{instance=\"10.20.0.2:9100\",device=~\"enp.*\"}[5m])*8",
+     "legendFormat": "rx {{device}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "-rate(node_network_transmit_bytes_total{instance=\"10.20.0.2:9100\",device=~\"enp.*\"}[5m])*8",
+     "legendFormat": "tx {{device}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 33
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 18,
+   "type": "timeseries",
+   "title": "Proxmox guest network (pve exporter)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(pve_network_receive_bytes_total[5m]) * on(id) group_left(name) pve_guest_info)",
+     "legendFormat": "rx {{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "-sum by(name)(rate(pve_network_transmit_bytes_total[5m]) * on(id) group_left(name) pve_guest_info)",
+     "legendFormat": "tx {{name}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 33
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 19,
+   "type": "timeseries",
+   "title": "Per-host network (LXC/VM node exporters)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(host)(rate(node_network_receive_bytes_total{device!~\"lo|veth.*|br-.*|docker.*\"}[5m]))",
+     "legendFormat": "rx {{host}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "-sum by(host)(rate(node_network_transmit_bytes_total{device!~\"lo|veth.*|br-.*|docker.*\"}[5m]))",
+     "legendFormat": "tx {{host}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 41
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 20,
+   "type": "timeseries",
+   "title": "Network errors / drops",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(host)(rate(node_network_receive_errs_total{device!~\"lo|veth.*\"}[5m]) + rate(node_network_receive_drop_total{device!~\"lo|veth.*\"}[5m]))",
+     "legendFormat": "rx {{host}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum by(host)(rate(node_network_transmit_errs_total{device!~\"lo|veth.*\"}[5m]) + rate(node_network_transmit_drop_total{device!~\"lo|veth.*\"}[5m]))",
+     "legendFormat": "tx {{host}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 6,
+    "w": 24,
+    "x": 0,
+    "y": 49
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "pps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "type": "row",
+   "title": "DHCP & DNS",
+   "id": 21,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 55
+   },
+   "panels": []
+  },
+  {
+   "id": 22,
+   "type": "timeseries",
+   "title": "DHCP ACK / DISCOVER (events/min)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum(count_over_time({app=\"kea-dhcp4\"} |= \"DHCPACK\" [5m])) / 5",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "ACK",
+     "queryType": "range"
+    },
+    {
+     "expr": "sum(count_over_time({app=\"kea-dhcp4\"} |= \"DHCPDISCOVER\" [5m])) / 5",
+     "refId": "B",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "DISCOVER",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 0,
+    "y": 56
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 23,
+   "type": "timeseries",
+   "title": "Log volume: unbound / pihole / kea",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum by(app)(count_over_time({host=~\"router.lan.cbho.me|pihole\",app=~\"unbound|pihole-ftl|kea-dhcp4|pihole-dns\"}[5m]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "{{app}}",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 12,
+    "y": 56
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "normal"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 24,
+   "type": "logs",
+   "title": "DHCP: new leases / NAKs / declines",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{app=\"kea-dhcp4\"} |~ \"DHCP4_LEASE_ALLOC|DHCPNAK|DHCPDECLINE|DHCP4_LEASE_ALLOC_FAIL\"",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 63
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  },
+  {
+   "id": 25,
+   "type": "logs",
+   "title": "Pi-hole / unbound warnings",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{app=~\"pihole-ftl|unbound\"} |~ \"(?i)(warn|error|fail|servfail)\"",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 71
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  },
+  {
+   "type": "row",
+   "title": "UniFi / Wi-Fi",
+   "id": 26,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 79
+   },
+   "panels": []
+  },
+  {
+   "id": 27,
+   "type": "timeseries",
+   "title": "UniFi controller log levels",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum by(level)(count_over_time({host=\"unifi\",app=\"unifi-server\"} | detected_level != \"\" [5m]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "{{level}}",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 0,
+    "y": 80
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 28,
+   "type": "timeseries",
+   "title": "UniFi host log volume by app",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum by(app)(count_over_time({host=\"unifi\"}[5m]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "{{app}}",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 12,
+    "y": 80
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "normal"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 29,
+   "type": "logs",
+   "title": "UniFi warnings / errors",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{host=\"unifi\"} |~ \"(?i)(error|warn)\" != \"PageNotFound\"",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 24,
+    "x": 0,
+    "y": 87
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  },
+  {
+   "id": 30,
+   "type": "logs",
+   "title": "Tailscale",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{app=\"tailscaled\"}",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 24,
+    "x": 0,
+    "y": 95
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  }
+ ],
+ "annotations": {
+  "list": []
+ }
+}

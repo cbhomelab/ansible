@@ -1,0 +1,1395 @@
+{
+ "uid": "iracing-tms",
+ "title": "iRacing Team Manager",
+ "tags": [
+  "iracing",
+  "apps"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "refresh": "30s",
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "editable": true,
+ "graphTooltip": 1,
+ "templating": {
+  "list": [
+   {
+    "name": "env",
+    "label": "Environment",
+    "type": "custom",
+    "multi": false,
+    "includeAll": false,
+    "query": "prod,dev",
+    "current": {
+     "text": "prod",
+     "value": "prod"
+    },
+    "options": []
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "title": "Health",
+   "id": 2,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "App",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "time() - container_last_seen{name=\"iracing-tms-$env\"} < bool 60",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 0,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Database",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "time() - container_last_seen{name=\"iracing-tms-$env-db\"} < bool 60",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 4,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "Postgres reachable (pg_up)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "pg_up{instance_name=\"iracing-tms-$env\"}",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 8,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "App uptime",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "time() - container_start_time_seconds{name=\"iracing-tms-$env\"}",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 12,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "s"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "Error log lines (1h)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum(count_over_time({container=\"iracing-tms-$env\"} |~ \"(?i)(error|exception|traceback|critical)\" [1h]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 16,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 10
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "noValue": "0"
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ]
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 8,
+   "type": "stat",
+   "title": "Restarts (24h)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "changes(container_start_time_seconds{name=\"iracing-tms-$env\"}[24h])",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 4,
+    "x": 20,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 10
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "type": "row",
+   "title": "App container",
+   "id": 9,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 5
+   },
+   "panels": []
+  },
+  {
+   "id": 10,
+   "type": "timeseries",
+   "title": "CPU (cores)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_cpu_usage_seconds_total{name=~\"iracing-tms-$env(-db|-mumble|-pg-exporter)?\"}[5m]))",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 11,
+   "type": "timeseries",
+   "title": "Memory (working set)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "container_memory_working_set_bytes{name=~\"iracing-tms-$env(-db|-mumble|-pg-exporter)?\"}",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 12,
+   "type": "timeseries",
+   "title": "Network",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_network_receive_bytes_total{name=~\"iracing-tms-$env(-db|-mumble|-pg-exporter)?\"}[5m]))",
+     "legendFormat": "rx {{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "-sum by(name)(rate(container_network_transmit_bytes_total{name=~\"iracing-tms-$env(-db|-mumble|-pg-exporter)?\"}[5m]))",
+     "legendFormat": "tx {{name}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 14
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 13,
+   "type": "timeseries",
+   "title": "Disk IO",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_fs_reads_bytes_total{name=~\"iracing-tms-$env(-db|-mumble|-pg-exporter)?\"}[5m]))",
+     "legendFormat": "read {{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum by(name)(rate(container_fs_writes_bytes_total{name=~\"iracing-tms-$env(-db|-mumble|-pg-exporter)?\"}[5m]))",
+     "legendFormat": "write {{name}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 14
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "type": "row",
+   "title": "PostgreSQL",
+   "id": 14,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 22
+   },
+   "panels": []
+  },
+  {
+   "id": 15,
+   "type": "timeseries",
+   "title": "Connections",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(datname)(pg_stat_database_numbackends{instance_name=\"iracing-tms-$env\"})",
+     "legendFormat": "{{datname}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum(pg_stat_activity_count{instance_name=\"iracing-tms-$env\"})",
+     "legendFormat": "all sessions",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 23
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 16,
+   "type": "timeseries",
+   "title": "Database size",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "pg_database_size_bytes{instance_name=\"iracing-tms-$env\",datname!~\"template.*|postgres\"}",
+     "legendFormat": "{{datname}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 23
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 17,
+   "type": "timeseries",
+   "title": "Transactions / s",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum(rate(pg_stat_database_xact_commit{instance_name=\"iracing-tms-$env\"}[5m]))",
+     "legendFormat": "commit",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum(rate(pg_stat_database_xact_rollback{instance_name=\"iracing-tms-$env\"}[5m]))",
+     "legendFormat": "rollback",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 31
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "ops",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 18,
+   "type": "timeseries",
+   "title": "Cache hit ratio",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum(rate(pg_stat_database_blks_hit{instance_name=\"iracing-tms-$env\"}[5m])) / (sum(rate(pg_stat_database_blks_hit{instance_name=\"iracing-tms-$env\"}[5m])) + sum(rate(pg_stat_database_blks_read{instance_name=\"iracing-tms-$env\"}[5m])))",
+     "legendFormat": "hit ratio",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 31
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percentunit",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 19,
+   "type": "timeseries",
+   "title": "Tuples / s",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum(rate(pg_stat_database_tup_returned{instance_name=\"iracing-tms-$env\"}[5m]))",
+     "legendFormat": "returned",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum(rate(pg_stat_database_tup_fetched{instance_name=\"iracing-tms-$env\"}[5m]))",
+     "legendFormat": "fetched",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum(rate(pg_stat_database_tup_inserted{instance_name=\"iracing-tms-$env\"}[5m]))",
+     "legendFormat": "inserted",
+     "refId": "C",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum(rate(pg_stat_database_tup_updated{instance_name=\"iracing-tms-$env\"}[5m]))",
+     "legendFormat": "updated",
+     "refId": "D",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum(rate(pg_stat_database_tup_deleted{instance_name=\"iracing-tms-$env\"}[5m]))",
+     "legendFormat": "deleted",
+     "refId": "E",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 39
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "ops",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 20,
+   "type": "timeseries",
+   "title": "Locks / deadlocks / dead tuples",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum(pg_locks_count{instance_name=\"iracing-tms-$env\"})",
+     "legendFormat": "locks",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum(increase(pg_stat_database_deadlocks{instance_name=\"iracing-tms-$env\"}[5m]))",
+     "legendFormat": "deadlocks (5m)",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum(pg_stat_user_tables_n_dead_tup{instance_name=\"iracing-tms-$env\"})",
+     "legendFormat": "dead tuples",
+     "refId": "C",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 39
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 21,
+   "type": "table",
+   "title": "Largest tables",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "topk(15, pg_stat_user_tables_size_bytes{instance_name=\"iracing-tms-$env\"})",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true,
+     "format": "table"
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 24,
+    "x": 0,
+    "y": 47
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes"
+    },
+    "overrides": []
+   },
+   "options": {
+    "showHeader": true,
+    "sortBy": []
+   },
+   "transformations": [
+    {
+     "id": "merge",
+     "options": {}
+    },
+    {
+     "id": "organize",
+     "options": {
+      "excludeByName": {
+       "Time": true,
+       "__name__": true,
+       "env": true,
+       "host": true,
+       "instance": true,
+       "job": true,
+       "instance_name": true,
+       "datname": true
+      },
+      "renameByName": {
+       "relname": "Table",
+       "schemaname": "Schema",
+       "Value": "Size"
+      }
+     }
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "title": "Logs",
+   "id": 22,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 54
+   },
+   "panels": []
+  },
+  {
+   "id": 23,
+   "type": "timeseries",
+   "title": "Log volume by level (app)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum by(level)(count_over_time({container=\"iracing-tms-$env\"} | detected_level != \"\" [5m]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "{{level}}",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 0,
+    "y": 55
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "normal"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 24,
+   "type": "timeseries",
+   "title": "Error lines (app + db)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum by(container)(count_over_time({container=~\"iracing-tms-$env(-db)?\"} |~ \"(?i)(error|exception|traceback|fatal|critical)\" [5m]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "{{container}}",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 12,
+    "y": 55
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "normal"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 25,
+   "type": "logs",
+   "title": "App errors / warnings",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{container=\"iracing-tms-$env\"} |~ \"(?i)(error|exception|traceback|warn|critical)\"",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 9,
+    "w": 24,
+    "x": 0,
+    "y": 62
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  },
+  {
+   "id": 26,
+   "type": "logs",
+   "title": "App log (all)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{container=\"iracing-tms-$env\"}",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 10,
+    "w": 24,
+    "x": 0,
+    "y": 71
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  },
+  {
+   "id": 27,
+   "type": "logs",
+   "title": "Database log",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{container=\"iracing-tms-$env-db\"}",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 24,
+    "x": 0,
+    "y": 81
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  }
+ ],
+ "annotations": {
+  "list": []
+ }
+}

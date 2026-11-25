@@ -1,0 +1,10 @@
+---
+- name: Dashboard directory
+  ansible.builtin.file: {path: "{{ grafana_dashboards_appdata }}/homelab", state: directory, mode: "0755"}
+
+- name: Provider config
+  ansible.builtin.template: {src: provider.yaml.j2, dest: "{{ grafana_dashboards_appdata }}/homelab-provider.yaml", mode: "0644"}
+
+- name: Dashboard JSON (Grafana re-reads the directory every 30s, no restart)
+  ansible.builtin.copy: {src: "{{ item }}", dest: "{{ grafana_dashboards_appdata }}/homelab/{{ item | basename }}", mode: "0644"}
+  with_fileglob: ["{{ role_path }}/files/*.json"]

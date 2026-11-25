@@ -1,0 +1,12 @@
+# Managed by Ansible (roles/grafana_dashboards)
+apiVersion: 1
+providers:
+  - name: homelab-as-code
+    orgId: 1
+    folder: {{ grafana_dashboards_folder }}
+    type: file
+    disableDeletion: false
+    allowUiUpdates: false
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/provisioning/dashboards/homelab

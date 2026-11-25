@@ -1,0 +1,5 @@
+---
+- name: Grafana dashboards-as-code on saturn
+  hosts: saturn
+  become: true
+  roles: [grafana_dashboards]

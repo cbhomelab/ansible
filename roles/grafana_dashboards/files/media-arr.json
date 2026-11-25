@@ -1,0 +1,1931 @@
+{
+ "uid": "media-arr",
+ "title": "Media Servers & Arr Stack",
+ "tags": [
+  "media",
+  "arr",
+  "saturn"
+ ],
+ "timezone": "browser",
+ "schemaVersion": 39,
+ "version": 1,
+ "refresh": "30s",
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "editable": true,
+ "graphTooltip": 1,
+ "templating": {
+  "list": [
+   {
+    "name": "container",
+    "label": "Container",
+    "type": "query",
+    "datasource": {
+     "type": "prometheus",
+     "uid": "prometheus"
+    },
+    "query": {
+     "query": "label_values(container_last_seen{name=~\"plex|jellyfin|tautulli|seerr|sonarr|radarr|lidarr|bazarr|prowlarr|whisparr|huntarr-.*|lidarr-hunter|sabnzbd|qbittorrent|gluetun.*|tdarr.*|tidarr|aurral|tunarr|dispatcharr|ytdl-sub|flaresolverr|romm|stash|socks5_.*\"}, name)",
+     "refId": "v"
+    },
+    "refresh": 2,
+    "multi": true,
+    "includeAll": true,
+    "sort": 1,
+    "current": {
+     "selected": true,
+     "text": "All",
+     "value": "$__all"
+    },
+    "definition": "label_values(container_last_seen{name=~\"plex|jellyfin|tautulli|seerr|sonarr|radarr|lidarr|bazarr|prowlarr|whisparr|huntarr-.*|lidarr-hunter|sabnzbd|qbittorrent|gluetun.*|tdarr.*|tidarr|aurral|tunarr|dispatcharr|ytdl-sub|flaresolverr|romm|stash|socks5_.*\"}, name)",
+    "allValue": ".+"
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "title": "Status",
+   "id": 2,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   },
+   "panels": []
+  },
+  {
+   "id": 3,
+   "type": "stat",
+   "title": "Plex",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "time() - container_last_seen{name=\"plex\"} < bool 60",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 0,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 4,
+   "type": "stat",
+   "title": "Jellyfin",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "time() - container_last_seen{name=\"jellyfin\"} < bool 60",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 3,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 5,
+   "type": "stat",
+   "title": "Sonarr",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "time() - container_last_seen{name=\"sonarr\"} < bool 60",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 6,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 6,
+   "type": "stat",
+   "title": "Radarr",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "time() - container_last_seen{name=\"radarr\"} < bool 60",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 9,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 7,
+   "type": "stat",
+   "title": "Prowlarr",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "time() - container_last_seen{name=\"prowlarr\"} < bool 60",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 12,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     },
+     "mappings": [
+      {
+       "type": "value",
+       "options": {
+        "0": {
+         "text": "DOWN",
+         "color": "red"
+        },
+        "1": {
+         "text": "UP",
+         "color": "green"
+        }
+       }
+      }
+     ]
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 8,
+   "type": "stat",
+   "title": "Downloaders",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "count(time() - container_last_seen{name=~\"sabnzbd|qbittorrent\"} < 60)",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 15,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "red",
+        "value": null
+       },
+       {
+        "color": "green",
+        "value": 1
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "background",
+    "graphMode": "none"
+   },
+   "description": "Number of downloader containers (sabnzbd, qbittorrent) running"
+  },
+  {
+   "id": 9,
+   "type": "stat",
+   "title": "Containers running",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "count(time() - container_last_seen{name=~\"plex|jellyfin|tautulli|seerr|sonarr|radarr|lidarr|bazarr|prowlarr|whisparr|huntarr-.*|lidarr-hunter|sabnzbd|qbittorrent|gluetun.*|tdarr.*|tidarr|aurral|tunarr|dispatcharr|ytdl-sub|flaresolverr|romm|stash|socks5_.*\"} < 60)",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 18,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 10,
+   "type": "stat",
+   "title": "Restarts (24h)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum(changes(container_start_time_seconds{name=~\"plex|jellyfin|tautulli|seerr|sonarr|radarr|lidarr|bazarr|prowlarr|whisparr|huntarr-.*|lidarr-hunter|sabnzbd|qbittorrent|gluetun.*|tdarr.*|tidarr|aurral|tunarr|dispatcharr|ytdl-sub|flaresolverr|romm|stash|socks5_.*\"}[24h]))",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 4,
+    "w": 3,
+    "x": 21,
+    "y": 1
+   },
+   "fieldConfig": {
+    "defaults": {
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 1
+       },
+       {
+        "color": "red",
+        "value": 10
+       }
+      ]
+     },
+     "color": {
+      "mode": "thresholds"
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "type": "row",
+   "title": "Plex / Jellyfin",
+   "id": 11,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 5
+   },
+   "panels": []
+  },
+  {
+   "id": 12,
+   "type": "timeseries",
+   "title": "CPU (cores)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_cpu_usage_seconds_total{name=~\"plex|jellyfin|tautulli\"}[5m]))",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 0,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 13,
+   "type": "timeseries",
+   "title": "Memory",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "container_memory_working_set_bytes{name=~\"plex|jellyfin|tautulli\"}",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 8,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 14,
+   "type": "timeseries",
+   "title": "Network (streaming egress = tx)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_network_transmit_bytes_total{name=~\"plex|jellyfin|tautulli\"}[5m]))",
+     "legendFormat": "tx {{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum by(name)(rate(container_network_receive_bytes_total{name=~\"plex|jellyfin|tautulli\"}[5m]))",
+     "legendFormat": "rx {{name}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 16,
+    "y": 6
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "type": "row",
+   "title": "Arr stack & downloaders",
+   "id": 15,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 14
+   },
+   "panels": []
+  },
+  {
+   "id": 16,
+   "type": "timeseries",
+   "title": "CPU (cores)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_cpu_usage_seconds_total{name=~\"$container\",name=~\"plex|jellyfin|tautulli|seerr|sonarr|radarr|lidarr|bazarr|prowlarr|whisparr|huntarr-.*|lidarr-hunter|sabnzbd|qbittorrent|gluetun.*|tdarr.*|tidarr|aurral|tunarr|dispatcharr|ytdl-sub|flaresolverr|romm|stash|socks5_.*\"}[5m]))",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 15
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 17,
+   "type": "timeseries",
+   "title": "Memory",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "container_memory_working_set_bytes{name=~\"$container\",name=~\"plex|jellyfin|tautulli|seerr|sonarr|radarr|lidarr|bazarr|prowlarr|whisparr|huntarr-.*|lidarr-hunter|sabnzbd|qbittorrent|gluetun.*|tdarr.*|tidarr|aurral|tunarr|dispatcharr|ytdl-sub|flaresolverr|romm|stash|socks5_.*\"}",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 15
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 18,
+   "type": "timeseries",
+   "title": "Network rx",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_network_receive_bytes_total{name=~\"$container\",name=~\"plex|jellyfin|tautulli|seerr|sonarr|radarr|lidarr|bazarr|prowlarr|whisparr|huntarr-.*|lidarr-hunter|sabnzbd|qbittorrent|gluetun.*|tdarr.*|tidarr|aurral|tunarr|dispatcharr|ytdl-sub|flaresolverr|romm|stash|socks5_.*\"}[5m]))",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 23
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 19,
+   "type": "timeseries",
+   "title": "Disk write",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_fs_writes_bytes_total{name=~\"$container\",name=~\"plex|jellyfin|tautulli|seerr|sonarr|radarr|lidarr|bazarr|prowlarr|whisparr|huntarr-.*|lidarr-hunter|sabnzbd|qbittorrent|gluetun.*|tdarr.*|tidarr|aurral|tunarr|dispatcharr|ytdl-sub|flaresolverr|romm|stash|socks5_.*\"}[5m]))",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 23
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "type": "row",
+   "title": "Transcoding (Tdarr)",
+   "id": 20,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 31
+   },
+   "panels": []
+  },
+  {
+   "id": 21,
+   "type": "timeseries",
+   "title": "Tdarr CPU (cores)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_cpu_usage_seconds_total{name=~\"tdarr.*\"}[5m]))",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 0,
+    "y": 32
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "short",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 22,
+   "type": "timeseries",
+   "title": "Tdarr memory",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "container_memory_working_set_bytes{name=~\"tdarr.*\"}",
+     "legendFormat": "{{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 8,
+    "y": 32
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "bytes",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 23,
+   "type": "timeseries",
+   "title": "Tdarr disk IO",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(name)(rate(container_fs_reads_bytes_total{name=~\"tdarr.*\"}[5m]))",
+     "legendFormat": "read {{name}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "sum by(name)(rate(container_fs_writes_bytes_total{name=~\"tdarr.*\"}[5m]))",
+     "legendFormat": "write {{name}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 8,
+    "x": 16,
+    "y": 32
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "type": "row",
+   "title": "saturn host",
+   "id": 24,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 40
+   },
+   "panels": []
+  },
+  {
+   "id": 25,
+   "type": "gauge",
+   "title": "CPU",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "100 - avg(rate(node_cpu_seconds_total{instance=\"10.20.0.2:9100\",mode=\"idle\"}[5m])) * 100",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 0,
+    "y": 41
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "min": 0,
+     "max": 100,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 70
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    }
+   }
+  },
+  {
+   "id": 26,
+   "type": "gauge",
+   "title": "Memory",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - node_memory_MemAvailable_bytes{instance=\"10.20.0.2:9100\"} / node_memory_MemTotal_bytes{instance=\"10.20.0.2:9100\"})",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 4,
+    "y": 41
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "min": 0,
+     "max": 100,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 70
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    }
+   }
+  },
+  {
+   "id": 27,
+   "type": "gauge",
+   "title": "Array (mergerfs) used",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - node_filesystem_avail_bytes{instance=\"10.20.0.2:9100\",mountpoint=\"/srv/mergerfs/Array\"} / node_filesystem_size_bytes{instance=\"10.20.0.2:9100\",mountpoint=\"/srv/mergerfs/Array\"})",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 8,
+    "y": 41
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "min": 0,
+     "max": 100,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 85
+       },
+       {
+        "color": "red",
+        "value": 95
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    }
+   }
+  },
+  {
+   "id": 28,
+   "type": "gauge",
+   "title": "Appdata disk used",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - node_filesystem_avail_bytes{instance=\"10.20.0.2:9100\",mountpoint=~\"/srv/dev-disk-by-uuid-f09af9c4.*\"} / node_filesystem_size_bytes{instance=\"10.20.0.2:9100\",mountpoint=~\"/srv/dev-disk-by-uuid-f09af9c4.*\"})",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 12,
+    "y": 41
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "min": 0,
+     "max": 100,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 70
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    }
+   }
+  },
+  {
+   "id": 29,
+   "type": "gauge",
+   "title": "Root disk used",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - node_filesystem_avail_bytes{instance=\"10.20.0.2:9100\",mountpoint=\"/\"} / node_filesystem_size_bytes{instance=\"10.20.0.2:9100\",mountpoint=\"/\"})",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 16,
+    "y": 41
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "min": 0,
+     "max": 100,
+     "thresholds": {
+      "mode": "absolute",
+      "steps": [
+       {
+        "color": "green",
+        "value": null
+       },
+       {
+        "color": "orange",
+        "value": 70
+       },
+       {
+        "color": "red",
+        "value": 90
+       }
+      ]
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    }
+   }
+  },
+  {
+   "id": 30,
+   "type": "stat",
+   "title": "Load (5m)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "node_load5{instance=\"10.20.0.2:9100\"}",
+     "legendFormat": "",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     },
+     "instant": true
+    }
+   ],
+   "gridPos": {
+    "h": 5,
+    "w": 4,
+    "x": 20,
+    "y": 41
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "reduceOptions": {
+     "calcs": [
+      "lastNotNull"
+     ],
+     "fields": "",
+     "values": false
+    },
+    "colorMode": "value",
+    "graphMode": "none"
+   }
+  },
+  {
+   "id": 31,
+   "type": "timeseries",
+   "title": "Data disks usage",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "100 * (1 - node_filesystem_avail_bytes{instance=\"10.20.0.2:9100\",fstype=~\"xfs|ext4|fuse.mergerfs\",mountpoint=~\"/srv/.*\"} / node_filesystem_size_bytes{instance=\"10.20.0.2:9100\",fstype=~\"xfs|ext4|fuse.mergerfs\",mountpoint=~\"/srv/.*\"})",
+     "legendFormat": "{{mountpoint}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 9,
+    "w": 12,
+    "x": 0,
+    "y": 46
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "percent",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   },
+   "description": "Per-disk fill; array members are the /srv/dev-disk-by-uuid-* xfs disks."
+  },
+  {
+   "id": 32,
+   "type": "timeseries",
+   "title": "saturn network",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "rate(node_network_receive_bytes_total{instance=\"10.20.0.2:9100\",device=~\"enp.*|br0.*\"}[5m])",
+     "legendFormat": "rx {{device}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "-rate(node_network_transmit_bytes_total{instance=\"10.20.0.2:9100\",device=~\"enp.*|br0.*\"}[5m])",
+     "legendFormat": "tx {{device}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 9,
+    "w": 12,
+    "x": 12,
+    "y": 46
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 33,
+   "type": "timeseries",
+   "title": "Disk throughput (all disks)",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "sum by(device)(rate(node_disk_read_bytes_total{instance=\"10.20.0.2:9100\",device=~\"sd.*|nvme.*\"}[5m]))",
+     "legendFormat": "read {{device}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    },
+    {
+     "expr": "-sum by(device)(rate(node_disk_written_bytes_total{instance=\"10.20.0.2:9100\",device=~\"sd.*|nvme.*\"}[5m]))",
+     "legendFormat": "write {{device}}",
+     "refId": "B",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 0,
+    "y": 55
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "Bps",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     }
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 34,
+   "type": "timeseries",
+   "title": "Disk temperatures",
+   "datasource": {
+    "type": "prometheus",
+    "uid": "prometheus"
+   },
+   "targets": [
+    {
+     "expr": "node_hwmon_temp_celsius{instance=\"10.20.0.2:9100\"}",
+     "legendFormat": "{{chip}} {{sensor}}",
+     "refId": "A",
+     "datasource": {
+      "type": "prometheus",
+      "uid": "prometheus"
+     }
+    }
+   ],
+   "gridPos": {
+    "h": 8,
+    "w": 12,
+    "x": 12,
+    "y": 55
+   },
+   "fieldConfig": {
+    "defaults": {
+     "unit": "celsius",
+     "custom": {
+      "fillOpacity": 10,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "none"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "type": "row",
+   "title": "Logs",
+   "id": 35,
+   "collapsed": false,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 63
+   },
+   "panels": []
+  },
+  {
+   "id": 36,
+   "type": "timeseries",
+   "title": "Error lines by container (5m)",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "sum by(container)(count_over_time({container=~\"$container\"} |~ \"(?i)(error|exception|fatal|critical)\" [5m]))",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": "{{container}}",
+     "queryType": "range"
+    }
+   ],
+   "gridPos": {
+    "h": 7,
+    "w": 24,
+    "x": 0,
+    "y": 64
+   },
+   "fieldConfig": {
+    "defaults": {
+     "custom": {
+      "fillOpacity": 15,
+      "lineWidth": 1,
+      "stacking": {
+       "mode": "normal"
+      }
+     },
+     "min": 0
+    },
+    "overrides": []
+   },
+   "options": {
+    "legend": {
+     "displayMode": "table",
+     "placement": "bottom",
+     "calcs": [
+      "mean",
+      "max"
+     ]
+    },
+    "tooltip": {
+     "mode": "multi",
+     "sort": "desc"
+    }
+   }
+  },
+  {
+   "id": 37,
+   "type": "logs",
+   "title": "Errors / warnings",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{container=~\"$container\"} |~ \"(?i)(error|exception|fatal|critical|warn)\"",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 12,
+    "w": 24,
+    "x": 0,
+    "y": 71
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  },
+  {
+   "id": 38,
+   "type": "logs",
+   "title": "Plex / Jellyfin / Tautulli",
+   "datasource": {
+    "type": "loki",
+    "uid": "P8E80F9AEF21F6940"
+   },
+   "targets": [
+    {
+     "expr": "{container=~\"plex|jellyfin|tautulli\"}",
+     "refId": "A",
+     "datasource": {
+      "type": "loki",
+      "uid": "P8E80F9AEF21F6940"
+     },
+     "legendFormat": ""
+    }
+   ],
+   "gridPos": {
+    "h": 10,
+    "w": 24,
+    "x": 0,
+    "y": 83
+   },
+   "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+   },
+   "options": {
+    "showTime": true,
+    "wrapLogMessage": true,
+    "sortOrder": "Descending",
+    "enableLogDetails": true,
+    "dedupStrategy": "none"
+   }
+  }
+ ],
+ "annotations": {
+  "list": []
+ }
+}
