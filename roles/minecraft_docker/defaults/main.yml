@@ -10,6 +10,7 @@ minecraft_docker_uid: 1006
 minecraft_docker_gid: 100
 minecraft_docker_java: 25
 minecraft_docker_mem_limit: 16g
+minecraft_docker_max_heap_gib: 12      # start.sh sizes the heap from /proc/meminfo, which shows the HOST's RAM inside docker; this caps it
 minecraft_docker_proxy_port: 25565
 minecraft_docker_mux_port: 25566      # vane-velocity auth multiplexer
 minecraft_docker_bluemap_port: 8100

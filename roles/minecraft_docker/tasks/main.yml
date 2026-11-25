@@ -32,6 +32,12 @@
     regexp: '^download_velocity velocity.jar$'
     replace: '# download_velocity velocity.jar  # pinned by ansible (minecraft_docker_velocity_*)'
 
+- name: Cap Paper heap (framework start.sh reads host RAM, ignoring the container/LXC limit)
+  ansible.builtin.replace:
+    path: "{{ minecraft_docker_data }}/deploy/server/start.sh"
+    regexp: '^\[\[ "\$ram" -le \d+ \]\] \|\| ram=\d+$'
+    replace: '[[ "$ram" -le {{ minecraft_docker_max_heap_gib }} ]] || ram={{ minecraft_docker_max_heap_gib }}'
+
 - name: Fix vane-velocity config key casing (v1.23 reads AllowAnyone)
   ansible.builtin.replace:
     path: "{{ minecraft_docker_data }}/deploy/proxy/plugins/vane-velocity/config.toml"

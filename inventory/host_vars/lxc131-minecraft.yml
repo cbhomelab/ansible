@@ -5,3 +5,4 @@ minecraft_docker_backup_dir: /var/backups/minecraft
 minecraft_docker_mem_limit: 8g
 minecraft_docker_bedrockconnect_servers:
   - {name: CBHomelab, address: 10.20.0.131, port: 19133}
+minecraft_docker_max_heap_gib: 5   # 8 GB LXC: 5 GB heap + proxy JVM + native overhead
