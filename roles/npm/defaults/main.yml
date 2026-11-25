@@ -53,7 +53,7 @@ npm_proxy_hosts:
   - {"domain_names": ["lidarr.cbhomelab.net", "music.cbhomelab.net"], "forward_host": "10.20.0.149", "forward_port": 8686}
   - {"domain_names": ["logs.cbhomelab.net"], "forward_host": "10.20.0.161", "forward_port": 3000}
   - {"domain_names": ["mattermost.cbhomelab.net"], "forward_host": "10.20.0.51", "forward_port": 8065, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "advanced_config": "client_max_body_size 100M;\nproxy_read_timeout 600s;"}
-  - {"domain_names": ["mc-map.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 8100, "access_list_id": 0}
+  - {"domain_names": ["mc-map.cbhomelab.net"], "forward_host": "10.20.0.131", "forward_port": 8100, "access_list_id": 0}
   - {"domain_names": ["minecraft.cbhomelab.net"], "forward_host": "10.40.0.30", "forward_port": 19132, "access_list_id": 0}
   - {"domain_names": ["movies.cbhomelab.net", "radarr.cbhomelab.net"], "forward_host": "10.20.0.149", "forward_port": 7878}
   - {"domain_names": ["neptune.cbhomelab.net", "proxmox.cbhomelab.net", "pve.cbhomelab.net"], "forward_host": "10.20.0.6", "forward_port": 8006, "forward_scheme": "https", "block_exploits": 0, "advanced_config": "proxy_redirect off;"}

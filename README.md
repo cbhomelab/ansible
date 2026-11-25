@@ -95,10 +95,10 @@ Neptune is excluded from automatic baseline patching on purpose. lxc103
 | lxc105 Minecraft | `minecraft` | superseded, kept for rollback |
 
 ### Minecraft (moved to saturn, Nov 15)
-- Compose stack in `/opt/minecraft` on saturn: `minecraft-proxy` (Velocity with
+- Compose stack in `/opt/minecraft` on lxc131-minecraft (jupiter; moved from saturn 2026-11-25, 8 GB, Paper heap capped at 5 GB): `minecraft-proxy` (Velocity with
   vane-velocity) and `minecraft-server` (Paper, parked behind `start.block`
   until a player joins). Java 25. World data is a bind mount on the NVMe.
-- OPNsense alias `minecraft_server` and NPM host `mc-map` point at saturn.
+- OPNsense alias `minecraft_server` and NPM host `mc-map` point at lxc131-minecraft (jupiter, 10.20.0.131).
 - LXC 105 is stopped with onboot off and is not destroyed. Restarting it is the
   rollback. Planned to be destroyed after about a week if nothing breaks.
 - The role never writes into the data directory. The first import from LXC 105

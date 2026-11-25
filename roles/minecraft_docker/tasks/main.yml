@@ -32,6 +32,12 @@
     regexp: '^download_velocity velocity.jar$'
     replace: '# download_velocity velocity.jar  # pinned by ansible (minecraft_docker_velocity_*)'
 
+- name: Cap Paper heap (framework start.sh reads host RAM, ignoring the container/LXC limit)
+  ansible.builtin.replace:
+    path: "{{ minecraft_docker_data }}/deploy/server/start.sh"
+    regexp: '^\[\[ "\$ram" -le \d+ \]\] \|\| ram=\d+$'
+    replace: '[[ "$ram" -le {{ minecraft_docker_max_heap_gib }} ]] || ram={{ minecraft_docker_max_heap_gib }}'
+
 - name: Fix vane-velocity config key casing (v1.23 reads AllowAnyone)
   ansible.builtin.replace:
     path: "{{ minecraft_docker_data }}/deploy/proxy/plugins/vane-velocity/config.toml"
@@ -88,6 +94,27 @@
   ansible.builtin.template: {src: "{{ item.src }}", dest: "{{ minecraft_docker_dir }}/{{ item.dest }}", mode: "0644"}
   loop: [{src: Dockerfile.j2, dest: Dockerfile}, {src: compose.yml.j2, dest: compose.yml}]
   register: mcd_files
+
+- name: Offsite copy of backups (rsync over ssh) - key
+  when: minecraft_docker_offsite_host | length > 0
+  block:
+    - name: Packages (rsync, ssh client)
+      ansible.builtin.apt: {name: [rsync, openssh-client], state: present}
+    - name: Offsite ssh key
+      ansible.builtin.command: ssh-keygen -t ed25519 -N '' -C minecraft-offsite -f /root/.ssh/minecraft_offsite
+      args: {creates: /root/.ssh/minecraft_offsite}
+    - name: Read offsite public key
+      ansible.builtin.slurp: {src: /root/.ssh/minecraft_offsite.pub}
+      register: mcd_offsite_pub
+    - name: Authorize key on offsite host (restricted to rsync is not possible with plain rsync; user is unprivileged)
+      ansible.posix.authorized_key:
+        user: "{{ minecraft_docker_offsite_user }}"
+        key: "{{ mcd_offsite_pub.content | b64decode }}"
+      delegate_to: "{{ minecraft_docker_offsite_inv }}"
+    - name: Offsite directory
+      ansible.builtin.file: {path: "{{ minecraft_docker_offsite_dir }}", state: directory, owner: "{{ minecraft_docker_offsite_user }}", mode: "0750"}
+      delegate_to: "{{ minecraft_docker_offsite_inv }}"
+      become: true
 
 - name: Backup script
   ansible.builtin.template: {src: backup.sh.j2, dest: /usr/local/sbin/minecraft-backup, mode: "0750"}
