@@ -1,0 +1,3 @@
+---
+# Key-only SSH (hermes key verified working before enabling).
+access_control_disable_password_auth: true
