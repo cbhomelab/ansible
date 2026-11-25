@@ -1,0 +1,7 @@
+---
+# Standalone Proxmox node(s) not in a cluster (jupiter, Lenovo M70q). Managed from PDM VM 112.
+- name: Configure standalone PVE node
+  hosts: jupiter
+  become: true
+  roles:
+    - pve_node

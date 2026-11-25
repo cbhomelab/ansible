@@ -219,7 +219,7 @@
     validate_certs: false
     status_code: [200]
   register: network_appliances_unbound_fwd_deleted
-  loop: "{{ network_appliances_unbound_forwards.json.rows | selectattr('domain', 'equalto', network_appliances_unbound_domain) | list }}"
+  loop: "{{ (network_appliances_unbound_forwards.json | default({'rows': []})).rows | selectattr('domain', 'equalto', network_appliances_unbound_domain) | list }}"
   loop_control: {label: "{{ item.domain }} -> {{ item.server }}"}
   when:
     - inventory_hostname == 'vm100-opnsense'

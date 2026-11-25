@@ -10,6 +10,23 @@ prometheus_targets_compose: /opt/docker-compose/90-metrics/90-metrics.yml
 
 # Extra scrape jobs appended to prometheus.yml (inside an Ansible-managed block). Targets are container names on the `docker` network.
 prometheus_targets_extra_jobs: |
+  - job_name: pve-jupiter
+    # prometheus-pve-exporter module "jupiter": standalone node, read-only PVEAuditor token
+    metrics_path: /pve
+    params:
+      module: [jupiter]
+      cluster: ['0']
+      node: ['1']
+    static_configs:
+      - targets: ['10.20.0.55']
+        labels: {host: jupiter}
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: pve-exporter:9221
   - job_name: cadvisor
     # per-container stats for every container on saturn (90-metrics/cadvisor)
     static_configs:

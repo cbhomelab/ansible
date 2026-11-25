@@ -15,6 +15,12 @@
 # two overlapping ones, and is idempotent (no-op) on the 6 hosts that
 # already had 90-loki-forward.conf before this role ever ran.
 
+- name: Ensure rsyslog is installed (fresh Proxmox installs ship journald only)
+  ansible.builtin.apt:
+    name: rsyslog
+    state: present
+  become: true
+
 - name: Remove superseded narrow auth-only forwarding rule (if present)
   ansible.builtin.file:
     path: "{{ audit_log_shipping_rsyslog_conf_path }}"

@@ -136,6 +136,7 @@
         headers: {Authorization: "Bearer {{ npm_login2.json.token }}"}
         body_format: json
         body: "{{ item | combine({'meta': {}}) }}"
+        status_code: [200, 201]
       changed_when: true
       loop: "{{ npm_ph_create | default([]) }}"
       loop_control: {label: "{{ item.domain_names[0] }}"}

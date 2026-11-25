@@ -1,0 +1,3 @@
+---
+backup_pve_config_dest: /mnt/pve/saturn-backups/jupiter-config
+backup_pve_config_schedule: "Sun *-*-* 04:15:00"

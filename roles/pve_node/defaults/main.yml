@@ -1,0 +1,11 @@
+---
+# Standalone (non-clustered) Proxmox VE node managed by Ansible: repos, saturn backups, ACME cert.
+# Applied to `jupiter` (Lenovo M70q) only; neptune predates this role.
+pve_node_acme_domain: "{{ inventory_hostname }}.mgmt.cbhomelab.net"
+pve_node_acme_email: admin@christian.cbhomelab.net
+pve_node_acme_plugin: cloudflare
+pve_node_acme_token: "{{ lookup('community.general.bitwarden', 'Cloudflare API Key for NPM', field='notes')[0] }}"
+pve_node_backup_storage: saturn-backups
+pve_node_backup_nfs_server: 10.20.0.2
+pve_node_backup_nfs_export: /export/backups
+pve_node_vzdump_schedule: "sun 03:30"

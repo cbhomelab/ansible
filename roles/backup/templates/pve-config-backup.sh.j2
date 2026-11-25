@@ -3,7 +3,7 @@
 set -eu
 D={{ backup_pve_config_dest }}
 mkdir -p "$D"; umask 077
-F="$D/neptune-config-$(date +%Y%m%d-%H%M).tar.zst"
+F="$D/{{ inventory_hostname }}-config-$(date +%Y%m%d-%H%M).tar.zst"
 tar --zstd -cf "$F" --ignore-failed-read {{ backup_pve_config_paths | join(' ') }} 2>/dev/null || [ $? -eq 1 ]
-ls -1t "$D"/neptune-config-*.tar.zst | tail -n +{{ backup_pve_config_keep + 1 }} | xargs -r rm -f
+ls -1t "$D"/{{ inventory_hostname }}-config-*.tar.zst | tail -n +{{ backup_pve_config_keep + 1 }} | xargs -r rm -f
 echo "wrote $F"

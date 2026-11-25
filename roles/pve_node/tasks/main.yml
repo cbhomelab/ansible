@@ -1,0 +1,80 @@
+---
+- name: Repos - disable enterprise sources (no subscription)
+  ansible.builtin.copy:
+    dest: "/etc/apt/sources.list.d/{{ item.file }}"
+    content: "{{ item.content }}"
+    mode: "0644"
+  loop:
+    - file: pve-enterprise.sources
+      content: |
+        Types: deb
+        URIs: https://enterprise.proxmox.com/debian/pve
+        Suites: trixie
+        Components: pve-enterprise
+        Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+        Enabled: false
+    - file: ceph.sources
+      content: |
+        Types: deb
+        URIs: https://enterprise.proxmox.com/debian/ceph-tentacle
+        Suites: trixie
+        Components: enterprise
+        Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+        Enabled: false
+    - file: pve-no-subscription.sources
+      content: |
+        Types: deb
+        URIs: http://download.proxmox.com/debian/pve
+        Suites: trixie
+        Components: pve-no-subscription
+        Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+  loop_control: {label: "{{ item.file }}"}
+  register: pve_node_repos
+
+- name: Repos - apt update when changed
+  ansible.builtin.apt: {update_cache: true}
+  when: pve_node_repos is changed
+
+- name: Backup storage (NFS on saturn) present
+  ansible.builtin.shell: |
+    pvesm status --storage {{ pve_node_backup_storage }} >/dev/null 2>&1 && exit 0
+    pvesm add nfs {{ pve_node_backup_storage }} --server {{ pve_node_backup_nfs_server }} --export {{ pve_node_backup_nfs_export }} --content backup --prune-backups keep-last=2 && echo CHANGED
+  register: pve_node_nfs
+  changed_when: "'CHANGED' in pve_node_nfs.stdout"
+
+- name: vzdump weekly job (all guests) present
+  ansible.builtin.shell: |
+    pvesh get /cluster/backup --output-format json | grep -q '"id":"weekly-saturn"' && exit 0
+    pvesh create /cluster/backup --id weekly-saturn --all 1 --storage {{ pve_node_backup_storage }} --schedule "{{ pve_node_vzdump_schedule }}" --mode snapshot --compress zstd --prune-backups keep-last=2 --notes-template "{{ '{{guestname}}' }}" --enabled 1 && echo CHANGED
+  register: pve_node_vzdump
+  changed_when: "'CHANGED' in pve_node_vzdump.stdout"
+
+- name: ACME account (Let's Encrypt) registered
+  ansible.builtin.shell: |
+    pvesh get /cluster/acme/account --output-format json | grep -q default && exit 0
+    pvesh create /cluster/acme/account --name default --contact {{ pve_node_acme_email }} --directory https://acme-v02.api.letsencrypt.org/directory --tos_url "$(pvesh get /cluster/acme/tos --output-format json | tr -d '\"')" && echo CHANGED
+  register: pve_node_acme_acct
+  changed_when: "'CHANGED' in pve_node_acme_acct.stdout"
+
+- name: ACME Cloudflare DNS plugin present
+  ansible.builtin.shell: |
+    pvesh get /cluster/acme/plugins --output-format json | grep -q '"plugin":"{{ pve_node_acme_plugin }}"' && exit 0
+    pvesh create /cluster/acme/plugins --id {{ pve_node_acme_plugin }} --type dns --api cf --data "$(printf 'CF_Token=%s' "$TOK" | base64 -w0)" && echo CHANGED
+  environment: {TOK: "{{ pve_node_acme_token }}"}
+  no_log: true
+  register: pve_node_acme_plug
+  changed_when: "'CHANGED' in pve_node_acme_plug.stdout"
+
+- name: Node ACME domain configured
+  ansible.builtin.shell: |
+    pvenode config get --output-format json | grep -q 'acmedomain0' && exit 0
+    pvenode config set --acmedomain0 domain={{ pve_node_acme_domain }},plugin={{ pve_node_acme_plugin }} && echo CHANGED
+  register: pve_node_acme_dom
+  changed_when: "'CHANGED' in pve_node_acme_dom.stdout"
+
+- name: Order certificate when node still has the self-signed one
+  ansible.builtin.shell: |
+    openssl x509 -in /etc/pve/local/pveproxy-ssl.pem -noout -issuer 2>/dev/null | grep -qi "Let's Encrypt" && exit 0
+    pvenode acme cert order && echo CHANGED
+  register: pve_node_acme_order
+  changed_when: "'CHANGED' in pve_node_acme_order.stdout"
