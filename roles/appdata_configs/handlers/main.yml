@@ -1,0 +1,6 @@
+---
+- name: Restart changed containers
+  ansible.builtin.command: "docker restart {{ item.item.restart }}"
+  loop: "{{ (appdata_configs_plain.results | default([])) + (appdata_configs_tpl.results | default([])) }}"
+  loop_control: {label: "{{ item.item.dest }}"}
+  when: item.changed and item.item.restart is defined

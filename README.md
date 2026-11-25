@@ -86,6 +86,7 @@ Neptune is excluded from automatic baseline patching on purpose. lxc103
 | lxc102 NPM | `npm` | nightly sqlite + cert backup |
 | lxc104 Glance | `glance` | pinned v0.8.4, update path with rollback |
 | saturn Glance (Docker) | `glance_dashboard` | pages in `files/config/*.yml`, hot-reloaded; secrets stay in appdata `.env` |
+| saturn app configs (loki, promtail, pve-exporter, ddns, epgo, frigate, ytdl-sub) | `appdata_configs` | plain files + templates; secrets from untracked `appdata/.config-secrets.json` |
 | saturn iRacing Team Manager (prod .162 / dev .163) | `iracing_tms_docker` | compose stacks on saturn, own Postgres 16 each, nightly `pg_dump`; LXC 106/111 on neptune retired |
 | lxc107 UniFi | `unifi_controller` | pinned 8.0.24, update with rollback |
 | lxc108 Pi-hole | `pihole` | v6, declarative, update via `--tags update` |

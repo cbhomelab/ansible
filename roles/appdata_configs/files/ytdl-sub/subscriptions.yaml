@@ -1,0 +1,106 @@
+# Danny Go: https://www.youtube.com/channel/UC3wCAOfSB0W9iuKDDtNJeGw
+# Document Disney: https://www.youtube.com/playlist?list=PLrfa0N8H40Vh1LsjiVVhvhAuBE-rl7PUf
+# Hey Bear: https://www.youtube.com/channel/UCtf9cFBJkHVAf2qMqF01xYg
+# Kids Ballet: https://www.youtube.com/playlist?list=PLZeBwGx-VLPvMF-ZrK0EH1i1RfS1DQVXi
+# Ms Rachel: https://www.youtube.com/channel/UCG2CL6EUjG8TVT1Tpl9nJdg
+# Letter Factory: https://www.youtube.com/playlist?list=PLJPvAoIi_-ohG5Kq9Qr0m4KTcYTzD4prh
+
+
+__preset__:
+  overrides:
+    # Root folder of all ytdl-sub TV Shows
+    tv_show_directory: "/youtube/tv_shows"
+    
+    # Root folder of all ytdl-sub Music
+    music_directory: "/youtube/music"
+    
+    # Root folder of all ytdl-sub Music Videos
+    music_video_directory: "/youtube/music_videos"
+    
+    # For 'Only Recent' preset, only keep vids within this range and limit
+    only_recent_date_range: "2months"
+    only_recent_max_files: 30
+    
+    episode_title: "{title}"  # Only sets the video title
+  # Pass any arg directly to yt-dlp's Python API
+  ytdl_options:
+    cookiefile: "/config/cookie.txt" 
+
+Plex TV Show by Date:
+  = Kids | = TV-Y:
+   "Document Disney": https://www.youtube.com/watch?v=4EIYZDDlJaU&list=PLrfa0N8H40VgCvzoQIbjAonCrPodomaHF
+   "Kids Ballet": https://www.youtube.com/playlist?list=PLZeBwGx-VLPvMF-ZrK0EH1i1RfS1DQVXi
+
+Plex TV Show Collection:
+  "~Danny Go":
+   s01_name: Dance Songs
+   s01_url: "https://www.youtube.com/playlist?list=PL-i89lrKRaYQqfCkDv_Y7CMDZgzCfW31F"
+   s02_name: Dance-Along Adventures
+   s02_url: "https://www.youtube.com/playlist?list=PL-i89lrKRaYQGe8Lz_vMrLNWD9yVeY7Ky"
+   s03_name: Full Episodes
+   s03_url: "https://www.youtube.com/playlist?list=PL-i89lrKRaYQmHWxvVh_NDvU1TXTOf1Xf"
+   s04_name: Drum-Along Songs
+   s04_url: "https://www.youtube.com/playlist?list=PL-i89lrKRaYQWbHx-oA-1gHMJSLWgAf-O"
+   s05_name: Learning Videos
+   s05_url: "https://www.youtube.com/playlist?list=PL-i89lrKRaYTRKPdcI4zQf0V1VgppDu7K"
+   s06_name: Dance Compilations
+   s06_url: "https://www.youtube.com/playlist?list=PL-i89lrKRaYSWRV0tVDGnxpCKyBr1BXV0"
+  "~Hey Bear":
+   s01_name: Dancing Fruit and Funky Veggies
+   s01_url: "https://www.youtube.com/playlist?list=PLNT83Pmw8EuJO0h6nBaLwCyVAk8sUbuCm"
+   s02_name: Bedtime
+   s02_url: "https://www.youtube.com/playlist?list=PLNT83Pmw8EuLQ_rH2buFSBBLCvIGoZMNV"
+   s03_name: High Contrast Videos
+   s03_url: "https://www.youtube.com/playlist?list=PLNT83Pmw8EuJJlznMRMQjjocSW5liccZG"
+  "~Ms Rachel": 
+   s01_name: Videos with Elmo and Sesame Street
+   s01_url:  "https://www.youtube.com/watch?v=drkVagtmIJA&list=PLEeIyWKd-HQ7101lg3zuULYsYZo9sBqsW"
+   s02_name: Ms Rachel Visits Places in the Community
+   s02_url:  "https://www.youtube.com/watch?v=oEn7XBxOXSw&list=PLEeIyWKd-HQ4BizdNz8Tsvtm3uOLT-TKi"
+   s03_name: Videos for Kids
+   s03_url:  "https://www.youtube.com/watch?v=gFuEoxh5hd4&list=PLEeIyWKd-HQ41T6D-MhxFjdhU8v9nl9DM"
+   s04_name: First Words
+   s04_url:  "https://www.youtube.com/watch?v=zwL2o4jZxbc&list=PLEeIyWKd-HQ7_u77di-OuLUAOL4QYKYLw"
+   s05_name: Learn Animals with Ms Rachel
+   s05_url:  "https://www.youtube.com/watch?v=E2_kRmS6y8A&list=PLEeIyWKd-HQ7q_NbK46ftPomPDf_EnOot"
+   s06_name: Baby Songs with Ms Rachel
+   s06_url:  "https://www.youtube.com/watch?v=47MNn4bsmSw&list=PLEeIyWKd-HQ7keDetUdGq64tv9dfnY28n"
+   s07_name: Videos for Toddlers with Ms Rachel
+   s07_url:  "https://www.youtube.com/watch?v=xkYved-ucGg&list=PLEeIyWKd-HQ4MMlJefvgkg0tdAN9Yl4Wc&pp=0gcJCV8EOCosWNin"
+   s08_name: Learn to Talk with Ms Rachel
+   s08_url:  "https://www.youtube.com/watch?v=HsT3iI6dT5U&list=PLEeIyWKd-HQ7LNc7DFDF8c3Qpo7Q_Kx42"
+   s09_name: Christmas with Ms Rachel
+   s09_url:  "https://www.youtube.com/watch?v=kBuKdHQYPps&list=PLEeIyWKd-HQ4WWbE6ieWoaFkrNDYHpNGW&pp=0gcJCV8EOCosWNin"
+   s10_name: Halloween with Ms Rachel
+   s10_url:  "https://www.youtube.com/watch?v=hOHrqPI9bVk&list=PLEeIyWKd-HQ58xkHUDMHbqGXCp1Juqx0W"
+   s11_name: Learn Colors, Numbers, Shapes, and Letters with Ms Rachel
+   s11_url:  "https://www.youtube.com/watch?v=hTqtGJwsJVE&list=PLEeIyWKd-HQ5hDP6uRMUtpeixgALzlsgN"
+   s12_name: Baby Learning with Ms Rachel
+   s12_url:  "https://www.youtube.com/watch?v=bOiYN7iU-W8&list=PLEeIyWKd-HQ4pxSdPQyWTD7TsMqbdXZVi"
+   s13_name: Nursery Rhymes & Kids Songs
+   s13_url:  "https://www.youtube.com/watch?v=oVtzNpzuvoA&list=PLEeIyWKd-HQ4bp2d-VbTNck6dN0I7YiSu&pp=0gcJCV8EOCosWNin"
+   s14_name: Preschool Videos with Ms Rachel
+   s14_url:  "https://www.youtube.com/watch?v=oVtzNpzuvoA&list=PLEeIyWKd-HQ4bp2d-VbTNck6dN0I7YiSu"
+  "~Blippi":
+   s01_name: Blippi Super Specials!
+   s01_url: "https://www.youtube.com/watch?v=ORDymT86_pQ&list=TLGGIOKIJzgAgqgxNjEwMjAyNg"
+   s02_name: Blippi Vehicle Adventures!
+   s02_url: "https://www.youtube.com/watch?v=8yp_YG0n36c&list=TLGGpw1m5tZwWHgxNjEwMjAyNg"
+   s03_name: Blippi Roar & Explore!
+   s03_url: "https://www.youtube.com/watch?v=_iB6NFNiWq8&list=TLGGzAv47xaXATExNjEwMjAyNg"
+   s04_name: Blippi Jump Wiggle & Play!
+   s04_url: "https://www.youtube.com/watch?v=V01eiHqM84w&list=TLGGSyfSMekiPTIxNjEwMjAyNg"
+   s05_name: Blippi's Magical Walt Disney World Adventure!
+   s05_url: "https://www.youtube.com/watch?v=xdQlJwG_MJM&list=TLGGQUioYTemI6MxNjEwMjAyNg"
+   s06_name: Blippi Playtime Adventures!
+   s06_url: "https://www.youtube.com/watch?v=jGW9tRx-Whw&list=TLGGQUioYTemI6MxNjEwMjAyNg"
+###################################################################
+
+
+###################################################################
+# Music Video Presets. Can replace Plex with Plex/Jellyfin/Kodi
+"Plex Music Videos":
+  = Pop:  # Sets genre tag to "Pop"
+    "Lady Gaga": "https://www.youtube.com/playlist?list=PLqqygUj8K0QPSKUBuVmOysRoKfDlysdoB"
+    "Taylor Swift": "https://www.youtube.com/watch?v=5UMCrq-bBCg&list=PLYbgbIXBJHRhrHgjGls97g6t3PtPJU7MN"
+

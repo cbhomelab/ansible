@@ -1,0 +1,11 @@
+# doplarr_rs config - secrets are injected from container env vars (see 40-overseerr compose)
+discord_token = "${DISCORD_TOKEN}"
+log_level = "info"
+public_followup = true
+
+[[backends]]
+media = "media"
+
+[backends.config.Seerr]
+url = "${SEERR_URL}"
+api_key = "${SEERR_API}"

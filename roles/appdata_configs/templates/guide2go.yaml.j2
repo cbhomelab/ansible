@@ -1,0 +1,25 @@
+Account:
+    Username: {{ s.sd_user_g2g | to_json }}
+    Password: {{ s.sd_pass_g2g | to_json }}
+Files:
+    Cache: cache.json
+    XMLTV: xmltv.xml
+Options:
+    Poster Aspect: 2x3
+    Schedule Days: 14
+    Subtitle into Description: false
+    Insert credits tag into XML file: true
+    Local Images Cache: true
+    Images Path: /data/images/
+    Proxy Images: false
+    Hostname: 10.40.0.15:8080
+    Rating:
+        Insert rating tag into XML file: true
+        Maximum rating entries. 0 for all entries: 1
+        Preferred countries. ISO 3166-1 alpha-3 country code. Leave empty for all systems:
+          - DEU
+          - CHE
+          - USA
+        Use country code as rating system: false
+    Show download errors from Schedules Direct in the log: false
+Station:

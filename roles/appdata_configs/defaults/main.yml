@@ -1,0 +1,23 @@
+---
+# Hand-edited app configs living in saturn's appdata, kept in git. Plain files are copied as-is;
+# files with credentials are Jinja templates whose values come from
+# {{ appdata_configs_appdata }}/.config-secrets.json (root:root 0600, NOT in git, seeded from the live files).
+# prometheus.yml is stored only as a snapshot: its blocks are owned by roles/backup and roles/prometheus_targets.
+# Frigate/ytdl-sub are deployed but never auto-restarted. Their config already uses {FRIGATE_*} env vars.
+appdata_configs_appdata: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata
+appdata_configs_secrets_file: "{{ appdata_configs_appdata }}/.config-secrets.json"
+
+appdata_configs_files:   # src (under files/), dest (under appdata), restart container (optional)
+  - {src: loki/loki-config.yaml,         dest: loki/config/loki-config.yaml,             restart: loki}
+  - {src: promtail/promtail-config.yaml, dest: promtail/config/promtail-config.yaml,     restart: promtail}
+  - {src: doplarr/config.toml,           dest: doplarr/config.toml,                      restart: doplarr}
+  - {src: xmltv/config.yaml,             dest: xmltv/config.yaml}
+  - {src: frigate/config.yaml,           dest: frigate/config.yaml}
+  - {src: ytdl-sub/config.yaml,          dest: ytdl-sub/config.yaml}
+  - {src: ytdl-sub/subscriptions.yaml,   dest: ytdl-sub/subscriptions.yaml}
+
+appdata_configs_templates:
+  - {src: pve.yml.j2,              dest: pve-exporter/pve.yml,                  restart: pve-exporter}
+  - {src: cloudflare-ddns.json.j2, dest: cloudflare-ddns-config/config.json,    restart: cloudflare-ddns}
+  - {src: epgo.yaml.j2,            dest: epgo/config.yaml,                      restart: epgo}
+  - {src: guide2go.yaml.j2,        dest: guide2go/config/config.yaml}

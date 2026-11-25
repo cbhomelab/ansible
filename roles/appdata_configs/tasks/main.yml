@@ -1,0 +1,29 @@
+---
+- name: Read secrets file
+  ansible.builtin.slurp: {src: "{{ appdata_configs_secrets_file }}"}
+  register: appdata_configs_raw
+  no_log: true
+
+- name: Parse secrets
+  ansible.builtin.set_fact:
+    s: "{{ appdata_configs_raw.content | b64decode | from_json }}"
+  no_log: true
+
+- name: Plain config files
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "{{ appdata_configs_appdata }}/{{ item.dest }}"
+    backup: false
+  loop: "{{ appdata_configs_files }}"
+  loop_control: {label: "{{ item.dest }}"}
+  register: appdata_configs_plain
+  notify: Restart changed containers
+
+- name: Templated config files (secrets from the untracked file)
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ appdata_configs_appdata }}/{{ item.dest }}"
+  loop: "{{ appdata_configs_templates }}"
+  loop_control: {label: "{{ item.dest }}"}
+  register: appdata_configs_tpl
+  notify: Restart changed containers

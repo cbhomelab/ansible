@@ -1,0 +1,5 @@
+default:
+  user: {{ s.pve_user | to_json }}
+  token_name: {{ s.pve_token_name | to_json }}
+  token_value: {{ s.pve_token_value | to_json }}
+  verify_ssl: false

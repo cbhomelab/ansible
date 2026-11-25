@@ -1,0 +1,56 @@
+{
+  "cloudflare": [
+    {
+      "authentication": {
+        "api_token": {{ s.cf_api_token | to_json }},
+        "api_key": {
+          "api_key": {{ s.cf_api_key | to_json }},
+          "account_email": {{ s.cf_email | to_json }}
+        }
+      },
+      "zone_id": "679fc5e6f9283742a8f1cadf7138e4eb",
+      "subdomains": [
+        {
+          "name": "",
+          "proxied": true
+        },
+        {
+          "name": "seerr",
+          "proxied": true
+        },
+        {
+          "name": "plex",
+          "proxied": true
+        },
+        {
+          "name": "jellyfin",
+          "proxied": true
+        },
+        {
+          "name": "www",
+          "proxied": true
+        },
+        {
+          "name": "minecraft",
+          "proxied": true
+        },
+        {
+          "name": "minecraft2",
+          "proxied": true
+        },
+        {
+          "name": "mc-map",
+          "proxied": true
+        },
+        {
+          "name": "romm",
+          "proxied": true
+        }
+      ]
+    }
+  ],
+  "a": true,
+  "aaaa": false,
+  "purgeUnknownRecords": false,
+  "ttl": 300
+}

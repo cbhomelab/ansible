@@ -1,0 +1,49 @@
+# Managed by hand (t_299916fe); targets mirror ansible inventory (node_exporter on :9100, MGMT addrs).
+global:
+  scrape_interval: 30s
+  evaluation_interval: 30s
+rule_files: ["/etc/prometheus/backup-alerts.yml"]
+# BEGIN ANSIBLE alerting (roles/backup)
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+# END ANSIBLE alerting (roles/backup)
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+  - job_name: node
+    file_sd_configs:
+      - files: ["/etc/prometheus/targets/node.yml"]
+  - job_name: pve
+    # prometheus-pve-exporter (t_03920b33): neptune via read-only PVEAuditor token
+    metrics_path: /pve
+    params:
+      module: [default]
+      cluster: ['1']
+      node: ['1']
+    static_configs:
+      - targets: ['10.20.0.6']
+        labels: {host: neptune}
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: pve-exporter:9221
+  # BEGIN ANSIBLE extra scrape jobs (roles/prometheus_targets)
+  - job_name: cadvisor
+    # per-container stats for every container on saturn (90-metrics/cadvisor)
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels: {host: saturn}
+  - job_name: iracing-postgres
+    # postgres_exporter sidecars from roles/iracing_tms_docker
+    static_configs:
+      - targets: ["iracing-tms-prod-pg-exporter:9187"]
+        labels: {host: saturn, instance_name: iracing-tms-prod, env: prod}
+      - targets: ["iracing-tms-dev-pg-exporter:9187"]
+        labels: {host: saturn, instance_name: iracing-tms-dev, env: dev}
+  # END ANSIBLE extra scrape jobs (roles/prometheus_targets)

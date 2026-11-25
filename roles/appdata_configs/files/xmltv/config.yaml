@@ -1,0 +1,39 @@
+Account:
+    Username: ""
+    Password: ""
+Files:
+    Cache: config_cache.json
+    XMLTV: config.xml
+    The MovieDB cache file: config_tmdb_cache.json
+Server:
+    Enable: false
+    Address: localhost
+    Port: "80"
+Options:
+    Live and New icons: false
+    Schedule Days: 7
+    Skip EPG refresh if XMLTV younger than hours: 0
+    Subtitle into Description: false
+    Insert credits tag into XML file: false
+    Images:
+        Download Images from Schedules Direct: false
+        Image Path: ""
+        Poster Aspect: ""
+        Preindex SD Posters: true
+        Proxy Mode: false
+        Proxy Base URL: ""
+        Max Cache Age Days: 0
+        Purge Stale Posters: false
+        The MovieDB:
+            Enable: false
+            Api Key: ""
+    Rating:
+        Insert rating tag into XML file: true
+        Maximum rating entries. 0 for all entries: 1
+        Preferred countries. ISO 3166-1 alpha-3 country code. Leave empty for all systems:
+            - USA
+            - CHE
+            - DE
+        Use country code as rating system: false
+    Show download errors from Schedules Direct in the log: false
+Station: []

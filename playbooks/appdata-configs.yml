@@ -1,0 +1,6 @@
+---
+# Deploy git-tracked app configs to saturn appdata (loki, promtail, pve-exporter, ddns, epgo, frigate, ytdl-sub...).
+- name: Apply appdata configs
+  hosts: omv
+  become: true
+  roles: [appdata_configs]

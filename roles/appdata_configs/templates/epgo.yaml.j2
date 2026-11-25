@@ -1,0 +1,114 @@
+Account:
+    Username: {{ s.sd_user | to_json }}
+    Password: {{ s.sd_pass_epgo | to_json }}
+Files:
+    Cache: config_cache.json
+    XMLTV: xmltv.xml
+    The MovieDB cache file: config_tmdb_cache.json
+Server:
+    Enable: true
+    Address: 10.40.0.16
+    Port: "80"
+Options:
+    Live and New icons: true
+    Schedule Days: 14
+    Subtitle into Description: false
+    Insert credits tag into XML file: false
+    Images:
+        Download Images from Schedules Direct: true
+        Poster Aspect: 2x3
+        Preindex SD Posters: true
+        Proxy Mode: true
+        #Proxy Base Url: xmltv.cbhomelab.net
+        Image Path: ""
+        Max Cache Age Days: 0
+        Purge Stale Posters: true
+        The MovieDB:
+            Enable: false
+            Api Key: {{ s.tmdb_key | to_json }}
+    Rating:
+        Insert rating tag into XML file: false
+        Maximum rating entries. 0 for all entries: 1
+        Preferred countries. ISO 3166-1 alpha-3 country code. Leave empty for all systems:
+            - USA
+        Use country code as rating system: false
+    Show download errors from Schedules Direct in the log: false
+Station:
+    - Name: WGBO-DT
+      ID: "42635"
+      Lineup: USA-IL67050-X
+    - Name: Sky Sports F1 HD
+      ID: "117233"
+      Lineup: GBR-1000197-DEFAULT
+    - Name: Sky Sports F1
+      ID: "74410"
+      Lineup: GBR-1000197-DEFAULT
+    - Name: ESPN HD
+      ID: "32645"
+      Lineup: USA-CA65962-X
+    - Name: ESPN2 HD
+      ID: "45507"
+      Lineup: USA-CA65962-X
+    - Name: ESPNEWS HD
+      ID: "59976"
+      Lineup: USA-CA65962-X
+    - Name: FS1 HD
+      ID: "82547"
+      Lineup: USA-CA65962-X
+    - Name: FS2 HD
+      ID: "59305"
+      Lineup: USA-CA65962-X
+    - Name: KABC-DT
+      ID: "19570"
+      Lineup: USA-CA65962-X
+    - Name: KCAL-DT
+      ID: "20364"
+      Lineup: USA-CA65962-X
+    - Name: KCBS-DT
+      ID: "19567"
+      Lineup: USA-CA65962-X
+    - Name: KNBC-DT
+      ID: "19568"
+      Lineup: USA-CA65962-X
+    - Name: KTTV-DT
+      ID: "20450"
+      Lineup: USA-CA65962-X
+    - Name: TNT HD (Pacific)
+      ID: "61340"
+      Lineup: USA-CA65962-X
+    - Name: USA Network HD (Pacific)
+      ID: "74030"
+      Lineup: USA-CA65962-X
+    - Name: KCNC-DT
+      ID: "21297"
+      Lineup: USA-DNOW751-X
+    - Name: KDVR-DT
+      ID: "21319"
+      Lineup: USA-DNOW751-X
+    - Name: KMGH-DT
+      ID: "20293"
+      Lineup: USA-DNOW751-X
+    - Name: KUSA-DT
+      ID: "21298"
+      Lineup: USA-DNOW751-X
+    - Name: KTLA-DT
+      ID: "19515"
+      Lineup: USA-CA65962-X
+    - Name: CBS Sports Network HD
+      ID: "59250"
+      Lineup: USA-CA65962-X
+    - Name: FOX SPORTS 506 HD
+      ID: "103078"
+      Lineup: AUS-1007697-DEFAULT
+    - Name: Discovery Turbo (West Coast Feed)
+      ID: "117331"
+      Lineup: USA-CA65962-X
+    - Name: RACER Network HD
+      ID: "61036"
+      Lineup: USA-DNOW751-X
+    - Name: NFL Network HD
+      ID: "45399"
+      Lineup: USA-DNOW751-X
+    - Name: NFL RedZone HD
+      ID: "65025"
+      Lineup: USA-DNOW751-X

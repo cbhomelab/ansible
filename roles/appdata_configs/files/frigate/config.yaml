@@ -1,0 +1,588 @@
+mqtt:
+  host: mqtt.mgmt.cbho.me
+  user: '{FRIGATE_MQTT_USER}'
+  password: '{FRIGATE_MQTT_PASSWORD}'
+
+ffmpeg:
+  hwaccel_args: preset-vaapi
+
+detectors: # <---- add detectors
+  coral:
+    type: edgetpu
+    device: pci
+
+objects:
+  # Track person + car globally (default is person-only); car matters for
+  # driveway/street coverage. Indoor cams override back to person-only below.
+  track:
+    - person
+    - car
+  filters:
+    person:
+      # Slightly more sensitive than Frigate defaults (min_score 0.5, threshold 0.7)
+      # so borderline/distant people initiate tracking instead of being dropped.
+      min_score: 0.45
+      threshold: 0.65
+    car:
+      min_score: 0.45
+      threshold: 0.65
+
+record:
+  enabled: true
+  alerts:
+    retain:
+      days: 45
+  detections:
+    retain:
+      days: 45
+  continuous:
+    days: 0
+  motion:
+    days: 10
+snapshots:
+  enabled: true
+  retain:
+    default: 30
+
+go2rtc:
+  streams:
+    front_door:
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.10:554/h264Preview_01_main
+      - ffmpeg:front_door#audio=opus
+      #- ffmpeg:http://10.50.0.10/flv?port=1935&app=bcs&stream=channel0_main.bcs&user={FRIGATE_RTSP_USER}&password={FRIGATE_RTSP_PASSWORD}#video=copy#audio=copy#audio=opus
+    front_door_sub:
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.10:554/h264Preview_01_sub
+      - ffmpeg:front_door_sub#audio=opus
+      #- ffmpeg:http://10.50.0.10/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user={FRIGATE_RTSP_USER}&password={FRIGATE_RTSP_PASSWORD}
+    garage:
+      #- ffmpeg:http://10.50.0.11/flv?port=1935&app=bcs&stream=channel0_main.bcs&user={FRIGATE_RTSP_USER}&password={FRIGATE_RTSP_PASSWORD}#video=copy#audio=copy#audio=opus
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.11:554/h264Preview_01_main
+      - ffmpeg:garage#audio=opus
+    garage_sub:
+      #- ffmpeg:http://10.50.0.11/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user={FRIGATE_RTSP_USER}&password={FRIGATE_RTSP_PASSWORD}
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.11:554/h264Preview_01_sub
+      - ffmpeg:garage_sub#audio=opus
+#    gazebo:
+#      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.14:554/h264Preview_01_main
+#      - ffmpeg:gazebo#audio=opus
+#    gazebo_sub:
+#      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.14:554/h264Preview_01_sub
+#      - ffmpeg:gazebo_sub#audio=opus
+    front_yard:
+      # Duo 2 main is HEVC 4608x1728 (stitched dual-lens pano). Tried using it
+      # for full-res recording on 2026-11-12 - it caused the camera itself to
+      # drop BOTH its main and sub RTSP sessions every few minutes (confirmed
+      # via repeated "Connection timed out" crashes, isolated to this camera
+      # model only - front_door/garage with similar dual-stream setups never
+      # crashed). This is a camera/firmware reliability issue with the Duo 2's
+      # HEVC main encoder, not fixable in Frigate config. Reverted to sub-only.
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.15:554/h264Preview_01_sub
+      - ffmpeg:front_yard#audio=opus
+      #- rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.15:554/h264Preview_01_main
+      #- ffmpeg:http://10.50.0.15/flv?port=1935&app=bcs&stream=channel0_main.bcs&user={FRIGATE_RTSP_USER}&password={FRIGATE_RTSP_PASSWORD}#video=copy#audio=copy#audio=opus
+    front_yard_sub:
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.15:554/h264Preview_01_sub
+      - ffmpeg:front_yard_sub#audio=opus
+      #- ffmpeg:http://10.50.0.15/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user={FRIGATE_RTSP_USER}&password={FRIGATE_RTSP_PASSWORD}
+    back_yard:
+      # Same Duo 2 main-stream reliability issue as front_yard - reverted to sub.
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.16:554/h264Preview_01_sub
+      - ffmpeg:back_yard#audio=opus
+      #- rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.16:554/h264Preview_01_main
+      #- ffmpeg:http://10.50.0.16/flv?port=1935&app=bcs&stream=channel0_main.bcs&user={FRIGATE_RTSP_USER}&password={FRIGATE_RTSP_PASSWORD}#video=copy#audio=copy#audio=opus
+    back_yard_sub:
+      - rtsp://{FRIGATE_RTSP_USER}:{FRIGATE_RTSP_PASSWORD}@10.50.0.16:554/h264Preview_01_sub
+      - ffmpeg:back_yard_sub#audio=opus
+      #- ffmpeg:http://10.50.0.16/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user={FRIGATE_RTSP_USER}&password={FRIGATE_RTSP_PASSWORD}
+    doorbell:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.30.0.113:554/cam/realmonitor?channel=1&subtype=0&authbasic=64
+      - ffmpeg:doorbell#audio=opus
+    doorbell_sub:
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.30.0.113:554/cam/realmonitor?channel=1&subtype=1&authbasic=64
+      - ffmpeg:doorbell_sub#audio=opus
+    # baby_monitor:
+    #   #- ffmpeg:http://10.20.0.53/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password={FRIGATE_RTSP_PASSWORD}#video=copy#audio=copy#audio=opus
+    #   - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.20.0.53:554/h264Preview_01_main
+    #   - ffmpeg:baby_monitor#audio=opus
+    # baby_monitor_sub:
+    #   #- ffmpeg:http://10.20.0.53/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password={FRIGATE_RTSP_PASSWORD}
+    #   - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.20.0.53:554/h264Preview_01_sub
+    #   - ffmpeg:baby_monitor_sub#audio=opus
+    violet_bedroom:
+      #- ffmpeg:http://10.20.0.54/flv?port=1935&app=bcs&stream=channel0_main.bcs&user=admin&password={FRIGATE_RTSP_PASSWORD}#video=copy#audio=copy#audio=opus
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.20.0.54:554/h264Preview_01_main
+      - ffmpeg:violet_bedroom#audio=opus
+    violet_bedroom_sub:
+      #- ffmpeg:http://10.20.0.54/flv?port=1935&app=bcs&stream=channel0_ext.bcs&user=admin&password={FRIGATE_RTSP_PASSWORD}
+      - rtsp://admin:{FRIGATE_RTSP_PASSWORD}@10.20.0.54:554/h264Preview_01_sub
+      - ffmpeg:violet_bedroom_sub#audio=opus
+
+cameras:
+  front_door: # <------ Name the camera
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/front_door_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+        - path: rtsp://127.0.0.1:8554/front_door
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      #enabled: false # <---- disable detection until you have a working camera feed
+      fps: 7
+      width: 640
+      height: 480
+    motion:
+      mask:
+    # Top-down porch view: nearly the whole frame is your own doormat/tile,
+    # so one zone covering the usable floor is enough (not alert-restrictive,
+    # just here for stats/debug visibility).
+        motion_mask_1:
+          friendly_name: Motion Mask 1
+          enabled: true
+          coordinates: 0.627,0.019,0.977,0.021,0.979,0.071,0.627,0.075
+    zones:
+      porch:
+        friendly_name: Porch
+        coordinates: 0.0,1.0,0.0,0.05,0.6,0.0,1.0,0.2,1.0,1.0
+  garage: # <------ Name the camera
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/garage_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+        - path: rtsp://127.0.0.1:8554/garage
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      #enabled: false # <---- disable detection until you have a working camera feed
+      fps: 7
+      width: 640
+      height: 480
+    motion:
+      mask:
+        motion_mask_1:
+          friendly_name: Motion Mask 1
+          enabled: true
+          coordinates: 0.625,0.026,0.973,0.028,0.975,0.066,0.627,0.068
+      threshold: 43
+      contour_area: 22
+      improve_contrast: 'true'
+    # Interior storage garage, not a perimeter view - no zones (clutter makes
+    # them noise-prone), and no car tracking since no vehicles are ever in frame.
+    objects:
+      track:
+        - person
+#  gazebo: # <------ Name the camera
+#    enabled: true
+#    ffmpeg:
+#      inputs:
+#        - path: rtsp://127.0.0.1:8554/gazebo_sub
+#          input_args: preset-rtsp-restream
+#          roles:
+#            - detect
+#        - path: rtsp://127.0.0.1:8554/gazebo
+#          input_args: preset-rtsp-restream
+#          roles:
+#            - record
+#    detect:
+#      enabled: false # <---- disable detection until you have a working camera feed
+#      fps: 7
+#      width: 640
+#      height: 480
+#    motion:
+#      mask: 0.621,0.018,0.968,0.019,0.974,0.073,0.624,0.068
+  front_yard: # <------ Name the camera
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/front_yard_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+        - path: rtsp://127.0.0.1:8554/front_yard
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      #enabled: false # <---- disable detection until you have a working camera feed
+      fps: 10
+      width: 1536
+      height: 576
+    motion:
+      mask:
+        motion_mask_1:
+          friendly_name: Motion Mask 1
+          enabled: true
+          coordinates: 0.71,0.007,0.987,0.013,0.989,0.065,0.707,0.06
+      contour_area: 6
+    # Near zone (your driveway) vs far zone (the curb/sidewalk across the
+    # street where the truck parks). Both zones require alerts now - people
+    # messing with the truck or gate across the street need a push alert,
+    # not a silent "detection" log entry.
+    zones:
+      driveway:
+        friendly_name: Driveway
+        coordinates: 0.28,1.0,0.30,0.40,1.0,0.33,1.0,1.0
+      street:
+        friendly_name: Street
+        coordinates: 0.0,0.40,0.0,0.08,0.85,0.07,1.0,0.12,1.0,0.38
+    review:
+      alerts:
+        required_zones:
+          - driveway
+          - street
+  back_yard: # <------ Name the camera
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/back_yard_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+        - path: rtsp://127.0.0.1:8554/back_yard
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      #enabled: false # <---- disable detection until you have a working camera feed
+      fps: 7
+      width: 1536
+      height: 576
+    motion:
+      mask:
+        motion_mask_1:
+          friendly_name: Motion Mask 1
+          enabled: true
+          coordinates: 0.708,0.007,0.99,0.013,0.991,0.063,0.706,0.068
+      contour_area: 8
+    # Fully fenced private yard - no street/public area to separate out, so a
+    # single zone covering the usable ground (lawn+patio) is enough; not
+    # alert-restrictive since any person back here is already notable.
+    zones:
+      yard:
+        friendly_name: Yard
+        coordinates: 0.0,1.0,0.0,0.5,1.0,0.15,1.0,1.0
+  doorbell: # <------ Name the camera
+    enabled: true
+    ffmpeg:
+      # Software decode: VAAPI intermittently fails on this 640px H.264 stream (Failed to sync surface)
+      hwaccel_args: []
+      inputs:
+        - path: rtsp://127.0.0.1:8554/doorbell
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+        - path: rtsp://127.0.0.1:8554/doorbell_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+    detect:
+      #enabled: false # <---- disable detection until you have a working camera feed
+      width: 640
+      height: 480
+      fps: 5
+    motion:
+      mask:
+    # Near zone (porch/walkway where a visitor actually stands) vs far zone
+    # (street visible through the gap). Alerts restricted to the porch.
+        motion_mask_1:
+          friendly_name: Motion Mask 1
+          enabled: true
+          coordinates: 0.489,0.002,0.996,0.006,0.997,0.063,0.487,0.056
+    zones:
+      porch:
+        friendly_name: Porch
+        coordinates: 0.35,1.0,0.35,0.55,1.0,0.45,1.0,1.0
+      street:
+        friendly_name: Street
+        coordinates: 0.0,0.75,0.0,0.35,0.68,0.35,0.5,0.75
+    review:
+      alerts:
+        required_zones:
+          - porch
+  # baby_monitor: # <------ Name the camera
+  #   enabled: true
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://127.0.0.1:8554/baby_monitor_sub
+  #         input_args: preset-rtsp-restream
+  #         roles:
+  #           - detect
+  #       - path: rtsp://127.0.0.1:8554/baby_monitor
+  #         input_args: preset-rtsp-restream
+  #         roles:
+  #           - record
+  #   onvif:
+  #     host: 10.20.0.53
+  #     port: 8000
+  #     user: admin
+  #     password: '{FRIGATE_RTSP_PASSWORD}'
+  #   detect:
+  #     #enabled: false # <---- disable detection until you have a working camera feed
+  #     width: 640
+  #     height: 360
+  #     fps: 7
+  #   motion:
+  #     mask: 0.416,0.014,0.985,0.015,0.987,0.068,0.415,0.073
+  #   # Indoor nursery - no vehicles will ever appear, skip car tracking.
+  #   objects:
+  #     track:
+  #       - person
+  violet_bedroom: # <------ Name the camera
+    enabled: true
+    ffmpeg:
+      output_args:
+        record: preset-record-generic-audio-copy
+      inputs:
+        - path: rtsp://127.0.0.1:8554/violet_bedroom_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - detect
+        - path: rtsp://127.0.0.1:8554/violet_bedroom
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    onvif:
+      host: 10.20.0.54
+      port: 8000
+      user: admin
+      password: '{FRIGATE_RTSP_PASSWORD}'
+    detect:
+      #enabled: false # <---- disable detection until you have a working camera feed
+      width: 640
+      height: 360
+      fps: 7
+    motion:
+      mask:
+    # Indoor nursery - no vehicles will ever appear, skip car tracking.
+        motion_mask_1:
+          friendly_name: Motion Mask 1
+          enabled: true
+          coordinates: 0.64,0.01,0.988,0.012,0.988,0.077,0.642,0.068
+    objects:
+      track:
+        - person
+  front_door_cr: # continuous low-res recording only (sub stream) - workaround for record_sub not being in a released Frigate version yet
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/front_door_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      enabled: false
+    snapshots:
+      enabled: false
+    birdseye:
+      enabled: false
+    record:
+      enabled: true
+      continuous:
+        days: 21
+      motion:
+        days: 0
+      alerts:
+        retain:
+          days: 0
+      detections:
+        retain:
+          days: 0
+  garage_cr:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/garage_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      enabled: false
+    snapshots:
+      enabled: false
+    birdseye:
+      enabled: false
+    record:
+      enabled: true
+      continuous:
+        days: 21
+      motion:
+        days: 0
+      alerts:
+        retain:
+          days: 0
+      detections:
+        retain:
+          days: 0
+  front_yard_cr:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/front_yard_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      enabled: false
+    snapshots:
+      enabled: false
+    birdseye:
+      enabled: false
+    record:
+      enabled: true
+      continuous:
+        days: 21
+      motion:
+        days: 0
+      alerts:
+        retain:
+          days: 0
+      detections:
+        retain:
+          days: 0
+  back_yard_cr:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/back_yard_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      enabled: false
+    snapshots:
+      enabled: false
+    birdseye:
+      enabled: false
+    record:
+      enabled: true
+      continuous:
+        days: 21
+      motion:
+        days: 0
+      alerts:
+        retain:
+          days: 0
+      detections:
+        retain:
+          days: 0
+  doorbell_cr:
+    enabled: true
+    ffmpeg:
+      # Software decode: VAAPI intermittently fails on this 640px H.264 stream (Failed to sync surface)
+      hwaccel_args: []
+      inputs:
+        - path: rtsp://127.0.0.1:8554/doorbell_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      enabled: false
+    snapshots:
+      enabled: false
+    birdseye:
+      enabled: false
+    record:
+      enabled: true
+      continuous:
+        days: 21
+      motion:
+        days: 0
+      alerts:
+        retain:
+          days: 0
+      detections:
+        retain:
+          days: 0
+  # baby_monitor_cr:
+  #   enabled: true
+  #   ffmpeg:
+  #     inputs:
+  #       - path: rtsp://127.0.0.1:8554/baby_monitor_sub
+  #         input_args: preset-rtsp-restream
+  #         roles:
+  #           - record
+  #   detect:
+  #     enabled: false
+  #   snapshots:
+  #     enabled: false
+  #   birdseye:
+  #     enabled: false
+  #   record:
+  #     enabled: true
+  #     continuous:
+  #       days: 21
+  #     motion:
+  #       days: 0
+  #     alerts:
+  #       retain:
+  #         days: 0
+  #     detections:
+  #       retain:
+  #         days: 0
+  violet_bedroom_cr:
+    enabled: true
+    ffmpeg:
+      inputs:
+        - path: rtsp://127.0.0.1:8554/violet_bedroom_sub
+          input_args: preset-rtsp-restream
+          roles:
+            - record
+    detect:
+      enabled: false
+    snapshots:
+      enabled: false
+    birdseye:
+      enabled: false
+    record:
+      enabled: true
+      continuous:
+        days: 21
+      motion:
+        days: 0
+      alerts:
+        retain:
+          days: 0
+      detections:
+        retain:
+          days: 0
+version: 0.18-0
+camera_groups:
+  Kids:
+    order: 1
+    icon: LuBaby
+    cameras:
+      # - baby_monitor
+      - violet_bedroom
+  Front_Yard:
+    order: 2
+    icon: LuCar
+    cameras:
+      - doorbell
+      - front_door
+      - front_yard
+  Back_Yard:
+    order: 3
+    icon: LuDog
+    cameras:
+      - back_yard
+  Continuous_LowRes:
+    order: 4
+    icon: LuVideo
+    cameras:
+      - front_door_cr
+      - garage_cr
+      - front_yard_cr
+      - back_yard_cr
+      - doorbell_cr
+      # - baby_monitor_cr
+      - violet_bedroom_cr
+detect:
+  enabled: true
