@@ -67,7 +67,7 @@
 
 - name: Node ACME domain configured
   ansible.builtin.shell: |
-    pvenode config get --output-format json | grep -q 'acmedomain0' && exit 0
+    pvenode config get | grep -q 'acmedomain0' && exit 0
     pvenode config set --acmedomain0 domain={{ pve_node_acme_domain }},plugin={{ pve_node_acme_plugin }} && echo CHANGED
   register: pve_node_acme_dom
   changed_when: "'CHANGED' in pve_node_acme_dom.stdout"
@@ -78,3 +78,20 @@
     pvenode acme cert order && echo CHANGED
   register: pve_node_acme_order
   changed_when: "'CHANGED' in pve_node_acme_order.stdout"
+
+- name: Hermes automation role/user/group/ACLs (mirrors neptune; token itself is created once by hand)
+  ansible.builtin.shell: |
+    set -e
+    CH=0
+    pveum role list --output-format json | grep -q '"roleid":"HermesVMOperator"' || { pveum role add HermesVMOperator --privs "{{ pve_node_hermes_privs }}"; CH=1; }
+    pveum group list --output-format json | grep -q '"groupid":"hermes"' || { pveum group add hermes; CH=1; }
+    pveum user list --output-format json | grep -q '"userid":"hermes@pve"' || { pveum user add hermes@pve --groups hermes; CH=1; }
+    A=$(pveum acl list --output-format json)
+    echo "$A" | grep -q '"path":"/","propagate":1,"roleid":"HermesVMOperator","type":"group"' || { pveum acl modify / --groups hermes --roles HermesVMOperator; CH=1; }
+    echo "$A" | grep -q '"path":"/storage","propagate":1,"roleid":"PVEDatastoreUser","type":"group"' || { pveum acl modify /storage --groups hermes --roles PVEDatastoreUser; CH=1; }
+    if pveum user token list hermes@pve --output-format json | grep -q '"tokenid":"hermes"'; then
+      echo "$A" | grep -q 'hermes@pve!hermes' || { pveum acl modify / --tokens 'hermes@pve!hermes' --roles HermesVMOperator; pveum acl modify /storage --tokens 'hermes@pve!hermes' --roles PVEDatastoreUser; CH=1; }
+    fi
+    [ "$CH" = 1 ] && echo CHANGED || true
+  register: pve_node_hermes
+  changed_when: "'CHANGED' in pve_node_hermes.stdout"

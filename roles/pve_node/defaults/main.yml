@@ -9,3 +9,6 @@ pve_node_backup_storage: saturn-backups
 pve_node_backup_nfs_server: 10.20.0.2
 pve_node_backup_nfs_export: /export/backups
 pve_node_vzdump_schedule: "sun 03:30"
+
+# neptune HermesVMOperator privs; PVE 9 dropped VM.Monitor (guest-agent access is VM.GuestAgent.*)
+pve_node_hermes_privs: "Permissions.Modify,Realm.AllocateUser,SDN.Use,User.Modify,VM.Allocate,VM.Audit,VM.Backup,VM.Clone,VM.Config.CDROM,VM.Config.CPU,VM.Config.Cloudinit,VM.Config.Disk,VM.Config.HWType,VM.Config.Memory,VM.Config.Network,VM.Config.Options,VM.Console,VM.GuestAgent.Audit,VM.PowerMgmt,VM.Snapshot,VM.Snapshot.Rollback"
