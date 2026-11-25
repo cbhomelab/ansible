@@ -1,0 +1,11 @@
+---
+# Create/update guests on jupiter. CREATE + UPDATE ONLY (no destroy).
+#   set -a; . ~/.config/proxmox/jupiter.env; . ~/.config/opnsense/env; set +a
+- name: Guests on jupiter via the API
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files: [../inventory/jupiter_guests.yml]
+  vars:
+    proxmox_guests_node: jupiter
+  roles: [proxmox_guests]

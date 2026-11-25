@@ -32,3 +32,7 @@ pihole_tailscale: true
 pihole_backup_dir: /var/backups/pihole
 pihole_backup_fetch_dir: ""
 pihole_update_check_only: false
+
+# Secondary-only (pihole_secondary: true in inventory): where to pull the Teleporter export from.
+pihole_sync_primary: "{{ hostvars['lxc108-pihole'].ansible_host }}"
+pihole_sync_interval_minutes: 30

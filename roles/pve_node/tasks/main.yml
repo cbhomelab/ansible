@@ -95,3 +95,11 @@
     [ "$CH" = 1 ] && echo CHANGED || true
   register: pve_node_hermes
   changed_when: "'CHANGED' in pve_node_hermes.stdout"
+
+- name: LXC OS templates present on local storage
+  ansible.builtin.shell: |
+    pveam list local | grep -q '{{ item }}' && exit 0
+    pveam update >/dev/null && pveam download local '{{ item }}' >/dev/null && echo CHANGED
+  loop: "{{ pve_node_lxc_templates }}"
+  register: pve_node_tpl
+  changed_when: "'CHANGED' in pve_node_tpl.stdout"

@@ -1,0 +1,7 @@
+---
+# Guests on jupiter (standalone PVE, 10.20.0.55). Applied by playbooks/proxmox-guests-jupiter.yml
+# with ~/.config/proxmox/jupiter.env. VMIDs here are distinct from neptune's.
+proxmox_guests_lxc:
+  - {vmid: 120, hostname: pihole2, ostemplate: "local:vztmpl/debian-13-standard_13.6-1_amd64.tar.zst", cores: 1, memory: 512, swap: 256, disk: "local-lvm:8", ip: 10.20.0.56/24, gw: 10.20.0.1, nameserver: 10.20.0.1, features: ["nesting=1"], tags: [ansible, dns, pihole]}
+proxmox_guests_adopted: []
+proxmox_guests_protect_only: []

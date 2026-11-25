@@ -1,0 +1,51 @@
+---
+# Secondary Pi-hole: pull the primary's Teleporter export (config + gravity) and import it
+# locally on a timer. Pi-hole v6 has no built-in sync; this uses the documented REST API.
+- name: Sync script
+  ansible.builtin.copy:
+    src: pihole-sync.py
+    dest: /usr/local/sbin/pihole-sync
+    mode: "0755"
+
+- name: Sync credentials (root only)
+  ansible.builtin.copy:
+    dest: /etc/pihole-sync.env
+    mode: "0600"
+    content: |
+      PRIMARY_URL=http://{{ pihole_sync_primary }}
+      PRIMARY_PASSWORD={{ pihole_web_password }}
+      LOCAL_URL=http://127.0.0.1
+      LOCAL_PASSWORD={{ pihole_web_password }}
+  no_log: true
+  when: pihole_web_password | length > 0
+
+- name: Sync service and timer
+  ansible.builtin.copy:
+    dest: "/etc/systemd/system/{{ item.name }}"
+    mode: "0644"
+    content: "{{ item.body }}"
+  loop:
+    - name: pihole-sync.service
+      body: |
+        [Unit]
+        Description=Sync Pi-hole config and gravity from {{ pihole_sync_primary }}
+        After=network-online.target pihole-FTL.service
+        [Service]
+        Type=oneshot
+        EnvironmentFile=/etc/pihole-sync.env
+        ExecStart=/usr/local/sbin/pihole-sync
+    - name: pihole-sync.timer
+      body: |
+        [Unit]
+        Description=Pi-hole sync timer
+        [Timer]
+        OnBootSec=5min
+        OnCalendar=*:0/{{ pihole_sync_interval_minutes }}
+        RandomizedDelaySec=60
+        Persistent=true
+        [Install]
+        WantedBy=timers.target
+  register: pihole_sync_units
+
+- name: Enable sync timer
+  ansible.builtin.systemd: {name: pihole-sync.timer, enabled: true, state: started, daemon_reload: "{{ pihole_sync_units.changed }}"}

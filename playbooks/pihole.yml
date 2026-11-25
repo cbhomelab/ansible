@@ -3,7 +3,7 @@
 #   --tags update   in-place update with backup + health check
 # App state (gravity DB customisations, query history) is restored by app_state.
 - name: Pi-hole
-  hosts: lxc108-pihole
+  hosts: lxc108-pihole,lxc120-pihole2
   become: true
   tasks:
     - ansible.builtin.import_role: {name: pihole}

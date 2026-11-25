@@ -30,6 +30,8 @@
   args: {creates: /usr/local/bin/pihole}
   environment: {PIHOLE_SKIP_OS_CHECK: "true"}
 
+# Secondary (pihole_secondary: true): config + gravity come from the primary via
+# sync.yml (Teleporter), so the declarative settings below are skipped there.
 - name: Declarative settings via pihole-FTL --config (changed only if pihole.toml content changes)
   ansible.builtin.shell: |
     set -e
@@ -57,6 +59,7 @@
       webserver.interface.theme: "{{ pihole_web_theme }}"
       database.maxDBdays: "{{ pihole_query_log_max_days }}"
   notify: Restart pihole-FTL
+  when: not (pihole_secondary | default(false))
 
 - name: Web admin password
   ansible.builtin.command: pihole setpassword '{{ pihole_web_password }}'
@@ -74,12 +77,14 @@
   changed_when: false
   loop: "{{ pihole_adlists }}"
   notify: Update gravity
+  when: not (pihole_secondary | default(false))
 
 - name: Groups
   ansible.builtin.shell: |
     pihole-FTL sqlite3 -batch /etc/pihole/gravity.db "INSERT OR IGNORE INTO \"group\"(name,enabled) VALUES('{{ item }}',1);"
   changed_when: false
   loop: "{{ pihole_groups }}"
+  when: not (pihole_secondary | default(false))
 
 - name: Allow/deny domains
   ansible.builtin.shell: |
@@ -87,6 +92,7 @@
   changed_when: false
   loop: "{{ pihole_domains }}"
   notify: Update gravity
+  when: not (pihole_secondary | default(false))
 
 - name: Tailscale (installed by network_appliances/baseline; only checked here)
   ansible.builtin.command: tailscale status
@@ -100,3 +106,7 @@
   register: pihole_dns
   changed_when: false
   failed_when: pihole_dns.stdout | length == 0
+
+- name: Sync from the primary Pi-hole (secondary only)
+  ansible.builtin.include_tasks: sync.yml
+  when: pihole_secondary | default(false)
