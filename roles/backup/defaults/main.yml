@@ -53,6 +53,6 @@ backup_prometheus_rules_dir: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147
 # {{ backup_appdata }}/alertmanager/config/mattermost_webhook (chmod 600), never in git.
 backup_alertmanager_enabled: false
 backup_alertmanager_bind: 10.20.0.2   # LAN IP only, never 0.0.0.0
-backup_alertmanager_image: prom/alertmanager:v0.28.1
+backup_alertmanager_image: prom/alertmanager:v0.35.1
 backup_appdata: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata
 backup_appdata_uid: 1006   # UID in /opt/docker-compose/global.env

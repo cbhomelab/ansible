@@ -32,7 +32,7 @@ npm_upstream_keep_fields: [domain_names, forward_scheme, forward_host, forward_p
 # Desired NPM proxy hosts (seeded from the live lxc102 state). Matched by first domain; the npm role creates missing hosts and
 # updates drifted fields. Keys omitted from an entry fall back to npm_proxy_host_defaults. Hosts not listed are never touched or deleted.
 npm_proxy_hosts:
-  - {"domain_names": ["alertmanager.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 9093, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["alertmanager.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 9093, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 1}
   - {"domain_names": ["apollo-gaming.cbhomelab.net"], "forward_host": "10.10.0.17", "forward_port": 47990, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "block_exploits": 0, "caching_enabled": 0}
   - {"domain_names": ["apollo-laptop-dock.cbhomelab.net"], "forward_host": "10.10.0.10", "forward_port": 47990, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "block_exploits": 0, "caching_enabled": 0}
   - {"domain_names": ["apollo-laptop.cbhomelab.net"], "forward_host": "10.10.0.12", "forward_port": 47990, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "block_exploits": 0, "caching_enabled": 0}
@@ -63,7 +63,7 @@ npm_proxy_hosts:
   - {"domain_names": ["opnsense.cbhomelab.net", "router.cbhomelab.net"], "forward_host": "10.20.0.1", "forward_port": 443, "forward_scheme": "https", "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
   - {"domain_names": ["overseerr.cbhomelab.net", "seerr.cbhomelab.net"], "forward_host": "10.40.0.99", "forward_port": 5055, "block_exploits": 0, "access_list_id": 0}
   - {"domain_names": ["plex.cbhomelab.net"], "forward_host": "10.40.0.20", "forward_port": 32400, "block_exploits": 0, "access_list_id": 0}
-  - {"domain_names": ["prometheus.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 9090, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 0}
+  - {"domain_names": ["prometheus.cbhomelab.net"], "forward_host": "10.20.0.2", "forward_port": 9090, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "access_list_id": 1}
   - {"domain_names": ["qbittorrent.cbhomelab.net", "torrent.cbhomelab.net"], "forward_host": "10.20.0.151", "forward_port": 8081}
   - {"domain_names": ["romm.cbhomelab.net"], "forward_host": "10.20.0.70", "forward_port": 8080, "access_list_id": 0}
   - {"domain_names": ["rss.cbhomelab.net"], "forward_host": "10.20.0.26", "forward_port": 80}
