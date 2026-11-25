@@ -1,0 +1,79 @@
+---
+# Make the router WebUI reachable by hostname and add direct mgmt.cbho.me
+# records for services that lacked one. See defaults for the why.
+
+- name: Ensure WebUI alternate hostnames (guest agent; idempotent)
+  ansible.builtin.shell: |
+    set -e
+    NAMES='{{ network_appliances_webgui_althostnames | join(" ") }}'
+    B=$(printf '%s' '<?php
+    require_once("/usr/local/etc/inc/config.inc");
+    $c = OPNsense\Core\Config::getInstance();
+    $want = "'"$NAMES"'";
+    $cur = (string)$c->object()->system->webgui->althostnames;
+    if ($cur === $want) { echo "UNCHANGED"; exit(0); }
+    $c->lock(); $c->object()->system->webgui->althostnames = $want; $c->save();
+    echo "CHANGED";' | base64 -w0)
+    ssh -o BatchMode=yes {{ network_appliances_guest_agent_host }} \
+      "sudo qm guest exec {{ hostvars['vm100-opnsense'].vmid }} -- /bin/sh -c 'echo $B | b64decode -r > /tmp/alt.php; php /tmp/alt.php; rm /tmp/alt.php'"
+  register: network_appliances_althost
+  changed_when: "'CHANGED' in network_appliances_althost.stdout and 'UNCHANGED' not in network_appliances_althost.stdout"
+  when: inventory_hostname == 'vm100-opnsense' and network_appliances_router_names_enabled
+
+- name: Reload the WebUI so the new hostnames take effect
+  ansible.builtin.shell: >-
+    ssh -o BatchMode=yes {{ network_appliances_guest_agent_host }}
+    "sudo qm guest exec {{ hostvars['vm100-opnsense'].vmid }} -- /bin/sh -c 'configctl webgui restart'"
+  when: inventory_hostname == 'vm100-opnsense' and network_appliances_althost is changed
+
+- name: Fetch Unbound host overrides (mgmt records)
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/searchHostOverride"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {rowCount: 5000, current: 1}
+    validate_certs: false
+    status_code: [200]
+  check_mode: false
+  no_log: true
+  register: network_appliances_mgmt_existing
+  when: inventory_hostname == 'vm100-opnsense' and network_appliances_router_names_enabled
+
+- name: Create missing mgmt.cbho.me records
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/settings/addHostOverride"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      host: {enabled: "1", hostname: "{{ item.key }}", domain: "{{ network_appliances_mgmt_domain }}", rr: A, server: "{{ item.value }}", description: "ansible:network_appliances router_names"}
+    validate_certs: false
+    status_code: [200]
+  register: network_appliances_mgmt_created
+  failed_when: network_appliances_mgmt_created.json.result | default('') != 'saved'
+  changed_when: true
+  loop: "{{ network_appliances_mgmt_hosts | dict2items }}"
+  loop_control: {label: "{{ item.key }}.{{ network_appliances_mgmt_domain }}"}
+  when: >-
+    inventory_hostname == 'vm100-opnsense' and network_appliances_router_names_enabled
+    and (network_appliances_mgmt_existing.json.rows
+         | selectattr('hostname', 'equalto', item.key)
+         | selectattr('domain', 'equalto', network_appliances_mgmt_domain)
+         | selectattr('rr', 'match', '^A( |$)') | list | length) == 0
+
+- name: Reload Unbound after new mgmt records
+  ansible.builtin.uri:
+    url: "{{ network_appliances_opnsense.api_base_url }}/api/unbound/service/reconfigure"
+    method: POST
+    url_username: "{{ network_appliances_opnsense.api_key }}"
+    url_password: "{{ network_appliances_opnsense.api_secret }}"
+    force_basic_auth: true
+    body_format: json
+    body: {}
+    validate_certs: false
+  when: inventory_hostname == 'vm100-opnsense' and network_appliances_mgmt_created is changed

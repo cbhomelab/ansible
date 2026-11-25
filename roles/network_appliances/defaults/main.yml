@@ -91,3 +91,31 @@ network_appliances_npm:
   host: "{{ hostvars['lxc102-intranet'].ansible_host }}:81"
   identity: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='username') | first }}"
   secret: "{{ lookup('community.general.bitwarden', 'homelab-npm-admin', field='password') | first }}"
+
+# ---- Router names (OPNsense WebUI + mgmt.cbho.me records) --------------
+# tasks/router_names.yml. The WebUI refuses any Host header not in its
+# hostname allow-list (System > Settings > Administration > Alternate
+# Hostnames) with "A potential DNS Rebind attack has been detected", which
+# is what NPM-fronted names (router/opnsense.cbhomelab.net) hit. There is no
+# API for that field, so it is set through the guest agent on neptune.
+network_appliances_router_names_enabled: true
+network_appliances_webgui_althostnames:
+  - router.mgmt.cbho.me
+  - router.iot.cbho.me
+  - router.ext.cbho.me
+  - router.cam.cbho.me
+  - router.priv.cbho.me
+  - router.tailnet.cbho.me
+  - router.cbhomelab.net
+  - opnsense.cbhomelab.net
+  - opnsense.mgmt.cbho.me
+network_appliances_guest_agent_host: neptune
+# Service names under mgmt.cbho.me -> backend IP (direct, not via NPM).
+# Only these records are created/corrected; other mgmt records are untouched.
+network_appliances_mgmt_domain: mgmt.cbho.me
+network_appliances_mgmt_hosts:
+  router: 10.20.0.1
+  opnsense: 10.20.0.1
+  npm: 10.20.0.4
+  grafana: 10.20.0.161
+  omv: 10.20.0.2

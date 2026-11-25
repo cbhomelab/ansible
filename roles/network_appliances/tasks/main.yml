@@ -29,3 +29,11 @@
     network_appliances_enabled and network_appliances_unbound_enabled
     and network_appliances_bedrock_dns_enabled and inventory_hostname == 'vm100-opnsense'
   tags: [bedrock_dns]
+
+- name: Router WebUI hostnames + mgmt.cbho.me records (OPNsense)
+  ansible.builtin.include_tasks:
+    file: router_names.yml
+    apply:
+      tags: [router_names]
+  when: network_appliances_enabled and inventory_hostname == 'vm100-opnsense'
+  tags: [router_names]
