@@ -1,0 +1,27 @@
+---
+# Hand-curated Plex collections refresh (Bob's Burgers Thanksgiving, Top Gear &
+# The Grand Tour Specials). Add-only; prints a line per episode added, silent
+# otherwise. See files/plex/plex_collections_refresh.py for the matching rules.
+#
+# Runs on the controller (Hermes, lxc103), which is excluded from fleet plays, so
+# this is a narrow localhost play. Needs ~/.config/plex/env with PLEX_TOKEN.
+# The schedule is the Hermes cron job "Plex collections refresh" (no_agent, daily
+# 4am, delivers to the saturn Mattermost thread). Hermes cron lives in Hermes's own
+# state, not here: recreate with
+#   cronjob create name="Plex collections refresh" script=plex_collections_refresh.py
+#   no_agent=true schedule="every day at 4am"
+- name: Plex collections refresh script
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Ensure Hermes scripts dir exists
+      ansible.builtin.file:
+        path: "{{ lookup('env', 'HOME') }}/.hermes/scripts"
+        state: directory
+        mode: "0700"
+    - name: Install refresh script
+      ansible.builtin.copy:
+        src: ../files/plex/plex_collections_refresh.py
+        dest: "{{ lookup('env', 'HOME') }}/.hermes/scripts/plex_collections_refresh.py"
+        mode: "0755"
