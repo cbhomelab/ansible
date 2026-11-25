@@ -6,6 +6,7 @@
 # on the controller (a token to clone the private repo).
 itl_repo: cbhomelab/iRacing-Team-Manager
 itl_branch: dev
+itl_installer_ref: "{{ itl_branch }}"   # where the installer script is fetched from (can differ while an installer change is in review)
 itl_app_env: development            # development | production
 itl_public_url: "http://{{ ansible_host }}:8000"
 itl_mumble: true

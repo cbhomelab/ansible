@@ -5,6 +5,9 @@
 # specific commands) updates the same file in place instead of leaving an
 # orphaned drop-in behind under the old name.
 
+- name: Install sudo (absent from fresh Debian LXC templates)
+  ansible.builtin.apt: {name: sudo, state: present}
+
 - name: Install sudoers.d drop-ins
   ansible.builtin.copy:
     dest: "/etc/sudoers.d/{{ item.name }}-nopasswd"

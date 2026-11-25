@@ -16,7 +16,7 @@
   block:
     - name: Installer script from the repo
       ansible.builtin.uri:
-        url: "https://raw.githubusercontent.com/{{ itl_repo }}/{{ itl_branch }}/proxmox/install/iracing-team-manager-install.sh"
+        url: "https://raw.githubusercontent.com/{{ itl_repo }}/{{ itl_installer_ref }}/proxmox/install/iracing-team-manager-install.sh"
         headers: {Authorization: "token {{ lookup('ansible.builtin.pipe', 'gh auth token') }}"}
         dest: /root/iracing-team-manager-install.sh
         mode: "0700"
