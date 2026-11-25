@@ -1,5 +1,5 @@
 ---
-- name: Minecraft stack on saturn
-  hosts: saturn
+- name: Minecraft stack on jupiter (lxc131-minecraft)
+  hosts: lxc131-minecraft
   become: true
   roles: [minecraft_docker]

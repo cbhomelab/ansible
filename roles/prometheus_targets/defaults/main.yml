@@ -37,5 +37,3 @@ prometheus_targets_extra_jobs: |
     static_configs:
       - targets: ["iracing-tms-prod-pg-exporter:9187"]
         labels: {host: saturn, instance_name: iracing-tms-prod, env: prod}
-      - targets: ["iracing-tms-dev-pg-exporter:9187"]
-        labels: {host: saturn, instance_name: iracing-tms-dev, env: dev}

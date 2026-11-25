@@ -8,10 +8,9 @@
   hosts: lxc130-iracing-dev
   become: true
   vars:
-    itl_installer_ref: feature/installer-dev-checkout   # until PR #96 is merged into dev
     itl_env_overrides:
-      DISCORD_BOT_ENABLED: "false"     # staging: flip to "true" (and SCHEDULER_ENABLED) at cutover
-      SCHEDULER_ENABLED: "false"
+      DISCORD_BOT_ENABLED: "true"
+      SCHEDULER_ENABLED: "true"
       SCHEDULER_SYNC_EVENTS: "true"
       SCRAPER_REQUEST_DELAY: "2"
   roles: [iracing_tms_lxc]
