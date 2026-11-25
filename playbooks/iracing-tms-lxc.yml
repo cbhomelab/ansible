@@ -25,7 +25,7 @@
     itl_vault_prefix: itms-prod
     itl_public_url: https://teams.fast-racing.org
     itl_env_overrides:
-      DISCORD_BOT_ENABLED: "false"   # staging: flip to "true" at cutover (like dev did)
-      SCHEDULER_ENABLED: "false"
+      DISCORD_BOT_ENABLED: "true"
+      SCHEDULER_ENABLED: "true"
       DISCORD_OAUTH_REDIRECT_URI: https://teams.fast-racing.org/auth/discord/callback
   roles: [iracing_tms_lxc]
