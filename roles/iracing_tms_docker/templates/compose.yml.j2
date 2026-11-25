@@ -6,6 +6,11 @@ networks:
     external: true
   internal:
     internal: true
+{% if itd_pg_exporter %}
+  {{ itd_metrics_network }}:
+    name: {{ itd_metrics_network }}
+    external: true
+{% endif %}
 {% if itd_mumble %}
     ipam: {config: [{subnet: {{ itd_internal_subnet }}}]}
 {% endif %}
@@ -17,6 +22,7 @@ services:
     env_file: {{ itd_env_file }}
     volumes: ["{{ itd_data }}/pgdata:/var/lib/postgresql/data"]
     networks: [internal]
+    logging: {options: {max-size: 50m, max-file: "3"}}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
@@ -47,6 +53,7 @@ services:
       {{ itd_network }}:
         ipv4_address: {{ itd_ip }}
       internal: {}
+    logging: {options: {max-size: 50m, max-file: "3"}}
     volumes:
 {% if itd_dev_mode %}
       - "{{ itd_data }}/src:/app"
@@ -66,6 +73,20 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+{% if itd_pg_exporter %}
+  pg-exporter:
+    image: {{ itd_pg_exporter_image }}
+    container_name: {{ itd_name }}-pg-exporter
+    restart: unless-stopped
+    user: "65534:65534"
+    env_file: {{ itd_pg_exporter_env_file }}
+    depends_on:
+      db: {condition: service_healthy}
+    # internal: reach the DB; {{ itd_metrics_network }}: lets the saturn Prometheus scrape :9187 by container name
+    networks: [internal, {{ itd_metrics_network }}]
+    deploy: {resources: {limits: {memory: 128M, pids: 64}}}
+    logging: {options: {max-size: 10m, max-file: "2"}}
+{% endif %}
 {% if itd_mumble %}
   mumble:
     image: {{ itd_mumble_image }}

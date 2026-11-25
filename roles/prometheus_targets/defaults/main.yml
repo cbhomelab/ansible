@@ -7,3 +7,18 @@ prometheus_targets_extra_hosts: [lxc107-unifi]
 prometheus_targets_exclude: [lxc103-hermesagent]
 prometheus_targets_port: 9100
 prometheus_targets_compose: /opt/docker-compose/90-metrics/90-metrics.yml
+
+# Extra scrape jobs appended to prometheus.yml (inside an Ansible-managed block). Targets are container names on the `docker` network.
+prometheus_targets_extra_jobs: |
+  - job_name: cadvisor
+    # per-container stats for every container on saturn (90-metrics/cadvisor)
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels: {host: saturn}
+  - job_name: iracing-postgres
+    # postgres_exporter sidecars from roles/iracing_tms_docker
+    static_configs:
+      - targets: ["iracing-tms-prod-pg-exporter:9187"]
+        labels: {host: saturn, instance_name: iracing-tms-prod, env: prod}
+      - targets: ["iracing-tms-dev-pg-exporter:9187"]
+        labels: {host: saturn, instance_name: iracing-tms-dev, env: dev}

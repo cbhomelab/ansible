@@ -37,3 +37,15 @@
     -f /opt/docker-compose/90-metrics/90-metrics.yml -f /opt/docker-compose/90-metrics/compose.override.yml
     up -d --force-recreate prometheus
   when: pt_compose.changed or pt_cfg.changed
+
+- name: Extra scrape jobs (cadvisor, iracing postgres)
+  ansible.builtin.blockinfile:
+    path: "{{ prometheus_targets_appdata }}/prometheus/config/prometheus.yml"
+    marker: "  # {mark} ANSIBLE extra scrape jobs (roles/prometheus_targets)"
+    insertafter: EOF
+    block: "{{ prometheus_targets_extra_jobs | indent(2, first=True) }}"
+  register: pt_jobs
+
+- name: Reload prometheus config (lifecycle API, no restart)
+  ansible.builtin.uri: {url: "http://127.0.0.1:9090/-/reload", method: POST, status_code: 200}
+  when: pt_jobs.changed

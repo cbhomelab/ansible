@@ -22,6 +22,11 @@
   no_log: true
   register: itd_env_rendered
 
+- name: postgres_exporter env file
+  when: itd_pg_exporter
+  ansible.builtin.template: {src: pg-exporter.env.j2, dest: "{{ itd_pg_exporter_env_file }}", mode: "0600", owner: root, group: root}
+  no_log: true
+
 - name: Mumble env file and data dir
   when: itd_mumble
   block:

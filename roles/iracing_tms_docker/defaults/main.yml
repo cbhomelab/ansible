@@ -68,3 +68,10 @@ itd_mumble_vault: [MUMBLE_ICE_SECRET, MUMBLE_SERVER_PASSWORD, MUMBLE_SUPERUSER_P
 # not used by another docker network (docker network ls) and a free address in it.
 itd_internal_subnet: ""
 itd_mumble_internal_ip: ""
+
+# --- metrics: postgres_exporter sidecar scraped by the saturn Prometheus (90-metrics) over the `docker` bridge ---
+# Container CPU/memory/net/disk come from cAdvisor (90-metrics), logs from Promtail docker_sd; only DB stats need a sidecar.
+itd_pg_exporter: true
+itd_pg_exporter_image: quay.io/prometheuscommunity/postgres-exporter:v0.16.0
+itd_pg_exporter_env_file: "{{ itd_data }}/pg-exporter.env"
+itd_metrics_network: docker
