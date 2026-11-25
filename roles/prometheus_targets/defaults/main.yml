@@ -32,8 +32,3 @@ prometheus_targets_extra_jobs: |
     static_configs:
       - targets: ["cadvisor:8080"]
         labels: {host: saturn}
-  - job_name: iracing-postgres
-    # postgres_exporter sidecars from roles/iracing_tms_docker
-    static_configs:
-      - targets: ["iracing-tms-prod-pg-exporter:9187"]
-        labels: {host: saturn, instance_name: iracing-tms-prod, env: prod}

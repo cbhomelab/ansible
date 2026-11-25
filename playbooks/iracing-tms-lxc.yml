@@ -14,3 +14,18 @@
       SCHEDULER_SYNC_EVENTS: "true"
       SCRAPER_REQUEST_DELAY: "2"
   roles: [iracing_tms_lxc]
+
+- name: iRacing Team Manager (production, native LXC on jupiter)
+  hosts: lxc132-iracing-prod
+  become: true
+  vars:
+    itl_branch: main
+    itl_installer_ref: dev          # installer is branch-independent; main has no native-LXC installer yet
+    itl_app_env: production
+    itl_vault_prefix: itms-prod
+    itl_public_url: https://teams.fast-racing.org
+    itl_env_overrides:
+      DISCORD_BOT_ENABLED: "true"
+      SCHEDULER_ENABLED: "true"
+      DISCORD_OAUTH_REDIRECT_URI: https://teams.fast-racing.org/auth/discord/callback
+  roles: [iracing_tms_lxc]

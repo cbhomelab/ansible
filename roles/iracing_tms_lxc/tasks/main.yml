@@ -94,6 +94,7 @@
         line: "{{ item.k }}={{ itl_secrets[item.v] }}"
       loop: [{k: icesecretwrite, v: MUMBLE_ICE_SECRET}, {k: serverpassword, v: MUMBLE_SERVER_PASSWORD}]
       loop_control: {label: "{{ item.k }}"}
+      when: itl_secrets[item.v] | length > 0
       no_log: true
       notify: Restart mumble-server
 

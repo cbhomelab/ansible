@@ -5,6 +5,7 @@ proxmox_guests_lxc:
   - {vmid: 120, hostname: pihole2, ostemplate: "local:vztmpl/debian-13-standard_13.6-1_amd64.tar.zst", cores: 1, memory: 512, swap: 256, disk: "local-lvm:8", ip: 10.20.0.56/24, gw: 10.20.0.1, nameserver: 10.20.0.1, features: ["nesting=1"], tags: [ansible, dns, pihole]}
   - {vmid: 130, hostname: iracing-dev, ostemplate: "local:vztmpl/debian-13-standard_13.6-1_amd64.tar.zst", cores: 4, memory: 4096, swap: 512, disk: "local-lvm:20", ip: 10.20.0.163/24, gw: 10.20.0.1, nameserver: 10.20.0.8, tags: [ansible, iracing, dev]}
   - {vmid: 131, hostname: minecraft, ostemplate: "local:vztmpl/debian-13-standard_13.6-1_amd64.tar.zst", cores: 4, memory: 8192, swap: 512, disk: "local-lvm:32", ip: 10.20.0.131/24, gw: 10.20.0.1, nameserver: "10.20.0.8 10.20.0.56", features: ["nesting=1"], onboot: true, tags: [ansible, minecraft]}
+  - {vmid: 132, hostname: iracing-prod, ostemplate: "local:vztmpl/debian-13-standard_13.6-1_amd64.tar.zst", cores: 4, memory: 4096, swap: 512, disk: "local-lvm:20", ip: 10.20.0.162/24, gw: 10.20.0.1, nameserver: 10.20.0.8, tags: [ansible, iracing, prod]}
 proxmox_guests_adopted:
   - {vmid: 107, type: lxc, name: unifi, cores: 2, memory: 2048, swap: 2048, onboot: true}  # moved from neptune 2026-11-25 (vzdump/pct restore), IP 10.20.0.19 unchanged
   - {vmid: 112, type: qemu, name: pdm, cores: 2, memory: 4096, onboot: true, agent: 0}  # PDM 10.20.0.52, moved from neptune 2026-11-25 (vzdump/qmrestore); old copy stopped on neptune
