@@ -1,0 +1,5 @@
+---
+- name: Restart iracing-team-manager
+  ansible.builtin.systemd: {name: iracing-team-manager, state: restarted}
+- name: Restart mumble-server
+  ansible.builtin.systemd: {name: mumble-server, state: restarted}

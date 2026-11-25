@@ -1,0 +1,17 @@
+---
+# iracing_tms_lxc: iRacing Team Manager installed natively in an LXC (no Docker) with the project's own installer
+# (proxmox/install/iracing-team-manager-install.sh in cbhomelab/iRacing-Team-Manager). The installer only runs when the
+# service is not yet installed; everything after that (secrets, env overrides, Mumble credentials) is converged here.
+# Needs BW_SESSION exported (secrets live in Bitwarden as "<itl_vault_prefix>/<VAR>", password field) and `gh` logged in
+# on the controller (a token to clone the private repo).
+itl_repo: cbhomelab/iRacing-Team-Manager
+itl_branch: dev
+itl_app_env: development            # development | production
+itl_public_url: "http://{{ ansible_host }}:8000"
+itl_mumble: true
+itl_install_dir: /opt/iracing-team-manager
+itl_vault_prefix: itms-dev
+itl_vault_install: [ADMIN_PASSWORD]  # needed by the first install
+itl_vault_env: [SECRET_KEY, DISCORD_BOT_TOKEN, GITHUB_ISSUES_TOKEN, DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, DISCORD_GUILD_ID, DISCORD_ADMIN_ROLE_ID, GARAGE61_TOKEN]
+itl_vault_mumble: [MUMBLE_ICE_SECRET, MUMBLE_SERVER_PASSWORD]
+itl_env_overrides: {}               # plain KEY: value pairs written to the .env (e.g. DISCORD_BOT_ENABLED: "true")
