@@ -14,7 +14,10 @@ def show_key(title):
 def bobs(e): return re.search(r"thanksgiving|turkey", e["title"] + " " + e.get("summary", ""), re.I)
 def topgear(e): return e["parentIndex"] == 0 or re.search(r"\bspecial\b", e["title"], re.I)
 def grandtour(e): return e["parentIndex"] in (4, 5, 6) or re.search(r"\bspecial\b", e["title"], re.I) or e.get("duration", 0) >= 80 * 60000
+def tim_char(e): return e["grandparentTitle"] == "Netflix Presents: The Characters" and e["title"] == "Tim Robinson"
+def always(e): return True
 RULES = [
+  ("Tim Robinson", [("I Think You Should Leave with Tim Robinson", always), ("Detroiters", always), ("Netflix Presents: The Characters", tim_char)]),
   ("Bob's Burgers Thanksgiving", [("Bob's Burgers", bobs)]),
   ("Top Gear & The Grand Tour Specials", [("Top Gear", topgear), ("The Grand Tour (2016)", grandtour)]),
 ]
