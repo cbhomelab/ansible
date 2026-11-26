@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Add-only refresh of hand-curated Plex collections (TV Shows library, section 1).
-Also covers per-person Game Changer / Make Some Noise collections (by Plex cast tags).
+Also covers per-person Dropout collections (Game Changer, Make Some Noise, Breaking News, Smartypants) (by Plex cast tags).
 Prints a line per added episode; silent when nothing changed. Never removes items."""
 import re, requests, sys
 env = dict(l.strip().split("=", 1) for l in open("/home/hermes/.config/plex/env") if "=" in l)
@@ -15,14 +15,16 @@ def bobs(e): return re.search(r"thanksgiving|turkey", e["title"] + " " + e.get("
 def topgear(e): return e["parentIndex"] == 0 or re.search(r"\bspecial\b", e["title"], re.I)
 def grandtour(e): return e["parentIndex"] in (4, 5, 6) or re.search(r"\bspecial\b", e["title"], re.I) or e.get("duration", 0) >= 80 * 60000
 def tim_char(e): return e["grandparentTitle"] == "Netflix Presents: The Characters" and e["title"] == "Tim Robinson"
+def b99(e): return re.search(r"^(Halloween( I+V?|)|HalloVeen|Valloweaster)$", e["title"])
 def always(e): return True
 RULES = [
   ("Tim Robinson", [("I Think You Should Leave with Tim Robinson", always), ("Detroiters", always), ("Netflix Presents: The Characters", tim_char)]),
+  ("Brooklyn Nine-Nine Halloween", [("Brooklyn Nine-Nine", b99)]),
   ("Bob's Burgers Thanksgiving", [("Bob's Burgers", bobs)]),
   ("Top Gear & The Grand Tour Specials", [("Top Gear", topgear), ("The Grand Tour (2016)", grandtour)]),
 ]
-PEOPLE = ["Brennan Lee Mulligan", "Vic Michaelis", "Jacob Wysocki", "Lisa Gilroy", "Jessica McKenna", "Zac Oyama"]
-PEOPLE_SHOWS = ["Game Changer", "Make Some Noise"]
+PEOPLE = ["Brennan Lee Mulligan", "Vic Michaelis", "Jacob Wysocki", "Lisa Gilroy", "Jessica McKenna", "Zac Oyama", "Paul F. Tompkins"]
+PEOPLE_SHOWS = ["Game Changer", "Make Some Noise", "Breaking News", "Smartypants"]
 SKIP = re.compile(r"archive footage|video footage", re.I)  # clips don't count as appearing
 colls = {c["title"]: c["ratingKey"] for c in g("/library/sections/1/collections").get("Metadata", [])}
 for name, parts in RULES:
@@ -42,7 +44,7 @@ for sname in PEOPLE_SHOWS:
         roles = g(f"/library/metadata/{e['ratingKey']}")["Metadata"][0].get("Role", [])
         cast.append((e, [r for r in roles if not SKIP.search(r.get("role", ""))]))
 for person in PEOPLE:
-    name = f"Game Changer & Make Some Noise: {person}"
+    name = f"Dropout: {person}"
     cid = colls[name]
     have = {e["ratingKey"] for e in g(f"/library/collections/{cid}/children").get("Metadata", [])}
     new = [e for e, rs in cast if e["ratingKey"] not in have and any(r["tag"] == person for r in rs)]
