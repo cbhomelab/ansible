@@ -1,0 +1,25 @@
+---
+# Synthetic probes (blackbox_exporter) on saturn: HTTPS reachability + TLS cert expiry + WAN reachability.
+blackbox_image: prom/blackbox-exporter:v0.29.1
+blackbox_appdata: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata
+blackbox_appdata_uid: 1006
+blackbox_prom_cfg: "{{ blackbox_appdata }}/prometheus/config"
+blackbox_compose: /opt/docker-compose/90-metrics/90-metrics.yml
+
+# Probed via NPM (10.20.0.4). All *.cbhomelab.net share one wildcard cert (NPM cert 3), so cert
+# expiry is checked on one name per distinct cert plus the two fast-racing.org certs.
+blackbox_https_targets:
+  - {name: npm-plex,        url: "https://plex.cbhomelab.net/identity"}
+  - {name: npm-hass,        url: "https://hass.cbhomelab.net/"}
+  - {name: npm-pihole,      url: "https://dns.cbhomelab.net/admin/"}
+  - {name: npm-unifi,       url: "https://unifi.cbhomelab.net/"}
+  - {name: npm-opnsense,    url: "https://opnsense.cbhomelab.net/"}
+  - {name: npm-neptune,     url: "https://neptune.cbhomelab.net/"}
+  - {name: npm-mattermost,  url: "https://mattermost.cbhomelab.net/api/v4/system/ping"}
+  - {name: npm-jellyfin,    url: "https://jellyfin.cbhomelab.net/health"}
+  - {name: npm-forgejo,     url: "https://forgejo.cbhomelab.net/"}
+  - {name: teams-prod,      url: "https://teams.fast-racing.org/"}
+  - {name: teams-dev,       url: "https://teams-dev.fast-racing.org/"}
+
+# Raw TCP reachability to the internet (WAN up / DNS-independent). Two independent endpoints.
+blackbox_wan_targets: ["1.1.1.1:443", "9.9.9.9:443"]

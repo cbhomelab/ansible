@@ -81,7 +81,7 @@
       ansible.builtin.lineinfile:
         path: "{{ backup_prometheus_rules_dir }}/prometheus.yml"
         insertafter: '^  evaluation_interval:.*'
-        line: "rule_files: [\"/etc/prometheus/backup-alerts.yml\"]"
+        line: "rule_files: [\"/etc/prometheus/backup-alerts.yml\", \"/etc/prometheus/probe-alerts.yml\"]"
         regexp: '^rule_files:'
       register: backup_promcfg
     - name: Mount the rules file into the prometheus container (compose edit)

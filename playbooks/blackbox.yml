@@ -1,0 +1,6 @@
+---
+# Synthetic HTTPS/cert/WAN probes (blackbox_exporter) + alert rules, on saturn.
+- name: Blackbox probes
+  hosts: saturn
+  become: true
+  roles: [blackbox]

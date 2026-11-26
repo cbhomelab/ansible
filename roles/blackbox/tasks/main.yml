@@ -1,0 +1,109 @@
+---
+- name: Blackbox dirs
+  ansible.builtin.file: {path: "{{ item }}", state: directory, mode: "0755", owner: "{{ blackbox_appdata_uid }}"}
+  loop: ["{{ blackbox_appdata }}/blackbox", "{{ blackbox_appdata }}/blackbox/config"]
+
+- name: Blackbox module config
+  ansible.builtin.template: {src: blackbox.yml.j2, dest: "{{ blackbox_appdata }}/blackbox/config/blackbox.yml", mode: "0644"}
+  register: bb_cfg
+
+- name: Probe alert rules
+  ansible.builtin.template: {src: probe-alerts.yml.j2, dest: "{{ blackbox_prom_cfg }}/probe-alerts.yml", mode: "0644"}
+  register: bb_rules
+
+- name: Blackbox service in 90-metrics compose
+  ansible.builtin.blockinfile:
+    path: "{{ blackbox_compose }}"
+    insertafter: '^services:'
+    marker: "  # {mark} ANSIBLE blackbox (roles/blackbox)"
+    backup: true
+    block: |2
+        blackbox:
+          container_name: blackbox
+          image: {{ blackbox_image }}
+          user: "${UID}:${GID}"
+          restart: unless-stopped
+          command: ["--config.file=/etc/blackbox/blackbox.yml"]
+          networks:
+            docker:
+          dns:
+            - ${DNS}
+          volumes:
+            - ${APPDATA_DIR}/blackbox/config/blackbox.yml:/etc/blackbox/blackbox.yml:ro
+          deploy:
+            resources:
+              limits:
+                pids: 128
+                memory: 128M
+          logging:
+            options:
+              max-size: 50m
+  register: bb_compose
+
+- name: Mount probe rules into prometheus
+  ansible.builtin.lineinfile:
+    path: "{{ blackbox_compose }}"
+    insertafter: '^\s+- \$\{APPDATA_DIR\}/prometheus/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro'
+    line: "      - ${APPDATA_DIR}/prometheus/config/probe-alerts.yml:/etc/prometheus/probe-alerts.yml:ro"
+    backup: true
+  register: bb_mount
+
+- name: Blackbox scrape jobs
+  ansible.builtin.blockinfile:
+    path: "{{ blackbox_prom_cfg }}/prometheus.yml"
+    marker: "  # {mark} ANSIBLE blackbox jobs (roles/blackbox)"
+    insertafter: EOF
+    block: |2
+        - job_name: blackbox-https
+          metrics_path: /probe
+          params: {module: [http_up]}
+          scrape_interval: 60s
+          static_configs:
+      {% for t in blackbox_https_targets %}
+            - targets: ["{{ t.url }}"]
+              labels: {name: "{{ t.name }}"}
+      {% endfor %}
+          relabel_configs:
+            - source_labels: [__address__]
+              target_label: __param_target
+            - source_labels: [__param_target]
+              target_label: instance
+            - target_label: __address__
+              replacement: blackbox:9115
+        - job_name: blackbox-wan
+          metrics_path: /probe
+          params: {module: [tcp_connect]}
+          scrape_interval: 60s
+          static_configs:
+            - targets: {{ blackbox_wan_targets | to_json }}
+              labels: {name: wan}
+          relabel_configs:
+            - source_labels: [__address__]
+              target_label: __param_target
+            - source_labels: [__param_target]
+              target_label: instance
+            - target_label: __address__
+              replacement: blackbox:9115
+  register: bb_jobs
+
+- name: Prometheus loads the probe rule file (same line the backup role manages)
+  ansible.builtin.lineinfile:
+    path: "{{ blackbox_prom_cfg }}/prometheus.yml"
+    insertafter: '^  evaluation_interval:.*'
+    line: 'rule_files: ["/etc/prometheus/backup-alerts.yml", "/etc/prometheus/probe-alerts.yml"]'
+    regexp: '^rule_files:'
+  register: bb_ruleref
+
+- name: Bring up blackbox / recreate prometheus if mounts changed
+  ansible.builtin.command: >-
+    docker compose --project-name 90-metrics --env-file /opt/docker-compose/global.env
+    --env-file /opt/docker-compose/90-metrics/90-metrics.env
+    -f /opt/docker-compose/90-metrics/90-metrics.yml -f /opt/docker-compose/90-metrics/compose.override.yml
+    up -d blackbox prometheus
+  register: bb_up
+  changed_when: "'Started' in bb_up.stderr or 'Created' in bb_up.stderr or 'Recreated' in bb_up.stderr"
+  when: bb_compose.changed or bb_mount.changed or bb_cfg.changed
+
+- name: Restart prometheus (bind-mounted files are replaced atomically, reload would read stale inodes)
+  ansible.builtin.command: docker restart prometheus
+  when: (bb_rules.changed or bb_jobs.changed or bb_ruleref.changed) and not (bb_compose.changed or bb_mount.changed or bb_cfg.changed)
