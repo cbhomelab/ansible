@@ -5,6 +5,7 @@ OUT={{ backup_metrics_textfile_dir }}/homelab_backup.prom; T=$(mktemp "$OUT.XXXX
 {
 echo '# TYPE homelab_backup_last_success_timestamp_seconds gauge'
 for id in $(ls {{ backup_vzdump_dir }} 2>/dev/null | sed -nE 's/^vzdump-(lxc|qemu)-([0-9]+)-.*\.(tar|vma)\.zst$/\2/p' | sort -u); do
+  case " {{ backup_vzdump_ignore_ids | join(' ') }} " in *" $id "*) continue;; esac
   f=$(ls -t {{ backup_vzdump_dir }}/vzdump-*-$id-*.zst 2>/dev/null | head -1)
   echo "homelab_backup_last_success_timestamp_seconds{kind=\"vzdump\",target=\"$id\"} $(stat -c %Y "$f")"
 done
