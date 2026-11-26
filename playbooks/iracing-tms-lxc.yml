@@ -16,7 +16,7 @@
   roles: [iracing_tms_lxc]
 
 - name: iRacing Team Manager (production, native LXC on jupiter)
-  hosts: lxc132-iracing-prod
+  hosts: lxc106-iracing-prod
   become: true
   vars:
     itl_branch: main
