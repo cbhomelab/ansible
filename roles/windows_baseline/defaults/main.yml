@@ -133,3 +133,15 @@ windows_baseline_admins: []
 windows_baseline_apollo_hooks_enabled: false
 windows_baseline_apollo_conf: 'C:\Program Files\Apollo\config\sunshine.conf'
 windows_baseline_apollo_hooks_script: 'D:\Users\christian\Documents\Repos\Mode Switch Powershell Scripts\Apollo Hooks\StreamHooks.ps1'
+
+# --- VLAN trunk (Hyper-V external vSwitch + tagged host vNICs) ------------
+# The Realtek NIC driver only supports ONE tag for the whole NIC, so extra
+# VLANs are done with an external Hyper-V vSwitch: the default host vNIC stays
+# untagged (native VLAN) and each extra VLAN gets its own tagged host vNIC.
+# Needs the matching tagged ports on the switch (core-sw, see docs).
+windows_baseline_vlan_trunk_enabled: false
+windows_baseline_vlan_switch_name: "LAN-Trunk"
+windows_baseline_vlan_physical_adapter: "Ethernet"
+# Interface metric for the tagged vNICs: keeps the default route on the untagged LAN.
+windows_baseline_vlan_extra_metric: 500
+windows_baseline_vlan_adapters: []   # [{name: MGMT, id: 2, mac: "00155D001100"}, ...]  (mac pins the vNIC for Kea reservations)

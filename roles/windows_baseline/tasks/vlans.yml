@@ -1,0 +1,85 @@
+---
+# Hyper-V external vSwitch on the physical NIC with the untagged host vNIC kept
+# as the native VLAN, plus one tagged host vNIC per extra VLAN.
+# Creating the vSwitch drops the link for a few seconds (the host vNIC takes
+# over the NIC's MAC and DHCP lease), so it runs async and we wait for the
+# connection to return.
+- name: VLAN trunk tasks
+  when: windows_baseline_vlan_trunk_enabled | bool
+  block:
+    - name: Check whether the external vSwitch exists
+      ansible.windows.win_powershell:
+        script: |
+          [CmdletBinding()] param()
+          $Ansible.Changed = $false
+          $sw = Get-VMSwitch -Name '{{ windows_baseline_vlan_switch_name }}' -ErrorAction SilentlyContinue
+          $Ansible.Result = [bool]$sw
+      register: vlan_switch_present
+      check_mode: false
+
+    - name: Create the external vSwitch (async; the link blips)
+      ansible.windows.win_powershell:
+        script: |
+          [CmdletBinding()] param()
+          $Ansible.Changed = $true
+          New-VMSwitch -Name '{{ windows_baseline_vlan_switch_name }}' `
+            -NetAdapterName '{{ windows_baseline_vlan_physical_adapter }}' `
+            -AllowManagementOS $true | Out-Null
+      async: 300
+      poll: 0
+      register: vlan_switch_create
+      when:
+        - not vlan_switch_present.result
+        - not ansible_check_mode
+
+    - name: Wait for the PC to come back after the vSwitch creation
+      ansible.builtin.wait_for_connection:
+        delay: 10
+        timeout: 180
+      when: vlan_switch_create is changed
+
+    - name: Tagged host vNICs (one per VLAN), tagging and metric
+      ansible.windows.win_powershell:
+        script: |
+          [CmdletBinding()] param()
+          $Ansible.Changed = $false
+          $sw = '{{ windows_baseline_vlan_switch_name }}'
+          $metric = {{ windows_baseline_vlan_extra_metric }}
+          $want = ConvertFrom-Json '{{ windows_baseline_vlan_adapters | to_json }}'
+          if (-not (Get-VMSwitch -Name $sw -ErrorAction SilentlyContinue)) {
+            if ($Ansible.CheckMode) { $Ansible.Changed = $true; return }
+            throw "vSwitch $sw missing"
+          }
+          foreach ($v in $want) {
+            $name = "VLAN-$($v.name)"
+            $nic = Get-VMNetworkAdapter -ManagementOS -SwitchName $sw -Name $name -ErrorAction SilentlyContinue
+            if (-not $nic) {
+              $Ansible.Changed = $true
+              if ($Ansible.CheckMode) { continue }
+              $nic = Add-VMNetworkAdapter -ManagementOS -SwitchName $sw -Name $name -PassThru
+            }
+            $vl = Get-VMNetworkAdapterVlan -ManagementOS -VMNetworkAdapterName $name
+            if ($vl.OperationMode -ne 'Access' -or $vl.AccessVlanId -ne [int]$v.id) {
+              $Ansible.Changed = $true
+              if (-not $Ansible.CheckMode) {
+                Set-VMNetworkAdapterVlan -ManagementOS -VMNetworkAdapterName $name -Access -VlanId ([int]$v.id)
+              }
+            }
+            if ($v.mac -and (Get-VMNetworkAdapter -ManagementOS -Name $name).MacAddress -ne ($v.mac -replace '[-:]','').ToUpper()) {
+              $Ansible.Changed = $true
+              if (-not $Ansible.CheckMode) {
+                Set-VMNetworkAdapter -ManagementOS -Name $name -StaticMacAddress ($v.mac -replace '[-:]','')
+              }
+            }
+            if ($Ansible.CheckMode) { continue }
+            $ifc = Get-NetIPInterface -InterfaceAlias "vEthernet ($name)" -AddressFamily IPv4 -ErrorAction SilentlyContinue
+            if ($ifc -and ($ifc.AutomaticMetric -eq 'Enabled' -or $ifc.InterfaceMetric -ne $metric)) {
+              Set-NetIPInterface -InterfaceAlias "vEthernet ($name)" -AddressFamily IPv4 -InterfaceMetric $metric
+              $Ansible.Changed = $true
+            }
+            $dns = Get-DnsClient -InterfaceAlias "vEthernet ($name)" -ErrorAction SilentlyContinue
+            if ($dns -and $dns.RegisterThisConnectionsAddress) {
+              Set-DnsClient -InterfaceAlias "vEthernet ($name)" -RegisterThisConnectionsAddress $false
+              $Ansible.Changed = $true
+            }
+          }

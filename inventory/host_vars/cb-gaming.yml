@@ -1,6 +1,12 @@
 ---
 # CB-GAMING: christian's gaming/main PC.
 windows_baseline_package_sets: [gaming, dev, media_tools, creative, homelab]
+# Switch core-sw port 1/1/9: VLAN 1 (LAN) untagged + tagged 2,3,5.
+windows_baseline_vlan_trunk_enabled: true
+windows_baseline_vlan_adapters:
+  - {name: MGMT, id: 2, mac: '00155D001100'}
+  - {name: IOT, id: 3, mac: '00155D001101'}
+  - {name: CAM, id: 5, mac: '00155D001102'}
 # Accounts: christian only (global admin, nothing else needed here).
 windows_baseline_users: []
 windows_baseline_apollo_hooks_enabled: true

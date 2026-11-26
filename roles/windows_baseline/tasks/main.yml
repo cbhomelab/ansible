@@ -23,3 +23,7 @@
 - name: Apollo stream hooks
   ansible.builtin.import_tasks: apollo.yml
   tags: [apollo]
+
+- name: VLAN trunk (Hyper-V vSwitch + tagged host vNICs)
+  ansible.builtin.import_tasks: vlans.yml
+  tags: [vlans]
