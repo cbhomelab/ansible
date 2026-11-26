@@ -1,0 +1,30 @@
+---
+# FreshRSS "breaking news" alerts: collector + notifier scripts for a Hermes cron job.
+# Controller-local play (Hermes lxc103 is excluded from fleet plays).
+#   collector: reads new FreshRSS entries (ssh saturn -> sqlite), keyword prefilter,
+#              prints candidates; prints {"wakeAgent": false} when nothing to judge.
+#   notifier : HA phone push (tap opens article) + post in private #breaking-news (MM).
+# Needs ~/.config/homeassistant/env, ~/.hermes/.env (MATTERMOST_*), channel id in
+# ~/.hermes/cache/breaking_news_channel.txt. The schedule is a Hermes cron job
+# "Breaking news alerts" (every 15m, script=breaking_news_collect.py, agent judges
+# using the per-category criteria in its prompt and calls breaking_news_notify.py;
+# deliver=local). Hermes cron lives in Hermes state: recreate via `hermes cron` /
+# cronjob tool with the prompt documented in files/breaking_news/PROMPT.md.
+- name: Breaking news alert scripts
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Ensure Hermes scripts dir exists
+      ansible.builtin.file:
+        path: "{{ lookup('env', 'HOME') }}/.hermes/scripts"
+        state: directory
+        mode: "0700"
+    - name: Install scripts
+      ansible.builtin.copy:
+        src: "../files/breaking_news/{{ item }}"
+        dest: "{{ lookup('env', 'HOME') }}/.hermes/scripts/{{ item }}"
+        mode: "0755"
+      loop:
+        - breaking_news_collect.py
+        - breaking_news_notify.py
