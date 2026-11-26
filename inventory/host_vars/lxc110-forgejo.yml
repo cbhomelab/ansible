@@ -1,3 +1,6 @@
 ---
 # Key-only SSH (hermes key verified working before enabling).
 access_control_disable_password_auth: true
+
+# Guest backup freshness metric (roles/npm|forgejo write here; alerted in backup-alerts.yml)
+monitoring_agents_node_exporter_textfile_dir: /var/lib/node_exporter/textfile

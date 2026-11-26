@@ -10,3 +10,6 @@ monitoring_agents_promtail_jobs:
   - app: npm-error
     paths: ["/data/logs/*_error.log"]
 system_baseline_tailscale_enabled: true
+
+# Guest backup freshness metric (roles/npm|forgejo write here; alerted in backup-alerts.yml)
+monitoring_agents_node_exporter_textfile_dir: /var/lib/node_exporter/textfile

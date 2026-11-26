@@ -23,6 +23,9 @@
       # verify before rotating: zstd frame ok, tar readable, sqlite present
       if ! { zstd -tq "$d/npm-$ts.tar.zst" && zstd -dcq "$d/npm-$ts.tar.zst" | tar -tf - | grep -c "^./database.sqlite$" >/dev/null; }; then rm -f "$d/npm-$ts.tar.zst"; echo "npm backup verify FAILED" >&2; exit 1; fi
       ls -1t "$d"/npm-*.tar.zst | tail -n +$(( {{ npm_backup_keep }} + 1 )) | xargs -r rm -f
+      # freshness metric for Prometheus (node_exporter textfile collector); only after a verified archive
+      tf={{ monitoring_agents_node_exporter_textfile_dir | default("") }}
+      if [ -n "$tf" ] && [ -d "$tf" ]; then printf '# TYPE homelab_backup_last_success_timestamp_seconds gauge\nhomelab_backup_last_success_timestamp_seconds{kind="guest",target="%s"} %s\n' "npm" "$(date +%s)" > "$tf/guest_backup_npm.prom.tmp" && mv "$tf/guest_backup_npm.prom.tmp" "$tf/guest_backup_npm.prom"; fi
       echo "$d/npm-$ts.tar.zst"
 
 - name: Nightly backup

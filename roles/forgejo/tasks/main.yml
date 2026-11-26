@@ -61,6 +61,9 @@
       # verify before rotating: valid zip that contains the SQL dump and app config
       if ! python3 -c 'import sys,zipfile;z=zipfile.ZipFile(sys.argv[1]);n=z.namelist();sys.exit(0 if z.testzip() is None and "forgejo-db.sql" in n and "app.ini" in n else 1)' "$f"; then rm -f "$f"; echo "forgejo backup verify FAILED" >&2; exit 1; fi
       ls -1t "$d"/forgejo-*.zip | tail -n +$(( {{ forgejo_backup_keep }} + 1 )) | xargs -r rm -f
+      # freshness metric for Prometheus (node_exporter textfile collector); only after a verified archive
+      tf={{ monitoring_agents_node_exporter_textfile_dir | default("") }}
+      if [ -n "$tf" ] && [ -d "$tf" ]; then printf '# TYPE homelab_backup_last_success_timestamp_seconds gauge\nhomelab_backup_last_success_timestamp_seconds{kind="guest",target="%s"} %s\n' "forgejo" "$(date +%s)" > "$tf/guest_backup_forgejo.prom.tmp" && mv "$tf/guest_backup_forgejo.prom.tmp" "$tf/guest_backup_forgejo.prom"; fi
       echo "$f"
 
 - name: Nightly backup
