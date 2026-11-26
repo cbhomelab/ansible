@@ -8,6 +8,7 @@ proxmox_guests_lxc:
   - {vmid: 108, hostname: pihole, ostemplate: "local:vztmpl/debian-12-standard_12.12-1_amd64.tar.zst", cores: 2, memory: 1024, swap: 512, disk: "local-lvm:12", features: ["nesting=1"], tun: true}
   - {vmid: 110, hostname: forgejo, ostemplate: "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst", cores: 2, memory: 1024, swap: 512, disk: "local-lvm:16", ip: 10.20.0.50/24, gw: 10.20.0.1, nameserver: "10.20.0.8 10.20.0.56", features: ["nesting=1"], tags: [ansible, git], update: true}
   - {vmid: 111, hostname: mattermost, ostemplate: "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst", cores: 2, memory: 2048, swap: 512, disk: "local-lvm:16", ip: 10.20.0.51/24, gw: 10.20.0.1, nameserver: "10.20.0.8 10.20.0.56", features: ["nesting=1"], tags: [ansible, chat, hermes], update: true}
+  - {vmid: 106, hostname: iracing-prod, ostemplate: "local:vztmpl/debian-13-standard_13.1-2_amd64.tar.zst", cores: 4, memory: 4096, swap: 512, disk: "local-lvm:20", features: ["nesting=1"], ip: 10.20.0.162/24, gw: 10.20.0.1, nameserver: "10.20.0.8 10.20.0.56", tags: [ansible, iracing, prod]}
 
 # Pre-existing VMs: not cloneable/creatable by the role (PCI/USB passthrough), so declared for drift reporting only.
 proxmox_guests_adopted:
