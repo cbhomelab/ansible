@@ -21,7 +21,7 @@ RULES = [
   ("Bob's Burgers Thanksgiving", [("Bob's Burgers", bobs)]),
   ("Top Gear & The Grand Tour Specials", [("Top Gear", topgear), ("The Grand Tour (2016)", grandtour)]),
 ]
-PEOPLE = ["Brennan Lee Mulligan", "Vic Michaelis", "Jacob Wysocki", "Lisa Gilroy", "Jessica McKenna"]
+PEOPLE = ["Brennan Lee Mulligan", "Vic Michaelis", "Jacob Wysocki", "Lisa Gilroy", "Jessica McKenna", "Zac Oyama"]
 PEOPLE_SHOWS = ["Game Changer", "Make Some Noise"]
 SKIP = re.compile(r"archive footage|video footage", re.I)  # clips don't count as appearing
 colls = {c["title"]: c["ratingKey"] for c in g("/library/sections/1/collections").get("Metadata", [])}
