@@ -16,10 +16,16 @@ def topgear(e): return e["parentIndex"] == 0 or re.search(r"\bspecial\b", e["tit
 def grandtour(e): return e["parentIndex"] in (4, 5, 6) or re.search(r"\bspecial\b", e["title"], re.I) or e.get("duration", 0) >= 80 * 60000
 def tim_char(e): return e["grandparentTitle"] == "Netflix Presents: The Characters" and e["title"] == "Tim Robinson"
 def b99(e): return re.search(r"^(Halloween( I+V?|)|HalloVeen|Valloweaster)$", e["title"])
+def ng_tg(e): return re.search(r"^(Thanksgiving( I+V?)?|Last Thanksgiving|Parents)$", e["title"])
+def off_xmas(e): return re.search(r"christmas|secret santa", e["title"], re.I)
+def bobs_xmas(e): return e["title"] in ("Bob Rest Ye Merry Gentle-Mannequins","Christmas in the Car","Nice-Capades","The Last Gingerbread House on the Left","Have Yourself a Maily Linda Christmas","Yachty or Nice","Die Card, or Card Trying","Gene's Christmas Break","The Plight Before Christmas","The Nightmare 2 Days Before Christmas","Dog Christmas Day After Afternoon") or e["title"].startswith("It's a Stunterful Life")
 def always(e): return True
 RULES = [
   ("Tim Robinson", [("I Think You Should Leave with Tim Robinson", always), ("Detroiters", always), ("Netflix Presents: The Characters", tim_char)]),
   ("Brooklyn Nine-Nine Halloween", [("Brooklyn Nine-Nine", b99)]),
+  ("New Girl Thanksgiving", [("New Girl", ng_tg)]),
+  ("The Office Christmas", [("The Office (US)", off_xmas)]),
+  ("Bob's Burgers Christmas", [("Bob's Burgers", bobs_xmas)]),
   ("Bob's Burgers Thanksgiving", [("Bob's Burgers", bobs)]),
   ("Top Gear & The Grand Tour Specials", [("Top Gear", topgear), ("The Grand Tour (2016)", grandtour)]),
 ]
