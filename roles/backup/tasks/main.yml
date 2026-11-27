@@ -139,6 +139,12 @@
               volumes:
                 - ${APPDATA_DIR}/alertmanager/config/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
                 - ${APPDATA_DIR}/alertmanager/config/mattermost_webhook:/etc/alertmanager/mattermost_webhook:ro
+                {%- if backup_alertmanager_pushover_enabled | default(false) %}
+
+                - ${APPDATA_DIR}/alertmanager/config/pushover_user_key:/etc/alertmanager/pushover_user_key:ro
+                - ${APPDATA_DIR}/alertmanager/config/pushover_token:/etc/alertmanager/pushover_token:ro
+                {%- endif %}
+
                 - ${APPDATA_DIR}/alertmanager/data:/alertmanager
               deploy:
                 resources:

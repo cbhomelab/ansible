@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Send one breaking-news alert: Home Assistant phone push (tap opens the article)
+"""Send one breaking-news alert: Pushover phone push (HA push fallback; tap opens the article)
 + a rich Mattermost post in the private #breaking-news channel (no @mention, so
 the user is pinged once, by the phone push).
 
@@ -52,20 +52,28 @@ def main():
     title = f"{EMOJI.get(cat, '🔔')} {cat}: {a['headline']}"[:200]
     img = og_image(a["url"])
 
-    ha = envfile("~/.config/homeassistant/env")
-    data = {"tag": re.sub(r"\W+", "-", a["headline"].lower())[:60], "group": "breaking-news",
-            "url": a["url"], "clickAction": a["url"], "ttl": 0, "priority": "high",
-            "push": {"interruption-level": "time-sensitive" if imp >= 3 else "active"}}
-    if img:
-        data["image"] = img
-    try:
-        post(ha["HA_URL"].rstrip("/") + "/api/services/notify/mobile_app_christian_s_phone",
-             {"title": title, "message": a.get("summary", "")[:400], "data": data},
-             {"Authorization": "Bearer " + ha["HA_TOKEN"], "Content-Type": "application/json"})
-        pushed = True
-    except Exception as e:
-        pushed = False
-        print("push failed:", e)
+    # Pushover primary (importance 3 -> priority 1, else 0); HA push is the fallback.
+    import html as _h
+    sys.path.insert(0, str(Path(__file__).parent))
+    from pushover_send import send as pushover
+    body = f"{_h.escape(a.get('summary', ''))}\n\n<i>{_h.escape(a.get('source', 'source'))}</i>"
+    pushed = pushover(title, body, priority=1 if imp >= 3 else 0, url=a["url"],
+                      url_title="Read article", image_url=img,
+                      sound="siren" if imp >= 3 else "pushover")
+    if not pushed:
+        ha = envfile("~/.config/homeassistant/env")
+        data = {"tag": re.sub(r"\W+", "-", a["headline"].lower())[:60], "group": "breaking-news",
+                "url": a["url"], "clickAction": a["url"], "ttl": 0, "priority": "high",
+                "push": {"interruption-level": "time-sensitive" if imp >= 3 else "active"}}
+        if img:
+            data["image"] = img
+        try:
+            post(ha["HA_URL"].rstrip("/") + "/api/services/notify/mobile_app_christian_s_phone",
+                 {"title": title, "message": a.get("summary", "")[:400], "data": data},
+                 {"Authorization": "Bearer " + ha["HA_TOKEN"], "Content-Type": "application/json"})
+            pushed = True
+        except Exception as e:
+            print("push failed:", e)
 
     env = envfile("~/.hermes/.env")
     msg = f"### {title}\n{a.get('summary', '')}\n\n[Read article ({a.get('source', 'source')})]({a['url']})"

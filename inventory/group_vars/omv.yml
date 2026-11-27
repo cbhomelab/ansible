@@ -90,3 +90,4 @@ monitoring_agents_node_exporter_textfile_dir: /var/lib/node_exporter/textfile
 
 backup_metrics_enabled: true
 backup_alertmanager_enabled: true
+backup_alertmanager_pushover_enabled: true

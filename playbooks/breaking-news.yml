@@ -3,8 +3,8 @@
 # Controller-local play (Hermes lxc103 is excluded from fleet plays).
 #   collector: reads new FreshRSS entries (ssh saturn -> sqlite), keyword prefilter,
 #              prints candidates; prints {"wakeAgent": false} when nothing to judge.
-#   notifier : HA phone push (tap opens article) + post in private #breaking-news (MM).
-# Needs ~/.config/homeassistant/env, ~/.hermes/.env (MATTERMOST_*), channel id in
+#   notifier : Pushover phone push (HA push fallback; tap opens article) + post in private #breaking-news (MM).
+# Needs ~/.config/pushover/env (PUSHOVER_USER/TOKEN), ~/.config/homeassistant/env, ~/.hermes/.env (MATTERMOST_*), channel id in
 # ~/.hermes/cache/breaking_news_channel.txt. The schedule is a Hermes cron job
 # "Breaking news alerts" (every 15m, script=breaking_news_collect.py, agent judges
 # using the per-category criteria in its prompt and calls breaking_news_notify.py;
@@ -28,3 +28,4 @@
       loop:
         - breaking_news_collect.py
         - breaking_news_notify.py
+        - pushover_send.py
