@@ -52,9 +52,9 @@ backup_prometheus_rules_dir: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147
 # Alertmanager -> Mattermost #alerts. The webhook URL is a SECRET: it lives only in
 # {{ backup_appdata }}/alertmanager/config/mattermost_webhook (chmod 600), never in git.
 backup_alertmanager_enabled: false
-# Also push alerts to Pushover. user key + app token are SECRETS in files next to mattermost_webhook
-# ({{ backup_appdata }}/alertmanager/config/pushover_user_key and pushover_token, chmod 600), never in git.
+# Also push alerts to Pushover via the Hermes webhook (alert_webhook.py, adds per-service logos).
 backup_alertmanager_pushover_enabled: false
+backup_alertmanager_pushover_webhook: http://10.20.0.21:9095/
 backup_alertmanager_bind: 10.20.0.2   # LAN IP only, never 0.0.0.0
 backup_alertmanager_image: prom/alertmanager:v0.35.1
 backup_appdata: /srv/dev-disk-by-uuid-f09af9c4-de31-424e-a995-41147cfcbb0a/appdata

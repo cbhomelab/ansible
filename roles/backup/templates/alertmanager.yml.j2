@@ -18,15 +18,8 @@ receivers:
           {{ "{{" }} end {{ "}}" }}
         color: '{{ "{{" }} if eq .Status "firing" {{ "}}" }}danger{{ "{{" }} else {{ "}}" }}good{{ "{{" }} end {{ "}}" }}'
 {% if backup_alertmanager_pushover_enabled | default(false) %}
-    pushover_configs:
-      - user_key_file: /etc/alertmanager/pushover_user_key
-        token_file: /etc/alertmanager/pushover_token
+    webhook_configs:
+      # Hermes host: alert_webhook.py -> Pushover with per-service logo (systemd user unit alert-webhook)
+      - url: '{{ backup_alertmanager_pushover_webhook }}'
         send_resolved: false
-        html: true
-        title: '{{ "{{" }} .Status | toUpper {{ "}}" }}: {{ "{{" }} .CommonLabels.alertname {{ "}}" }}'
-        message: |-
-          {{ "{{" }} range .Alerts {{ "}}" }}{{ "{{" }} if .Annotations.summary {{ "}}" }}{{ "{{" }} .Annotations.summary {{ "}}" }}{{ "{{" }} else {{ "}}" }}{{ "{{" }} .Labels.alertname {{ "}}" }}{{ "{{" }} end {{ "}}" }}
-          {{ "{{" }} end {{ "}}" }}
-        priority: '{{ "{{" }} if eq .CommonLabels.severity "critical" {{ "}}" }}1{{ "{{" }} else {{ "}}" }}0{{ "{{" }} end {{ "}}" }}'
-        sound: '{{ "{{" }} if eq .CommonLabels.severity "critical" {{ "}}" }}siren{{ "{{" }} else {{ "}}" }}pushover{{ "{{" }} end {{ "}}" }}'
 {% endif %}
