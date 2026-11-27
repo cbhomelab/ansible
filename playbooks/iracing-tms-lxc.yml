@@ -13,6 +13,7 @@
       SCHEDULER_ENABLED: "true"
       SCHEDULER_SYNC_EVENTS: "true"
       SCRAPER_REQUEST_DELAY: "2"
+      DISCORD_OAUTH_REDIRECT_URI: https://teams-dev.fast-racing.org/auth/discord/callback
   roles: [iracing_tms_lxc]
 
 - name: iRacing Team Manager (production, native LXC on jupiter)
