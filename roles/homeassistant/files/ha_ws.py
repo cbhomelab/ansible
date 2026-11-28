@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
 """Minimal Home Assistant websocket client for the homeassistant role.
 Usage: ha_ws.py report | backup NAME
-Reads HA_HOST/HA_PORT/HA_TOKEN from the environment. Prints one JSON document."""
+Reads HA_URL (or HA_HOST/HA_PORT) and HA_TOKEN from the environment. Prints one JSON document."""
 import asyncio, json, os, sys, time, datetime
 import websockets
+from urllib.parse import urlparse
+
+def ws_url():
+    """HA_URL (http://host:port) preferred; falls back to HA_HOST/HA_PORT."""
+    u = os.environ.get("HA_URL")
+    if u:
+        p = urlparse(u)
+        return f"{'wss' if p.scheme == 'https' else 'ws'}://{p.netloc}/api/websocket"
+    return f"ws://{os.environ['HA_HOST']}:{os.environ['HA_PORT']}/api/websocket"
 
 async def main():
-    url = f"ws://{os.environ['HA_HOST']}:{os.environ['HA_PORT']}/api/websocket"
+    url = ws_url()
     async with websockets.connect(url, max_size=2**24) as w:
         await w.recv()
         await w.send(json.dumps({"type": "auth", "access_token": os.environ["HA_TOKEN"]}))
@@ -78,7 +87,7 @@ async def update_platform(kind):
     update, then poll with fresh connections until the target version is up and healthy."""
     ep, info_ep = ("/core", "/core/info") if kind == "core" else ("/os", "/os/info")
     async def conn():
-        w = await websockets.connect(f"ws://{os.environ['HA_HOST']}:{os.environ['HA_PORT']}/api/websocket", max_size=2**24)
+        w = await websockets.connect(ws_url(), max_size=2**24)
         await w.recv(); await w.send(json.dumps({"type": "auth", "access_token": os.environ["HA_TOKEN"]}))
         if json.loads(await w.recv())["type"] != "auth_ok": raise RuntimeError("auth")
         return w
