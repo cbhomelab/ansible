@@ -36,6 +36,12 @@
     minute: "{{ npm_backup_minute }}"
     job: /usr/local/sbin/npm-backup >/dev/null 2>&1 || logger -p user.err -t npm-backup "backup FAILED"
 
+- name: Icon directory for padded home-screen icons
+  ansible.builtin.file: {path: /var/lib/npm-icons, state: directory, mode: "0755"}
+
+- name: Padded 180px home-screen icons (see advanced_config alias locations)
+  ansible.builtin.copy: {src: icons/, dest: /var/lib/npm-icons/, mode: "0644"}
+
 - name: Health check (API status + major version)
   ansible.builtin.uri: {url: "http://127.0.0.1:{{ npm_port }}/api/", return_content: true}
   register: npm_health
