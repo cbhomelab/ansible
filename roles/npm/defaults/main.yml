@@ -51,7 +51,7 @@ npm_proxy_hosts:
   - {"domain_names": ["intranet.cbhomelab.net"], "forward_host": "10.20.0.4", "forward_port": 81, "block_exploits": 0}
   - {"domain_names": ["jellyfin.cbhomelab.net"], "forward_host": "10.40.0.24", "forward_port": 8096, "block_exploits": 0, "access_list_id": 0}
   - {"domain_names": ["lidarr.cbhomelab.net", "music.cbhomelab.net"], "forward_host": "10.20.0.149", "forward_port": 8686}
-  - {"domain_names": ["logs.cbhomelab.net"], "forward_host": "10.20.0.161", "forward_port": 3000}
+  - {"domain_names": ["logs.cbhomelab.net"], "forward_host": "10.20.0.161", "forward_port": 3000, "advanced_config": "location = /apple-touch-icon.png { proxy_pass http://10.20.0.161:3000/public/build/img/apple-touch-icon.png; }\nlocation = /apple-touch-icon-precomposed.png { proxy_pass http://10.20.0.161:3000/public/build/img/apple-touch-icon.png; }\nlocation = /favicon.ico { proxy_pass http://10.20.0.161:3000/public/build/img/fav32.png; }"}
   - {"domain_names": ["mattermost.cbhomelab.net"], "forward_host": "10.20.0.51", "forward_port": 8065, "hsts_enabled": 0, "hsts_subdomains": 0, "caching_enabled": 0, "advanced_config": "client_max_body_size 100M;\nproxy_read_timeout 600s;"}
   - {"domain_names": ["mc-map.cbhomelab.net"], "forward_host": "10.20.0.131", "forward_port": 8100, "access_list_id": 0}
   - {"domain_names": ["minecraft.cbhomelab.net"], "forward_host": "10.40.0.30", "forward_port": 19132, "access_list_id": 0}
